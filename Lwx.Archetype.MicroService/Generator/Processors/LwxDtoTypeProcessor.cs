@@ -42,7 +42,8 @@ namespace Lwx.Archetype.MicroService.Generator.Processors
             var ns = classSymbol.ContainingNamespace?.ToDisplayString() ?? "Generated";
             var className = GeneratorHelpers.SafeIdentifier(classSymbol.Name);
 
-            var properties = GetPartialProperties(classSymbol);
+            var members = GetMembersToProcess(classSymbol, ctx);
+            var properties = members.OfType<IPropertySymbol>().ToList();
             var generatedProperties = new List<string>();
 
             foreach (var prop in properties)
@@ -88,11 +89,60 @@ namespace Lwx.Archetype.MicroService.Generator.Processors
             return DtoType.Normal;
         }
 
-        private List<IPropertySymbol> GetPartialProperties(INamedTypeSymbol classSymbol)
+        private List<ISymbol> GetMembersToProcess(INamedTypeSymbol classSymbol, SourceProductionContext ctx)
         {
-            return classSymbol.GetMembers()
-                .OfType<IPropertySymbol>()
-                .ToList();
+            var members = new List<ISymbol>();
+            foreach (var member in classSymbol.GetMembers())
+            {
+                if (member is IPropertySymbol prop)
+                {
+                    var hasDtoProp = prop.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxDtoPropertyAttribute");
+                    var hasDtoIgnore = prop.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxDtoIgnoreAttribute");
+                    if (hasDtoProp || hasDtoIgnore)
+                    {
+                        if (hasDtoIgnore)
+                        {
+                            // Skip ignored properties
+                            continue;
+                        }
+                        members.Add(prop);
+                    }
+                    else
+                    {
+                        // Report error for properties without [LwxDtoProperty] or [LwxDtoIgnore]
+                        ctx.ReportDiagnostic(Diagnostic.Create(
+                            new DiagnosticDescriptor(
+                                "LWX005",
+                                "DTO property must have [LwxDtoProperty] or [LwxDtoIgnore]",
+                                "Property '{0}' in DTO class must be decorated with [LwxDtoProperty] or [LwxDtoIgnore].",
+                                "Lwx.Archetype",
+                                DiagnosticSeverity.Error,
+                                true
+                            ),
+                            prop.Locations.FirstOrDefault(),
+                            prop.Name
+                        ));
+                    }
+                }
+                else if (member is IFieldSymbol field && !field.IsImplicitlyDeclared)
+                {
+                    // Forbid fields
+                    ctx.ReportDiagnostic(Diagnostic.Create(
+                        new DiagnosticDescriptor(
+                            "LWX006",
+                            "DTO fields are not allowed",
+                            "Field '{0}' in DTO class is not allowed. Use properties instead.",
+                            "Lwx.Archetype",
+                            DiagnosticSeverity.Error,
+                            true
+                        ),
+                        field.Locations.FirstOrDefault(),
+                        field.Name
+                    ));
+                }
+                // Ignore other members
+            }
+            return members;
         }
 
         private string GenerateBackingFields(List<IPropertySymbol> properties)

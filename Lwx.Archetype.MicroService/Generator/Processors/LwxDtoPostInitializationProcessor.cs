@@ -28,5 +28,10 @@ internal class LwxDtoPostInitializationProcessor(
             "Attributes/LwxDtoPropertyAttribute.cs", 
             "LwxDtoPropertyAttribute.g.cs"
         );
+        GeneratorHelpers.AddEmbeddedSource(
+            ctx, 
+            "Attributes/LwxDtoIgnoreAttribute.cs", 
+            "LwxDtoIgnoreAttribute.g.cs"
+        );
     }
 }
