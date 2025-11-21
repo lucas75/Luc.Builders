@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Luc.Util.Web", "Luc.Util.Web\Luc.Util.Web.csproj", "{10E97AAA-EDB6-48AB-A4CE-5B434B5E67BD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lwx.Archetype.MicroService", "Lwx.Archetype.MicroService\Lwx.Archetype.MicroService.csproj", "{68C5096D-36FF-4AC2-87C5-E63E1326CE09}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyCompany.MyUnit.Worker001", "MyCompany.MyUnit.Worker001\MyCompany.MyUnit.Worker001.csproj", "{6C95AD64-D326-4E02-93CE-39BEA4F0B474}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -14,9 +16,13 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{10E97AAA-EDB6-48AB-A4CE-5B434B5E67BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{10E97AAA-EDB6-48AB-A4CE-5B434B5E67BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{10E97AAA-EDB6-48AB-A4CE-5B434B5E67BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{10E97AAA-EDB6-48AB-A4CE-5B434B5E67BD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{68C5096D-36FF-4AC2-87C5-E63E1326CE09}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68C5096D-36FF-4AC2-87C5-E63E1326CE09}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68C5096D-36FF-4AC2-87C5-E63E1326CE09}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68C5096D-36FF-4AC2-87C5-E63E1326CE09}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C95AD64-D326-4E02-93CE-39BEA4F0B474}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C95AD64-D326-4E02-93CE-39BEA4F0B474}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C95AD64-D326-4E02-93CE-39BEA4F0B474}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C95AD64-D326-4E02-93CE-39BEA4F0B474}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

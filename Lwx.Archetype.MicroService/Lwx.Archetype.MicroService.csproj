@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Generators target netstandard2.0 for broad compatibility -->
+    <TargetFramework>net9.0</TargetFramework>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <LangVersion>preview</LangVersion>
+    <NoWarn>CS0618;CS0612;CS9113</NoWarn>
+    <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Roslyn packages needed for incremental generators (PrivateAssets prevents flow to consumers) -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.10.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.10.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Embedded attribute source files for the generator (Attributes/ contains public attribute definitions) -->
+  <ItemGroup>
+    <EmbeddedResource Include="Attributes\**\*.cs" LogicalName="Lwx.Archetype.MicroService.%(RelativeDir)%(Filename)%(Extension)" />
+    <Compile Remove="Attributes\**\*.cs" />
+  </ItemGroup>
+
+  <!-- Optional analyzers or warnings suppression for generator project -->
+  <PropertyGroup>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+  </PropertyGroup>
+
+</Project>
