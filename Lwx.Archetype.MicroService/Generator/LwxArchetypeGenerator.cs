@@ -24,6 +24,7 @@ public class LwxArchetypeGenerator : IIncrementalGenerator
     private static readonly string[] AttributeNames = [
         "LwxEndpoint",
         "LwxDto",
+        "LwxDtoProperty",
         "LwxWorker",
         "LwxServiceBusConsumer",
         "LwxEventHubConsumer",

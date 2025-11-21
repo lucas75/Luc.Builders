@@ -18,15 +18,28 @@ namespace Lwx.Archetype.MicroService.Atributes
     /// {
     ///     public int Id { get; set; }
     ///     public string Name { get; set; }
-    /// }
     /// </code>
     /// </remarks>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public class LwxDtoAttribute : Attribute
     {
         /// <summary>
+        /// Gets or sets the implementation type for the DTO properties.
+        /// </summary>
+        public DtoType Type { get; set; } = DtoType.Normal;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="LwxDtoAttribute"/> class.
         /// </summary>
         public LwxDtoAttribute() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LwxDtoAttribute"/> class with the specified type.
+        /// </summary>
+        /// <param name="type">The implementation type for the DTO.</param>
+        public LwxDtoAttribute(DtoType type)
+        {
+            Type = type;
+        }
     }
 }

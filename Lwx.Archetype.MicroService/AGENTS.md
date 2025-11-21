@@ -7,14 +7,23 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
 ## Architecture Overview
 
 - **Generator**: `LwxArchetypeGenerator.cs` orchestrates the generation process using incremental generators
-- **Processors**: Object-oriented design with individual processor classes (e.g., `LwxEndpointTypeProcessor`) that implement `Execute()` methods
+- **Processors**: Object-oriented design with individual processor classes (e.g., `LwxEndpointTypeProcessor`, `LwxDtoTypeProcessor`) that implement `Execute()` methods
 - **Attributes**: Embedded as resources with LogicalName for proper resource naming
 - **Primary Constructors**: Used throughout for clean parameter handling
-- **Diagnostic System**: Custom error codes (LWX001-LWX003) for compile-time validation
+- **Diagnostic System**: Custom error codes (LWX001-LWX005) for compile-time validation
 
 ## Recent Development History
 
-### Completed Refactoring (Latest)
+### Completed DTO Processor Implementation (Latest)
+- Implemented `LwxDtoTypeProcessor` to generate partial property implementations for DTO classes
+- Added `DtoType` enum with `Normal` (backing fields) and `Dictionary` (dynamic storage) options
+- Created `LwxDtoPropertyAttribute` for customizing JSON serialization (JsonName, JsonConverter)
+- Added support for `JsonIgnore` on nullable properties and `JsonStringEnumConverter` for enums
+- Implemented type validation with diagnostics for unsupported property types
+- Added enum constant validation to warn missing `JsonPropertyName` attributes
+- Updated attribute embedding to include new DTO-related attributes
+
+### Completed Refactoring (Previous)
 - Refactored large `Execute()` method in `LwxEndpointTypeProcessor` into focused private methods:
   - `ExtractUriArgument()` - URI extraction from attributes
   - `ValidateEndpointNaming()` - Naming scheme validation with diagnostics
@@ -63,7 +72,8 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
 
 - All processors use primary constructors with `(FoundAttribute attr, SourceProductionContext ctx, Compilation _)`
 - Large methods have been refactored into maintainable private methods
-- Build passes cleanly with no warnings
+- DTO processor generates partial property implementations with backing fields or dictionary storage
+- Build passes cleanly with no errors (warnings for nullable in generated code)
 - Tests pass successfully
 - Ready for continued development of additional processor types or feature enhancements
 

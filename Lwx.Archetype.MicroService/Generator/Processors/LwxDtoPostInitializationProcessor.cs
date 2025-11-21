@@ -18,5 +18,15 @@ internal class LwxDtoPostInitializationProcessor(
             "Attributes/LwxDtoAttribute.cs", 
             "LwxDtoAttribute.g.cs"
         );
+        GeneratorHelpers.AddEmbeddedSource(
+            ctx, 
+            "Attributes/DtoType.cs", 
+            "DtoType.g.cs"
+        );
+        GeneratorHelpers.AddEmbeddedSource(
+            ctx, 
+            "Attributes/LwxDtoPropertyAttribute.cs", 
+            "LwxDtoPropertyAttribute.g.cs"
+        );
     }
 }
