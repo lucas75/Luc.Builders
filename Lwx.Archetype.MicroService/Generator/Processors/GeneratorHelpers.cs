@@ -44,5 +44,14 @@ internal static class GeneratorHelpers
             var src = sr.ReadToEnd();
             ctx.AddSource(generatedName, SourceText.From(src, System.Text.Encoding.UTF8));
         }
+        else
+        {
+            throw new InvalidOperationException(
+                $"Programming error in source generator: Embedded resource '{expectedName}' not found. " +
+                "The Attributes folder contains templates that must be embedded as source. " +
+                "Generator/Templates contains templates that must be embedded. " +
+                "Ensure the file paths and LogicalName in the project file match the internal names."
+            );
+        }
     }
 }

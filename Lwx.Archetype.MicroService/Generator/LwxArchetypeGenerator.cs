@@ -21,17 +21,6 @@ internal sealed class FoundAttribute(string attributeName, ISymbol targetSymbol,
 [Generator(LanguageNames.CSharp)]
 public class LwxArchetypeGenerator : IIncrementalGenerator
 {
-    private static readonly string[] AttributeNames = [
-        "LwxEndpoint",
-        "LwxDto",
-        "LwxDtoProperty",
-        "LwxWorker",
-        "LwxServiceBusConsumer",
-        "LwxEventHubConsumer",
-        "LwxTimer",
-        "LwxServiceBusProducer",
-        "LwxSwagger"
-    ];
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -65,32 +54,37 @@ public class LwxArchetypeGenerator : IIncrementalGenerator
             var found = tuple.Right;
             foreach (var f in found)
             {
-                switch (f.AttributeName)
+                if (f.AttributeName == LwxConstants.LwxEndpoint)
                 {
-                    case "LwxEndpoint":
-                        new LwxEndpointTypeProcessor(f, spc, compilation).Execute();
-                        break;
-                    case "LwxDto":
-                        new LwxDtoTypeProcessor(f, spc, compilation).Execute();
-                        break;
-                    case "LwxWorker":
-                        new LwxWorkerTypeProcessor(f, spc, compilation).Execute();
-                        break;
-                    case "LwxServiceBusConsumer":
-                        new LwxServiceBusConsumerTypeProcessor(f, spc, compilation).Execute();
-                        break;
-                    case "LwxEventHubConsumer":
-                        new LwxEventHubConsumerTypeProcessor(f, spc, compilation).Execute();
-                        break;
-                    case "LwxTimer":
-                        new LwxTimerTypeProcessor(f, spc, compilation).Execute();
-                        break;
-                    case "LwxServiceBusProducer":
-                        new LwxServiceBusProducerTypeProcessor(f, spc, compilation).Execute();
-                        break;
-                    case "LwxSwagger":
-                        new LwxSwaggerTypeProcessor(f, spc, compilation).Execute();
-                        break;
+                    new LwxEndpointTypeProcessor(f, spc, compilation).Execute();
+                }
+                else if (f.AttributeName == LwxConstants.LwxDto)
+                {
+                    new LwxDtoTypeProcessor(f, spc, compilation).Execute();
+                }
+                else if (f.AttributeName == LwxConstants.LwxWorker)
+                {
+                    new LwxWorkerTypeProcessor(f, spc, compilation).Execute();
+                }
+                else if (f.AttributeName == LwxConstants.LwxServiceBusConsumer)
+                {
+                    new LwxServiceBusConsumerTypeProcessor(f, spc, compilation).Execute();
+                }
+                else if (f.AttributeName == LwxConstants.LwxEventHubConsumer)
+                {
+                    new LwxEventHubConsumerTypeProcessor(f, spc, compilation).Execute();
+                }
+                else if (f.AttributeName == LwxConstants.LwxTimer)
+                {
+                    new LwxTimerTypeProcessor(f, spc, compilation).Execute();
+                }
+                else if (f.AttributeName == LwxConstants.LwxServiceBusProducer)
+                {
+                    new LwxServiceBusProducerTypeProcessor(f, spc, compilation).Execute();
+                }
+                else if (f.AttributeName == LwxConstants.LwxSwagger)
+                {
+                    new LwxSwaggerTypeProcessor(f, spc, compilation).Execute();
                 }
             }
         });
@@ -113,7 +107,7 @@ public class LwxArchetypeGenerator : IIncrementalGenerator
 
         var attrName = attrType.Name;
         if (attrName.EndsWith("Attribute")) attrName = attrName.Substring(0, attrName.Length - "Attribute".Length);
-        if (!AttributeNames.Contains(attrName, StringComparer.Ordinal)) return default(FoundAttribute);
+        if (!LwxConstants.AttributeNames.Contains(attrName, StringComparer.Ordinal)) return default(FoundAttribute);
 
         var parent = attributeSyntax.Parent?.Parent;
         if (parent == null) return default(FoundAttribute);
@@ -135,6 +129,6 @@ public class LwxArchetypeGenerator : IIncrementalGenerator
         var name = attribute.Name.ToString();
         var simple = name.Contains('.') ? name.Substring(name.LastIndexOf('.') + 1) : name;
         if (simple.EndsWith("Attribute")) simple = simple.Substring(0, simple.Length - "Attribute".Length);
-        return AttributeNames.Contains(simple, StringComparer.Ordinal);
+        return LwxConstants.AttributeNames.Contains(simple, StringComparer.Ordinal);
     }    
 }
