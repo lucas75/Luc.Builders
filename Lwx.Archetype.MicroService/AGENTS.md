@@ -62,6 +62,7 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
 - Embedded resources use LogicalName: `Lwx.Archetype.MicroService.%(RelativeDir)%(Filename)%(Extension)`
 - Project-level warning suppressions in NoWarn
 - Swashbuckle.AspNetCore dependency for Swagger features
+- **Deployment Note**: Attributes in `Attributes/` and templates in `Generator/Templates/` are embedded as source and generated in consuming projects via post-initialization. Incremental source generators must never use `ReferenceOutputAssembly=true` to avoid runtime dependencies on the generator assembly.
 
 ### Validation Rules
 - Endpoint naming: `EndpointAbc` for path `/abc`, `EndpointAbcParamDef` for `/abc/{def}`

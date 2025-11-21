@@ -34,8 +34,9 @@ internal static class GeneratorHelpers
     internal static void AddEmbeddedSource(IncrementalGeneratorPostInitializationContext ctx, string fileName, string generatedName)
     {
         var asm = typeof(LwxArchetypeGenerator).Assembly;
+        var expectedName = "Lwx.Archetype.MicroService." + fileName.Replace('/', '.').Replace('\\', '.');
         var rname = asm.GetManifestResourceNames()
-            .FirstOrDefault(n => n.EndsWith(fileName, StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(n => n == expectedName);
         if (rname != null)
         {
             using var s = asm.GetManifestResourceStream(rname);

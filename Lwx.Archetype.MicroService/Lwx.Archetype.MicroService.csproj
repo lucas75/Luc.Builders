@@ -17,8 +17,14 @@
 
   <!-- Embedded attribute source files for the generator (Attributes/ contains public attribute definitions) -->
   <ItemGroup>
-    <EmbeddedResource Include="Attributes\**\*.cs" LogicalName="Lwx.Archetype.MicroService.%(RelativeDir)%(Filename)%(Extension)" />
-    <Compile Remove="Attributes\**\*.cs" />
+    <EmbeddedResource Include="Attributes\**\*.cs" />
+    <EmbeddedResource Include="Generator/Templates/LwxEndpointExtensions.cs" />    
+    <Compile Remove="Generator/Templates\**\*.cs" />
+  </ItemGroup>
+
+  <!-- Exclude templates from compilation -->
+  <ItemGroup>
+    
   </ItemGroup>
 
   <!-- Optional analyzers or warnings suppression for generator project -->

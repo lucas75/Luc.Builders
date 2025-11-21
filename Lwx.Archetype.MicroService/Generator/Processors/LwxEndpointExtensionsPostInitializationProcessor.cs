@@ -14,7 +14,7 @@ internal class LwxEndpointExtensionsPostInitializationProcessor(
   {
     GeneratorHelpers.AddEmbeddedSource(
       ctx, 
-      "Attributes/LwxEndpointExtensions.cs", 
+      "Generator/Templates/LwxEndpointExtensions.cs", 
       "LwxEndpointExtensions.g.cs"
     );
   }
