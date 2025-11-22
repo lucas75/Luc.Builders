@@ -15,6 +15,7 @@ namespace Lwx.Archetype.MicroService.Atributes
         public string Description { get; set; }
         public string Version { get; set; }
         public LwxStage PublishSwagger { get; set; } = LwxStage.None;
+        public bool GenerateMain { get; set; } = false;
 
         public LwxServiceConfigAttribute() { }
     }

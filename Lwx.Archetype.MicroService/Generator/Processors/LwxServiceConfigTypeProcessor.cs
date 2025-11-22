@@ -46,6 +46,7 @@ internal class LwxServiceConfigTypeProcessor(
         string description = null;
         string version = null;
         string publishLiteral = "Lwx.Archetype.MicroService.Atributes.LwxStage.None";
+        bool generateMain = false;
 
         if (attr.AttributeData != null)
         {
@@ -83,6 +84,12 @@ internal class LwxServiceConfigTypeProcessor(
                     var tmp = m4.Value.Value.ToString() ?? "Lwx.Archetype.MicroService.Atributes.LwxStage.None";
                     publishLiteral = tmp.Contains('.') ? tmp : ("Lwx.Archetype.MicroService.Atributes.LwxStage." + tmp);
                 }
+            }
+
+            var m5 = attr.AttributeData.NamedArguments.FirstOrDefault(kv => kv.Key == "GenerateMain");
+            if (!m5.Equals(default(KeyValuePair<string, TypedConstant>)) && m5.Value.Value is bool b)
+            {
+                generateMain = b;
             }
         }
 
