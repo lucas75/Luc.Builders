@@ -13,17 +13,19 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
 - **Diagnostic System**: Custom error codes (LWX001-LWX005) for compile-time validation
 
 ## Recent Development History
-
-### Completed DTO and Swagger Integration Enhancements (Latest)
+ - Introduced `LwxServiceConfig` as the microservice descriptor attribute (file: `ServiceConfig.cs`). The generator prefers `[LwxServiceConfig]` for service metadata and no longer supports `[LwxSwagger]`.
+ - Enforced presence of `ServiceConfig.cs` in projects using the generator (diagnostic LWX011).
+ - Enforced presence of `ServiceConfig.cs` in projects using the generator (diagnostic LWX011).
+ - Enforced that `[LwxServiceConfig]` may only appear in a file named `ServiceConfig.cs` (diagnostic LWX012).
 - Enhanced `LwxDtoTypeProcessor` with strict validation: forbids properties without `[LwxDtoProperty]` or `[LwxDtoIgnore]`, forbids fields entirely, reports compilation errors for non-compliant DTOs
 - Added `[LwxDtoIgnoreAttribute]` for excluding properties from generation while satisfying validation rules
 - Centralized attribute name constants in `LwxConstants.cs` with `const string` for full names and `static readonly string` for short names using `Replace("Attribute", "")`
 - Refactored `LwxArchetypeGenerator.cs` to use constants from `LwxConstants` in switch statements and attribute detection
 - Moved `AttributeNames` array from generator to `LwxConstants` for better maintainability
-- Encapsulated Swagger configuration in dynamically generated `LwxConfigure` extension methods, avoiding reflection by conditionally including Swagger setup code based on `[LwxSwagger]` attribute presence
-- Upgraded Swagger generation to respect `Publish` property with environment-based activation (Development/Production stages), and set OpenAPI info (Title, Description, Version) and Swagger UI DocumentTitle from attribute properties
+ - Encapsulated Swagger configuration in dynamically generated `LwxConfigure` extension methods, using `[LwxServiceConfig]` metadata to conditionally include Swagger setup code
+ - Upgraded Swagger generation to respect `PublishSwagger` property with environment-based activation (Development/Production stages), and set OpenAPI info (Title, Description, Version) and Swagger UI DocumentTitle from attribute properties
 - Removed embedded `LwxEndpointExtensions.cs` template, replaced with dynamic generation in main generator for attribute-aware code inclusion
-- Updated `LwxSwaggerTypeProcessor` to minimal diagnostic checking, with actual generation moved to main generator
+ - Updated `LwxServiceConfigTypeProcessor` to minimal diagnostic checking, with actual generation moved to main generator
 - Ensured clean builds with no runtime dependencies on generator assembly, maintaining embedded source distribution pattern
 
 ### Endpoint Naming & Namespace/Filepath Validation (Latest)

@@ -7,16 +7,4 @@ using System.Text;
 
 namespace Lwx.Archetype.MicroService.Generator.Processors;
 
-internal class LwxSwaggerPostInitializationProcessor(
-  IncrementalGeneratorPostInitializationContext ctx
-)
-{
-  public void Execute()
-  {
-    GeneratorHelpers.AddEmbeddedSource(
-      ctx, 
-      "Attributes/LwxSwaggerAttribute.cs", 
-      "LwxSwaggerAttribute.g.cs"
-    );
-  }
-}
+// LwxSwaggerPostInitializationProcessor removed. LwxServiceConfig is embedded by LwxServiceConfigPostInitializationProcessor.

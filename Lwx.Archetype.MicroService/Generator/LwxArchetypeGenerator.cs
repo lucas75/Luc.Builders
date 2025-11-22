@@ -37,7 +37,7 @@ public class LwxArchetypeGenerator : IIncrementalGenerator
             new LwxServiceBusProducerPostInitializationProcessor(ctx).Execute();
             new LwxEndpointMetadataPostInitializationProcessor(ctx).Execute();
             new LwxEndpointExtensionsPostInitializationProcessor(ctx).Execute();
-            new LwxSwaggerPostInitializationProcessor(ctx).Execute();
+            new LwxServiceConfigPostInitializationProcessor(ctx).Execute();
         });
 
         // Find attributes whose simple name matches one of the attribute names in our list
@@ -83,14 +83,27 @@ public class LwxArchetypeGenerator : IIncrementalGenerator
                 {
                     new LwxServiceBusProducerTypeProcessor(f, spc, compilation).Execute();
                 }
-                else if (f.AttributeName == LwxConstants.LwxSwagger)
+                else if (f.AttributeName == LwxConstants.LwxServiceConfig)
                 {
                     hasSwagger = true;
-                    new LwxSwaggerTypeProcessor(f, spc, compilation).Execute();
+                    new LwxServiceConfigTypeProcessor(f, spc, compilation).Execute();
                 }
             }
 
-            var swaggerAttr = found.FirstOrDefault(f => f.AttributeName == LwxConstants.LwxSwagger)?.AttributeData;
+            var swaggerAttr = found.FirstOrDefault(f => f.AttributeName == LwxConstants.LwxServiceConfig)?.AttributeData;
+            if (swaggerAttr == null)
+            {
+                // If no ServiceConfig attribute is present, emit an error diagnostic requiring it.
+                spc.ReportDiagnostic(Diagnostic.Create(
+                    new DiagnosticDescriptor(
+                        "LWX011",
+                        "Missing ServiceConfig",
+                        "Projects using Lwx generator must declare a [LwxServiceConfig] class (ServiceConfig.cs) with service metadata.",
+                        "Configuration",
+                        DiagnosticSeverity.Error,
+                        isEnabledByDefault: true),
+                    Location.None));
+            }
             var fullNs = found.FirstOrDefault()?.TargetSymbol?.ContainingNamespace?.ToDisplayString() ?? "Generated";
             var ns = fullNs.Contains('.') ? fullNs.Substring(0, fullNs.LastIndexOf('.')) : fullNs;
             GenerateLwxConfigure(spc, swaggerAttr, ns);
@@ -122,7 +135,7 @@ public class LwxArchetypeGenerator : IIncrementalGenerator
                 version = s3;
             }
 
-            var m4 = swaggerAttr.NamedArguments.FirstOrDefault(kv => kv.Key == "Publish");
+            var m4 = swaggerAttr.NamedArguments.FirstOrDefault(kv => kv.Key == "PublishSwagger");
             if (!m4.Equals(default(KeyValuePair<string, TypedConstant>)) && m4.Value.Value != null)
             {
                 var raw = m4.Value.Value;

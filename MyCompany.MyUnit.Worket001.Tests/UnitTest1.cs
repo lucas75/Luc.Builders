@@ -1,10 +1,27 @@
-﻿namespace MyCompany.MyUnit.Worket001.Tests;
+﻿using System.Reflection;
+using Lwx.Archetype.MicroService.Atributes;
+using Xunit;
 
-public class UnitTest1
+namespace MyCompany.MyUnit.Worket001.Tests;
+
+public class ServiceConfigTests
 {
     [Fact]
-    public void Test1()
+    public void ServiceConfig_ClassExists_WithAttribute()
     {
+        var t = typeof(MyCompany.MyUnit.Worker001.ServiceConfig);
+        Assert.NotNull(t);
 
+        var attr = t.GetCustomAttribute<LwxServiceConfigAttribute>();
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    public void ServiceConfig_PublishSwagger_IsDevelopment()
+    {
+        var t = typeof(MyCompany.MyUnit.Worker001.ServiceConfig);
+        var attr = t.GetCustomAttribute<LwxServiceConfigAttribute>();
+        Assert.NotNull(attr);
+        Assert.Equal(LwxStage.Development, attr.PublishSwagger);
     }
 }

@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lwx.Archetype.MicroService"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyCompany.MyUnit.Worker001", "MyCompany.MyUnit.Worker001\MyCompany.MyUnit.Worker001.csproj", "{6C95AD64-D326-4E02-93CE-39BEA4F0B474}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyCompany.MyUnit.Worket001.Tests", "MyCompany.MyUnit.Worket001.Tests\MyCompany.MyUnit.Worket001.Tests.csproj", "{53D671F9-0655-4978-8D0A-697F4D809AB1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lwx.Archetype.MicroService.Tests", "Lwx.Archetype.MicroService.Tests\Lwx.Archetype.MicroService.Tests.csproj", "{D9D213B9-DFF0-4730-B75C-CC71E87812A3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +28,13 @@ Global
 		{6C95AD64-D326-4E02-93CE-39BEA4F0B474}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6C95AD64-D326-4E02-93CE-39BEA4F0B474}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6C95AD64-D326-4E02-93CE-39BEA4F0B474}.Release|Any CPU.Build.0 = Release|Any CPU
+		{53D671F9-0655-4978-8D0A-697F4D809AB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{53D671F9-0655-4978-8D0A-697F4D809AB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{53D671F9-0655-4978-8D0A-697F4D809AB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{53D671F9-0655-4978-8D0A-697F4D809AB1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9D213B9-DFF0-4730-B75C-CC71E87812A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9D213B9-DFF0-4730-B75C-CC71E87812A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9D213B9-DFF0-4730-B75C-CC71E87812A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9D213B9-DFF0-4730-B75C-CC71E87812A3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

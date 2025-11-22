@@ -13,7 +13,7 @@ public static class LwxConstants
     public const string LwxEventHubConsumerAttribute = nameof(LwxEventHubConsumerAttribute);
     public const string LwxTimerAttribute = nameof(LwxTimerAttribute);
     public const string LwxServiceBusProducerAttribute = nameof(LwxServiceBusProducerAttribute);
-    public const string LwxSwaggerAttribute = nameof(LwxSwaggerAttribute);
+    public const string LwxServiceConfigAttribute = nameof(LwxServiceConfigAttribute);
 
     public static readonly string LwxEndpoint = LwxEndpointAttribute.Replace("Attribute", "");
     public static readonly string LwxDto = LwxDtoAttribute.Replace("Attribute", "");
@@ -24,7 +24,8 @@ public static class LwxConstants
     public static readonly string LwxEventHubConsumer = LwxEventHubConsumerAttribute.Replace("Attribute", "");
     public static readonly string LwxTimer = LwxTimerAttribute.Replace("Attribute", "");
     public static readonly string LwxServiceBusProducer = LwxServiceBusProducerAttribute.Replace("Attribute", "");
-    public static readonly string LwxSwagger = LwxSwaggerAttribute.Replace("Attribute", "");
+    // LwxSwagger was removed: use LwxServiceConfig instead
+    public static readonly string LwxServiceConfig = LwxServiceConfigAttribute.Replace("Attribute", "");
 
     public static readonly string[] AttributeNames = [
         LwxEndpoint,
@@ -35,6 +36,6 @@ public static class LwxConstants
         LwxEventHubConsumer,
         LwxTimer,
         LwxServiceBusProducer,
-        LwxSwagger
+        LwxServiceConfig
     ];
 }

@@ -14,6 +14,9 @@ This TODO collects short-term work items and follow-ups for the Lwx source gener
 - Add unit tests / integration tests for the naming rules and diagnostics (LWX001, LWX007).
  - Add unit tests / integration tests for the naming rules and diagnostics (LWX001, LWX007, LWX008).
 
+ - Add support for a dedicated microservice descriptor attribute `LwxServiceConfig` (ServiceConfig.cs).
+ - Update generator to prefer `LwxServiceConfig` and use it for swagger/service configuration generation.
+
 ### Examples
 
 1. Standard: GET /abc/cde/efg => class should be `EndpointAbcCdeEfg` under `*.Endpoints` or nested namespace

@@ -68,7 +68,15 @@ internal static class GeneratorHelpers
         var assemblyRoot = symbol.ContainingAssembly?.Name ?? string.Empty;
 
         // Compute remaining namespace segments after assembly root
-        var remaining = fullNs.StartsWith(assemblyRoot + ".") ? fullNs.Substring(assemblyRoot.Length + 1) : fullNs;
+        string remaining;
+        if (string.Equals(fullNs, assemblyRoot, StringComparison.Ordinal))
+        {
+            remaining = string.Empty;
+        }
+        else
+        {
+            remaining = fullNs.StartsWith(assemblyRoot + ".") ? fullNs.Substring(assemblyRoot.Length + 1) : fullNs;
+        }
         if (string.IsNullOrEmpty(remaining)) return;
 
         var segments = remaining.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
