@@ -14,21 +14,7 @@ internal class LwxSwaggerTypeProcessor(
     {
         // enforce file path and namespace matching for swagger marker classes
         GeneratorHelpers.ValidateFilePathMatchesNamespace(attr.TargetSymbol, ctx);
-        // Check if Swashbuckle is available
-        var openApiInfoType = compilation.GetTypeByMetadataName("Microsoft.OpenApi.Models.OpenApiInfo");
-        if (openApiInfoType == null)
-        {
-            ctx.ReportDiagnostic(Diagnostic.Create(
-                new DiagnosticDescriptor(
-                    "LWX003",
-                    "Missing Swashbuckle package",
-                    "LwxSwagger requires the Swashbuckle.AspNetCore package. Install it using: dotnet add package Swashbuckle.AspNetCore",
-                    "Dependencies",
-                    DiagnosticSeverity.Error,
-                    isEnabledByDefault: true),
-                attr.Location));
-            return;
-        }
+        // We'll only require Swashbuckle when the attribute publish stage is active.
 
         var name = GeneratorHelpers.SafeIdentifier(attr.TargetSymbol.Name);
         var ns = attr.TargetSymbol.ContainingNamespace?.ToDisplayString() ?? "Generated";
@@ -74,6 +60,25 @@ internal class LwxSwaggerTypeProcessor(
                     var tmp = m4.Value.Value.ToString() ?? "Lwx.Archetype.MicroService.Atributes.LwxStage.None";
                     publishLiteral = tmp.Contains('.') ? tmp : ("Lwx.Archetype.MicroService." + tmp);
                 }
+            }
+        }
+
+        // If the publish stage is active (not None) make sure Swashbuckle is available
+        if (publishLiteral != "Lwx.Archetype.MicroService.Atributes.LwxStage.None")
+        {
+            var openApiInfoType = compilation.GetTypeByMetadataName("Microsoft.OpenApi.Models.OpenApiInfo");
+            if (openApiInfoType == null)
+            {
+                ctx.ReportDiagnostic(Diagnostic.Create(
+                    new DiagnosticDescriptor(
+                        "LWX003",
+                        "Missing Swashbuckle package",
+                        "LwxSwagger requires the Swashbuckle.AspNetCore package. Install it using: dotnet add package Swashbuckle.AspNetCore",
+                        "Dependencies",
+                        DiagnosticSeverity.Error,
+                        isEnabledByDefault: true),
+                    attr.Location));
+                return;
             }
         }
 

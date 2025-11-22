@@ -143,7 +143,7 @@ public class LwxArchetypeGenerator : IIncrementalGenerator
             }
         }
 
-        var hasSwagger = swaggerAttr != null;
+        var hasSwagger = swaggerAttr != null && publishLiteral != "Lwx.Archetype.MicroService.Atributes.LwxStage.None";
         var swaggerServicesCode = hasSwagger ? $$"""
             var __lwxPublish = {{publishLiteral}};
             if (__lwxPublish != Lwx.Archetype.MicroService.Atributes.LwxStage.None)
