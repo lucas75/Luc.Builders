@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Hosting;
 using MyCompany.MyUnit.Worker001.Endpoints;
+using MyCompany.MyUnit.Worker001.Endpoints.ExampleProc;
 using Lwx.Archetype.MicroService.Atributes;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,5 +18,9 @@ app.LwxConfigure();
 EndpointProc01Start.Configure(app);
 EndpointAbcCde.Configure(app);
 EndpointProc01MakeAbc.Configure(app);
+EndpointExampleProcStart.Configure(app);
+EndpointExampleProcFunc001.Configure(app);
+EndpointExampleProcFunc002.Configure(app);
+EndpointExampleProcFinish.Configure(app);
 
 app.Run();

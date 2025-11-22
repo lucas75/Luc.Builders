@@ -94,13 +94,13 @@ internal class LwxEndpointTypeProcessor(
         }
 
         // Also validate namespace
-        if (!ns.EndsWith(".Endpoints", StringComparison.Ordinal))
+        if (!ns.Contains(".Endpoints", StringComparison.Ordinal))
         {
             ctx.ReportDiagnostic(Diagnostic.Create(
                 new DiagnosticDescriptor(
                     "LWX002",
                     "Invalid endpoint namespace",
-                    "Endpoint class must be in a namespace ending with '.Endpoints'",
+                    "Endpoint class must be in a namespace containing '.Endpoints'",
                     "Naming",
                     DiagnosticSeverity.Error,
                     isEnabledByDefault: true),
@@ -142,7 +142,7 @@ internal class LwxEndpointTypeProcessor(
             var sb = new System.Text.StringBuilder("Endpoint");
             if (segs.Length > 0)
             {
-                optionalFirstSegment = GeneratorHelpers.SafeIdentifier(segs[0]);
+                optionalFirstSegment = GeneratorHelpers.PascalSafe(segs[0]);
             }
             foreach (var seg in segs)
             {
@@ -331,7 +331,10 @@ internal class LwxEndpointTypeProcessor(
             : null;
             
         GeneratorHelpers.AddGeneratedFile(ctx, $"LwxEndpoint_{name}.g.cs", source);
-        GeneratorHelpers.AddGeneratedFile(ctx, $"LwxEndpoint_{name}.Endpoints.g.cs", endpointsNsSource);
+        if (string.IsNullOrEmpty(nestedNs))
+        {
+            GeneratorHelpers.AddGeneratedFile(ctx, $"LwxEndpoint_{name}.Endpoints.g.cs", endpointsNsSource);
+        }
         if (!string.IsNullOrEmpty(optionalFirstSegment) && nestedNsSource != null)
         {
             GeneratorHelpers.AddGeneratedFile(ctx, $"LwxEndpoint_{name}.Endpoints_{GeneratorHelpers.SafeIdentifier(optionalFirstSegment)}.g.cs", nestedNsSource);
