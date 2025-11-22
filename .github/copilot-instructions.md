@@ -1,8 +1,7 @@
-- Look for AGENTS.md on the projects.
-- Update AGENTS.md with relevant context history.
-- Look for TODO.md on the projects.
+- Look for AGENTS.md on the projects and update it with relevant context history.
+- Look for TODO.md on the projects and update it with relevant context history.
 - Update your suggestions on TODO.md tasks.
-- Explore Net 9.0 and C# 13 features.
+- USE .NET 9.0 and C# 13 features.
 - Follow existing coding style and conventions in the codebase.
 - Run formatting tools 
 - Write clear, maintainable, and well-documented code.
@@ -11,6 +10,7 @@
 - Prefer immutability and `readonly` fields where meaningful.
 - Split large methods in smaller helper methods for clarity.
 - Never commit to git.
+- Do NOT use @" strings.
 
 AI agent verification checklist
 ------------------------------
