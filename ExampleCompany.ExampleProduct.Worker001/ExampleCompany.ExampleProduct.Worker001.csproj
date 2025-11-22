@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>preview</LangVersion>
+    <RootNamespace>ExampleCompany.ExampleProduct.Worker001</RootNamespace>
+    <AssemblyName>ExampleCompany.ExampleProduct.Worker001</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

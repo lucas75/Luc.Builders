@@ -1,9 +1,9 @@
-using MyCompany.MyUnit.Worker001.Dto;
+using ExampleCompany.ExampleProduct.Worker001.Dto;
 using Lwx.Archetype.MicroService.Atributes;
 using Microsoft.AspNetCore.Mvc;
 using Lwx.Archetype.MicroService;
 
-namespace MyCompany.MyUnit.Worker001.Endpoints.Proc01;
+namespace ExampleCompany.ExampleProduct.Worker001.Endpoints.Proc01;
 
 [LwxEndpoint(
     Uri = "POST /proc01/make-abc",

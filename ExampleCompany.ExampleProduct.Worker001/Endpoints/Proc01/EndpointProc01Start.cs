@@ -1,7 +1,7 @@
-using MyCompany.MyUnit.Worker001.Dto;
+using ExampleCompany.ExampleProduct.Worker001.Dto;
 using Lwx.Archetype.MicroService.Atributes;
 
-namespace MyCompany.MyUnit.Worker001.Endpoints.Proc01;
+namespace ExampleCompany.ExampleProduct.Worker001.Endpoints.Proc01;
 
 [LwxEndpoint(
     Uri = "POST /proc01/start",

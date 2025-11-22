@@ -5,15 +5,15 @@
     | | - is a incremental source generator
     | | - generates boilerplate code for microservice projects
     | | 
-    | Project: MyCompany.MyUnit.Archetype.MicroService
+    | Project: ExampleCompany.ExampleProduct.Archetype.MicroService
     | | - is a incremental source generator
-    | | - customizes Lwx.Archetipe.MicroService for MyCompany.MyUnit
+    | | - customizes Lwx.Archetipe.MicroService for ExampleCompany.ExampleProduct
     | | 
-    | Project: MyCompany.MyUnit.Services.Worker001
+    | Project: ExampleCompany.ExampleProduct.Services.Worker001
     | | - is a web project
     | | - uses all source generators above    
     | | 
-    | Project: MyCompany.MyUnit.Services.Worker001.Tests
+    | Project: ExampleCompany.ExampleProduct.Services.Worker001.Tests
     | | - is a test project
 
 # DEFINITIONS

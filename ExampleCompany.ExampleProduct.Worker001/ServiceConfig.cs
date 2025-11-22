@@ -1,7 +1,7 @@
 using Lwx.Archetype.MicroService.Atributes;
 using Microsoft.AspNetCore.Builder;
 
-namespace MyCompany.MyUnit.Worker001;
+namespace ExampleCompany.ExampleProduct.Worker001;
 
 [LwxServiceConfig(
     Title = "MyUnit Worker 001 API",
