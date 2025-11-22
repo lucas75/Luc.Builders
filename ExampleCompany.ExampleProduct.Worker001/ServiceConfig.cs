@@ -12,13 +12,13 @@ namespace ExampleCompany.ExampleProduct.Worker001;
 )]
 public static partial class ServiceConfig
 {
-    public static void Configure(WebApplicationBuilder builder)
+    public static void Configure(WebApplicationBuilder _)
     {
-        // Additional configuration here
+        
     }
 
-    public static void Configure(WebApplication app)
+    public static void Configure(WebApplication _)
     {
-        // Additional configuration here
+        
     }
 }
