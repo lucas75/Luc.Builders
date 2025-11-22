@@ -52,7 +52,6 @@ public class LwxArchetypeGenerator : IIncrementalGenerator
         {
             var compilation = tuple.Left;
             var found = tuple.Right;
-            var hasSwagger = false;
             var generateMain = false;
             var serviceConfigLocation = Location.None;
             var endpointNames = new List<string>();
@@ -89,7 +88,6 @@ public class LwxArchetypeGenerator : IIncrementalGenerator
                 }
                 else if (f.AttributeName == LwxConstants.LwxServiceConfig)
                 {
-                    hasSwagger = true;
                     new LwxServiceConfigTypeProcessor(f, spc, compilation).Execute();
                     serviceConfigLocation = f.Location;
                     var attrData = f.AttributeData;
