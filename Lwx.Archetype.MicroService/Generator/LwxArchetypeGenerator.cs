@@ -54,6 +54,7 @@ public class LwxArchetypeGenerator : IIncrementalGenerator
             var found = tuple.Right;
             var hasSwagger = false;
             var generateMain = false;
+            var serviceConfigLocation = Location.None;
             var endpointNames = new List<string>();
             foreach (var f in found)
             {
@@ -90,6 +91,7 @@ public class LwxArchetypeGenerator : IIncrementalGenerator
                 {
                     hasSwagger = true;
                     new LwxServiceConfigTypeProcessor(f, spc, compilation).Execute();
+                    serviceConfigLocation = f.Location;
                     var attrData = f.AttributeData;
                     if (attrData != null)
                     {
@@ -123,19 +125,19 @@ public class LwxArchetypeGenerator : IIncrementalGenerator
             if (generateMain)
             {
                 // Check if user has their own Program.cs
-                var programCsTree = compilation.SyntaxTrees.FirstOrDefault(st => 
+                var hasProgramCs = compilation.SyntaxTrees.Any(st => 
                     string.Equals(System.IO.Path.GetFileName(st.FilePath), "Program.cs", StringComparison.OrdinalIgnoreCase));
-                if (programCsTree != null)
+                if (hasProgramCs)
                 {
                     spc.ReportDiagnostic(Diagnostic.Create(
                         new DiagnosticDescriptor(
                             "LWX013",
                             "Program.cs not allowed when GenerateMain is true",
-                            "When [LwxServiceConfig(GenerateMain = true)] is set, you must not have a custom Program.cs file. The Program.cs is auto-generated.",
+                            "When [LwxServiceConfig(GenerateMain = true)] is set, you must not have a custom Program.cs file. The Program.cs is auto-generated with standard ASP.NET Core setup including LwxConfigure calls and endpoint mapping. Use ServiceConfig.Configure(WebApplicationBuilder) and ServiceConfig.Configure(WebApplication) for additional customizations.",
                             "Configuration",
                             DiagnosticSeverity.Error,
                             isEnabledByDefault: true),
-                        Location.Create(programCsTree.FilePath, new TextSpan(0, 0), new LinePositionSpan(LinePosition.Zero, LinePosition.Zero))));
+                        serviceConfigLocation));
                 }
                 else
                 {
