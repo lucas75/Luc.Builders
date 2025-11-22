@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Hosting;
 using MyCompany.MyUnit.Worker001.Endpoints;
 using MyCompany.MyUnit.Worker001.Endpoints.ExampleProc;
+using MyCompany.MyUnit.Worker001.Endpoints.Proc01;
 using Lwx.Archetype.MicroService.Atributes;
 
 var builder = WebApplication.CreateBuilder(args);

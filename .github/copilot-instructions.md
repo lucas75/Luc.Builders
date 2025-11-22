@@ -1,4 +1,7 @@
 - Look for AGENTS.md on the projects.
+- Update AGENTS.md with relevant context history.
+- Look for TODO.md on the projects.
+- Update your suggestions on TODO.md tasks.
 - Explore Net 9.0 and C# 13 features.
 - Follow existing coding style and conventions in the codebase.
 - Write clear, maintainable, and well-documented code.

@@ -54,4 +54,58 @@ internal static class GeneratorHelpers
             );
         }
     }
+
+    internal static void ValidateFilePathMatchesNamespace(ISymbol symbol, SourceProductionContext ctx)
+    {
+        // If missing source location, skip validation (could be metadata or generated)
+        var loc = symbol.Locations.FirstOrDefault(l => l.IsInSource);
+        if (loc == null) return;
+
+        var filePath = loc.SourceTree?.FilePath;
+        if (string.IsNullOrEmpty(filePath)) return;
+
+        var fullNs = symbol.ContainingNamespace?.ToDisplayString() ?? string.Empty;
+        var assemblyRoot = symbol.ContainingAssembly?.Name ?? string.Empty;
+
+        // Compute remaining namespace segments after assembly root
+        var remaining = fullNs.StartsWith(assemblyRoot + ".") ? fullNs.Substring(assemblyRoot.Length + 1) : fullNs;
+        if (string.IsNullOrEmpty(remaining)) return;
+
+        var segments = remaining.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length == 0) return;
+
+        // Expected relative path: If the last namespace segment equals the type name then the file path
+        // should be <...previousSegments>/<typeName>.cs (e.g. namespace MyProj.Abc.Cde -> Abc/Cde.cs).
+        // Otherwise the file path should be <...segments>/<TypeName>.cs (e.g. namespace MyProj.Endpoints.ExampleProc -> Endpoints/ExampleProc/TypeName.cs).
+        string expectedRelative;
+        var last = segments[^1];
+        if (string.Equals(last, symbol.Name, StringComparison.Ordinal))
+        {
+            // use previous segments as folder(s), final file is last (type name)
+            var dirSegments = segments.Length > 1 ? segments.Take(segments.Length - 1).ToArray() : Array.Empty<string>();
+            expectedRelative = dirSegments.Length > 0 ? System.IO.Path.Combine(dirSegments) + System.IO.Path.DirectorySeparatorChar + symbol.Name + ".cs" : symbol.Name + ".cs";
+        }
+        else
+        {
+            expectedRelative = System.IO.Path.Combine(segments) + System.IO.Path.DirectorySeparatorChar + symbol.Name + ".cs";
+        }
+
+        // Normalize separators
+        var normalizedFile = filePath.Replace('\\', '/');
+        var normalizedExpected = expectedRelative.Replace('\\', '/');
+
+        if (!normalizedFile.EndsWith(normalizedExpected, StringComparison.OrdinalIgnoreCase))
+        {
+            // Propose message with expected suffix to help developer
+            var descriptor = new DiagnosticDescriptor(
+                "LWX007",
+                "Source file path does not match namespace",
+                "Type '{0}' declared in namespace '{1}' should be located at path ending with '{2}'.",
+                "Naming",
+                DiagnosticSeverity.Error,
+                isEnabledByDefault: true);
+
+            ctx.ReportDiagnostic(Diagnostic.Create(descriptor, loc, symbol.Name, fullNs, expectedRelative));
+        }
+    }
 }

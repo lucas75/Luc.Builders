@@ -3,7 +3,7 @@ using Lwx.Archetype.MicroService.Atributes;
 using Microsoft.AspNetCore.Mvc;
 using Lwx.Archetype.MicroService;
 
-namespace MyCompany.MyUnit.Worker001.Endpoints;
+namespace MyCompany.MyUnit.Worker001.Endpoints.Proc01;
 
 [LwxEndpoint(
     Uri = "POST /proc01/make-abc",

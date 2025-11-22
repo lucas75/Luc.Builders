@@ -53,6 +53,13 @@ namespace Lwx.Archetype.MicroService.Atributes
         public LwxStage Publish { get; set; } = LwxStage.None;
 
         /// <summary>
+        /// Optional: provide a justification when an endpoint class name does not match the
+        /// generator's expected naming convention. When present, the generator will accept
+        /// the exception and skip the naming diagnostic (LWX001).
+        /// </summary>
+        public string NamingExceptionJustification { get; set; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="LwxEndpointAttribute"/> class.
         /// </summary>
         public LwxEndpointAttribute() { }

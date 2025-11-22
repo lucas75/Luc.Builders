@@ -13,6 +13,9 @@ internal class LwxEndpointTypeProcessor(
 {
     public void Execute()
     {
+        // enforce file path and namespace matching for classes marked with Lwx attributes
+        GeneratorHelpers.ValidateFilePathMatchesNamespace(attr.TargetSymbol, ctx);
+
         var name = GeneratorHelpers.SafeIdentifier(attr.TargetSymbol.Name);
         var ns = attr.TargetSymbol.ContainingNamespace?.ToDisplayString() ?? "Generated";
         
@@ -58,26 +61,85 @@ internal class LwxEndpointTypeProcessor(
             return true; // No URI to validate
         }
 
-        var parts = uriArg.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-        var path = parts.Length > 1 ? parts[1] : parts[0];
+        var verbParts = uriArg.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        var path = verbParts.Length > 1 ? verbParts[1] : verbParts[0];
         var segs = path.Trim('/').Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-        var expectedClassName = "Endpoint";
-        
+        var nameParts = new List<string>();
         foreach (var seg in segs)
         {
             if (seg.StartsWith("{") && seg.EndsWith("}"))
             {
                 var pname = seg.Substring(1, seg.Length - 2);
-                expectedClassName += "Param" + GeneratorHelpers.PascalSafe(pname);
+                nameParts.Add("Param" + GeneratorHelpers.PascalSafe(pname));
             }
             else
             {
-                expectedClassName += GeneratorHelpers.PascalSafe(seg);
+                nameParts.Add(GeneratorHelpers.PascalSafe(seg));
             }
         }
 
-        if (!string.Equals(attr.TargetSymbol.Name, expectedClassName, StringComparison.Ordinal))
+        // Build expected names: full name and some accepted variants using HTTP verb
+        var expectedFull = "Endpoint" + string.Join(string.Empty, nameParts);
+
+        // Build prefix without last segment (if more than 1 part)
+        var expectedPrefix = nameParts.Count > 1 ? "Endpoint" + string.Join(string.Empty, nameParts.Take(nameParts.Count - 1)) : expectedFull;
+
+        // derive HTTP verb suffix (e.g., GET -> Get)
+        var actualVerb = "GET";
+        if (verbParts.Length > 0) actualVerb = verbParts[0].ToUpperInvariant();
+        string HttpSuffix(string v) => v switch
         {
+            "GET" => "Get",
+            "POST" => "Post",
+            "PUT" => "Put",
+            "DELETE" => "Delete",
+            "PATCH" => "Patch",
+            _ => GeneratorHelpers.PascalSafe(v.ToLowerInvariant())
+        };
+
+        var suffix = HttpSuffix(actualVerb);
+
+        var acceptableNames = new[]
+        {
+            expectedFull,
+            expectedFull + suffix,
+            expectedPrefix + suffix
+        };
+
+        if (!acceptableNames.Contains(attr.TargetSymbol.Name, StringComparer.Ordinal))
+        {
+            // Check for a naming exception provided by the user on the attribute
+            string namingException = null;
+            if (attr.AttributeData != null)
+            {
+                var exc = attr.AttributeData.NamedArguments.FirstOrDefault(kv => kv.Key == "NamingExceptionJustification");
+                if (!exc.Equals(default(KeyValuePair<string, TypedConstant>)) && exc.Value.Value is string txt)
+                {
+                    namingException = txt?.Trim();
+                }
+            }
+
+            if (!string.IsNullOrEmpty(namingException))
+            {
+                // Informational diagnostic: the generator will accept the non-standard name because developer provided a justification
+                ctx.ReportDiagnostic(Diagnostic.Create(
+                    new DiagnosticDescriptor(
+                        "LWX008",
+                        "Endpoint naming exception accepted",
+                        "Endpoint class '{0}' does not follow naming rules for URI '{2}', but a naming exception was provided: {1}",
+                        "Naming",
+                        DiagnosticSeverity.Info,
+                        isEnabledByDefault: true),
+                    attr.Location,
+                    attr.TargetSymbol.Name,
+                    namingException,
+                    uriArg));
+
+                // Accept as valid because an exception was supplied
+                return true;
+            }
+
+            // No exception provided — report the standard error
             ctx.ReportDiagnostic(Diagnostic.Create(
                 new DiagnosticDescriptor(
                     "LWX001",
@@ -87,8 +149,8 @@ internal class LwxEndpointTypeProcessor(
                     DiagnosticSeverity.Error,
                     isEnabledByDefault: true),
                 attr.Location,
-                attr.TargetSymbol.Name,
-                expectedClassName,
+                    attr.TargetSymbol.Name,
+                    string.Join(" or ", acceptableNames),
                 uriArg));
             return false;
         }
@@ -275,6 +337,10 @@ internal class LwxEndpointTypeProcessor(
         var nestedNs = !string.IsNullOrEmpty(optionalFirstSegment) && targetNs.IndexOf($".Endpoints.{optionalFirstSegment}", StringComparison.OrdinalIgnoreCase) >= 0
             ? optionalFirstSegment : null;
 
+        // Use the actual declared type (safe and correct) for mapping. In most cases this equals
+        // the generated endpoint class name, but when a naming exception is used the declared type
+        // will be different — so prefer the actual declared type symbol.
+        var declaredHandlerQName = $"global::{attr.TargetSymbol.ToDisplayString()}";
         var endpointQName = !string.IsNullOrEmpty(nestedNs)
             ? $"global::{rootNs}.Endpoints.{GeneratorHelpers.SafeIdentifier(optionalFirstSegment)}.{GeneratorHelpers.PascalSafe(endpointClassName)}"
             : $"global::{rootNs}.Endpoints.{GeneratorHelpers.PascalSafe(endpointClassName)}";
@@ -303,7 +369,7 @@ internal class LwxEndpointTypeProcessor(
 
                             if (shouldMap)
                             {
-                                var endpoint = {{(mapMethod == "MapMethods" ? "app.MapMethods(\"" + (pathPart ?? string.Empty) + "\", new[] { \"" + httpVerb + "\" }, " + endpointQName + ".Execute)" : "app." + mapMethod + "(\"" + (pathPart ?? string.Empty) + "\", " + endpointQName + ".Execute)")}};
+                                var endpoint = {{(mapMethod == "MapMethods" ? "app.MapMethods(\"" + (pathPart ?? string.Empty) + "\", new[] { \"" + httpVerb + "\" }, " + declaredHandlerQName + ".Execute)" : "app." + mapMethod + "(\"" + (pathPart ?? string.Empty) + "\", " + declaredHandlerQName + ".Execute)")}};
                                 endpoint = endpoint.WithName("{{endpointClassName}}");
                                 {{(securityProfile is not null ? "endpoint.RequireAuthorization(\"" + securityProfile + "\");" : string.Empty)}}
                                 {{(summary is not null ? "endpoint.WithDisplayName(\"" + summary + "\");" : string.Empty)}}

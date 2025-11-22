@@ -10,6 +10,8 @@ internal class LwxServiceBusProducerTypeProcessor(
 {
     public void Execute()
     {
+        // enforce file path and namespace matching for classes marked with Lwx attributes
+        GeneratorHelpers.ValidateFilePathMatchesNamespace(attr.TargetSymbol, ctx);
         var name = GeneratorHelpers.SafeIdentifier(attr.TargetSymbol.Name);
         var ns = attr.TargetSymbol.ContainingNamespace?.ToDisplayString() ?? "Generated";
         var source = $$"""

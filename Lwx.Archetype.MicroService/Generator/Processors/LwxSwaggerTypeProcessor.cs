@@ -12,6 +12,8 @@ internal class LwxSwaggerTypeProcessor(
 {
     public void Execute()
     {
+        // enforce file path and namespace matching for swagger marker classes
+        GeneratorHelpers.ValidateFilePathMatchesNamespace(attr.TargetSymbol, ctx);
         // Check if Swashbuckle is available
         var openApiInfoType = compilation.GetTypeByMetadataName("Microsoft.OpenApi.Models.OpenApiInfo");
         if (openApiInfoType == null)

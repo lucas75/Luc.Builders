@@ -26,6 +26,16 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
 - Updated `LwxSwaggerTypeProcessor` to minimal diagnostic checking, with actual generation moved to main generator
 - Ensured clean builds with no runtime dependencies on generator assembly, maintaining embedded source distribution pattern
 
+### Endpoint Naming & Namespace/Filepath Validation (Latest)
+- Revised endpoint naming validation to support multiple acceptable class-name styles derived from the HTTP URI:
+  - Full segment style: EndpointAbcCdeEfg for GET /abc/cde/efg
+  - Verb-suffix style: EndpointAbcCdeEfgGet (or EndpointAbcCdeGet) — generator accepts useful variants for ergonomics
+  - Parameter naming: uses ParamX for path parameters (eg. EndpointAbcParamCdeEfg)
+- Generator now supports placing generated endpoint classes in nested folders/namespaces (e.g. .Endpoints, .Endpoints.Abc, .Endpoints.Abc.Cde) and will generate mapping helpers accordingly
+- Added strict filename/namespace matching validation for classes with Lwx attributes (diagnostic LWX007). The rule enforces that types are declared in files that match the namespace -> path layout. Example: type MyCompany.MyProject.Abc.Cde should be located at Abc/Cde.cs relative to the project root namespace
+- Applied the namespace/path validation across processors (endpoints, DTOs, workers, bus consumers/producers, timers, swagger) so any Lwx-decorated type is validated at compile time
+ - Added support for explicit naming exceptions via the attribute property `NamingExceptionJustification` on `[LwxEndpoint]`. When provided the generator will accept a non-standard class name and emit an informational diagnostic (LWX008) that includes the justification.
+
 ### Completed DTO Processor Implementation (Previous)
 - Implemented `LwxDtoTypeProcessor` to generate partial property implementations for DTO classes
 - Added `DtoType` enum with `Normal` (backing fields) and `Dictionary` (dynamic storage) options

@@ -33,6 +33,9 @@ namespace Lwx.Archetype.MicroService.Generator.Processors
 
         public void Execute()
         {
+            // ensure the source file path matches the declared namespace for DTO types
+            GeneratorHelpers.ValidateFilePathMatchesNamespace(attr.TargetSymbol, ctx);
+
             if (attr.TargetSymbol is not INamedTypeSymbol classSymbol)
             {
                 return;
