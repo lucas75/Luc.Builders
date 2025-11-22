@@ -14,7 +14,19 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
 
 ## Recent Development History
 
-### Completed DTO Processor Implementation (Latest)
+### Completed DTO and Swagger Integration Enhancements (Latest)
+- Enhanced `LwxDtoTypeProcessor` with strict validation: forbids properties without `[LwxDtoProperty]` or `[LwxDtoIgnore]`, forbids fields entirely, reports compilation errors for non-compliant DTOs
+- Added `[LwxDtoIgnoreAttribute]` for excluding properties from generation while satisfying validation rules
+- Centralized attribute name constants in `LwxConstants.cs` with `const string` for full names and `static readonly string` for short names using `Replace("Attribute", "")`
+- Refactored `LwxArchetypeGenerator.cs` to use constants from `LwxConstants` in switch statements and attribute detection
+- Moved `AttributeNames` array from generator to `LwxConstants` for better maintainability
+- Encapsulated Swagger configuration in dynamically generated `LwxConfigure` extension methods, avoiding reflection by conditionally including Swagger setup code based on `[LwxSwagger]` attribute presence
+- Upgraded Swagger generation to respect `Publish` property with environment-based activation (Development/Production stages), and set OpenAPI info (Title, Description, Version) and Swagger UI DocumentTitle from attribute properties
+- Removed embedded `LwxEndpointExtensions.cs` template, replaced with dynamic generation in main generator for attribute-aware code inclusion
+- Updated `LwxSwaggerTypeProcessor` to minimal diagnostic checking, with actual generation moved to main generator
+- Ensured clean builds with no runtime dependencies on generator assembly, maintaining embedded source distribution pattern
+
+### Completed DTO Processor Implementation (Previous)
 - Implemented `LwxDtoTypeProcessor` to generate partial property implementations for DTO classes
 - Added `DtoType` enum with `Normal` (backing fields) and `Dictionary` (dynamic storage) options
 - Created `LwxDtoPropertyAttribute` for customizing JSON serialization (JsonName, JsonConverter)

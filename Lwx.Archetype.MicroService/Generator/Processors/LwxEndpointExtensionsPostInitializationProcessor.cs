@@ -12,10 +12,6 @@ internal class LwxEndpointExtensionsPostInitializationProcessor(
 {
   public void Execute()
   {
-    GeneratorHelpers.AddEmbeddedSource(
-      ctx, 
-      "Generator/Templates/LwxEndpointExtensions.cs", 
-      "LwxEndpointExtensions.g.cs"
-    );
+    // LwxConfigure is now generated dynamically in the main generator
   }
 }
