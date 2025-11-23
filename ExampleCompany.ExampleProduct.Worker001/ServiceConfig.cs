@@ -11,14 +11,5 @@ namespace ExampleCompany.ExampleProduct.Worker001;
     GenerateMain = true
 )]
 public static partial class ServiceConfig
-{
-    public static void Configure(WebApplicationBuilder _)
-    {
-
-    }
-
-    public static void Configure(WebApplication _)
-    {
-
-    }
+{   
 }

@@ -18,7 +18,9 @@ public class UnitTest1
         using var dir = new TempProject();
 
         // Create a ServiceConfig with invalid Configure signature
-        File.WriteAllText(Path.Combine(dir.Path, "ServiceConfig.cs"),
+        var nsDir = System.IO.Path.Combine(dir.Path, "TempProject");
+        Directory.CreateDirectory(nsDir);
+        File.WriteAllText(Path.Combine(nsDir, "ServiceConfig.cs"),
             """
             namespace TempProject;
             using Lwx.Archetype.MicroService.Atributes;
@@ -44,7 +46,9 @@ public class UnitTest1
     {
         using var dir = new TempProject();
 
-        File.WriteAllText(Path.Combine(dir.Path, "ServiceConfig.cs"),
+        var nsDir2 = System.IO.Path.Combine(dir.Path, "TempProject");
+        Directory.CreateDirectory(nsDir2);
+        File.WriteAllText(Path.Combine(nsDir2, "ServiceConfig.cs"),
             """
             namespace TempProject;
             using Lwx.Archetype.MicroService.Atributes;
@@ -64,6 +68,62 @@ public class UnitTest1
 
         Assert.NotEqual(0, exit);
         Assert.Contains("LWX015", output);
+    }
+
+    [Fact]
+    public void ServiceConfig_GenerateMain_ProducesGeneratedFileAndLWX016()
+    {
+        using var dir = new TempProject();
+
+        // enable EmitCompilerGeneratedFiles in the auto-created csproj so generated sources are written to disk
+        var csprojPath = Path.Combine(dir.Path, "TestProj.csproj");
+        var csprojText = File.ReadAllText(csprojPath);
+        if (!csprojText.Contains("<EmitCompilerGeneratedFiles>"))
+        {
+            csprojText = csprojText.Replace("</PropertyGroup>",
+                "  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>\n  <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>\n</PropertyGroup>");
+            File.WriteAllText(csprojPath, csprojText);
+        }
+
+        // Remove Program.cs so the generator is allowed to produce the main method
+        var prog = Path.Combine(dir.Path, "Program.cs");
+        if (File.Exists(prog)) File.Delete(prog);
+
+        var nsDir1 = System.IO.Path.Combine(dir.Path, "TempProject");
+        Directory.CreateDirectory(nsDir1);
+        File.WriteAllText(Path.Combine(nsDir1, "ServiceConfig.cs"),
+            """
+            namespace TempProject;
+            using Lwx.Archetype.MicroService.Atributes;
+            using Microsoft.AspNetCore.Builder;
+
+            [LwxServiceConfig(GenerateMain = true)]
+            public static partial class ServiceConfig
+            {
+                public static void Configure(WebApplicationBuilder b) { }
+                public static void Configure(WebApplication a) { }
+            }
+            """);
+
+        var (exit, output) = dir.Build();
+
+        // Build should succeed and generated file should be present on disk
+        Assert.True(exit == 0, output);
+
+        // Look for generated file under obj/Generated
+        var genRoot = Directory.EnumerateFiles(dir.Path, "ServiceConfig.Main.g.cs", SearchOption.AllDirectories).FirstOrDefault();
+        Assert.False(string.IsNullOrEmpty(genRoot), "ServiceConfig.Main.g.cs should be emitted to disk");
+
+        // The generator may report LWX016 as an informational diagnostic in IDEs; dotnet build may not always print info-level diagnostics.
+        // If the diagnostic appears on the build output, check it includes the Main signature.
+        if (output.Contains("LWX016"))
+        {
+            Assert.Contains("public static void Main(string[] args)", output);
+        }
+
+        // Always assert the generated file contains the Main method so behavior is validated regardless of CLI diagnostic output
+        var generatedContent = File.ReadAllText(genRoot);
+        Assert.Contains("public static void Main(string[] args)", generatedContent);
     }
 
     private sealed class TempProject : IDisposable

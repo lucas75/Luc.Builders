@@ -151,7 +151,22 @@ public class LwxArchetypeGenerator : IIncrementalGenerator
                 {
                     // prefer to place Main inside the ServiceConfig's namespace when available
                     var svcNs = serviceConfigSymbol?.ContainingNamespace?.ToDisplayString() ?? fullNs;
-                    GenerateProgramCs(spc, svcNs, endpointNames);
+                    var generatedSource = GenerateProgramCs(spc, svcNs, endpointNames);
+
+                    // Emit an informational diagnostic anchored to the attribute location
+                    // to help users jump to or inspect the generated ServiceConfig.Main.g.cs
+                    var generatedName = "ServiceConfig.Main.g.cs";
+                    // attach the whole generated Main method/source in the diagnostic message so IDEs show it as hover text
+                    var methodPreview = generatedSource;
+                    spc.ReportDiagnostic(Diagnostic.Create(
+                        new DiagnosticDescriptor(
+                            "LWX016",
+                            "Generated ServiceConfig partial",
+                            "Generator produced '{0}' in namespace '{1}'. Generated source:\n{2}",
+                            "Generation",
+                            DiagnosticSeverity.Info,
+                            isEnabledByDefault: true),
+                        serviceConfigLocation, generatedName, svcNs, methodPreview));
                 }
             }
         });
@@ -324,7 +339,7 @@ public class LwxArchetypeGenerator : IIncrementalGenerator
         spc.AddSource("LwxEndpointExtensions.g.cs", SourceText.From(source, Encoding.UTF8));
     }
 
-    private static void GenerateProgramCs(SourceProductionContext spc, string ns, List<string> endpointNames)
+    private static string GenerateProgramCs(SourceProductionContext spc, string ns, List<string> endpointNames)
     {
         var endpointCalls = string.Join("\n", endpointNames.Select(name => $"{name}.Configure(app);"));
 
@@ -366,6 +381,9 @@ public class LwxArchetypeGenerator : IIncrementalGenerator
             """;
 
         spc.AddSource("ServiceConfig.Main.g.cs", SourceText.From(source, Encoding.UTF8));
+
+        // return the generated source so callers may reference it (for diagnostics, tests, etc.)
+        return source;
     }
     private static FoundAttribute Transform(GeneratorSyntaxContext ctx)
     {
