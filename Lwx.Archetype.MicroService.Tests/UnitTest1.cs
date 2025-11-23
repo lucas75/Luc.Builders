@@ -18,17 +18,20 @@ public class UnitTest1
         using var dir = new TempProject();
 
         // Create a ServiceConfig with invalid Configure signature
-        File.WriteAllText(Path.Combine(dir.Path, "ServiceConfig.cs"), @"namespace TempProject;
-using Lwx.Archetype.MicroService.Atributes;
-using Microsoft.AspNetCore.Builder;
+        File.WriteAllText(Path.Combine(dir.Path, "ServiceConfig.cs"),
+            """
+            namespace TempProject;
+            using Lwx.Archetype.MicroService.Atributes;
+            using Microsoft.AspNetCore.Builder;
 
-[LwxServiceConfig(GenerateMain = false)]
-public static class ServiceConfig
-{
-    // wrong parameter type
-    public static void Configure(string s) { }
-}
-");
+            [LwxServiceConfig(GenerateMain = false)]
+            public static class ServiceConfig
+            {
+                // wrong parameter type
+                public static void Configure(string s) { }
+            }
+            """
+        );
 
         var (exit, output) = dir.Build();
 
@@ -41,18 +44,21 @@ public static class ServiceConfig
     {
         using var dir = new TempProject();
 
-        File.WriteAllText(Path.Combine(dir.Path, "ServiceConfig.cs"), @"namespace TempProject;
-using Lwx.Archetype.MicroService.Atributes;
-using Microsoft.AspNetCore.Builder;
+        File.WriteAllText(Path.Combine(dir.Path, "ServiceConfig.cs"),
+            """
+            namespace TempProject;
+            using Lwx.Archetype.MicroService.Atributes;
+            using Microsoft.AspNetCore.Builder;
 
-[LwxServiceConfig(GenerateMain = false)]
-public static class ServiceConfig
-{
-    public static void Configure(WebApplicationBuilder b) { }
+            [LwxServiceConfig(GenerateMain = false)]
+            public static class ServiceConfig
+            {
+                public static void Configure(WebApplicationBuilder b) { }
 
-    public static void Foo() { }
-}
-");
+                public static void Foo() { }
+            }
+            """
+        );
 
         var (exit, output) = dir.Build();
 
