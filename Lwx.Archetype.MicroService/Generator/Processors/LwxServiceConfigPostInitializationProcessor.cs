@@ -11,12 +11,12 @@ internal class LwxServiceConfigPostInitializationProcessor(
   IncrementalGeneratorPostInitializationContext ctx
 )
 {
-  public void Execute()
-  {
-    GeneratorHelpers.AddEmbeddedSource(
-      ctx,
-      "Attributes/LwxServiceConfigAttribute.cs",
-      "LwxServiceConfigAttribute.g.cs"
-    );
-  }
+    public void Execute()
+    {
+        GeneratorHelpers.AddEmbeddedSource(
+          ctx,
+          "Attributes/LwxServiceConfigAttribute.cs",
+          "LwxServiceConfigAttribute.g.cs"
+        );
+    }
 }

@@ -12,12 +12,12 @@ internal class LwxTimerPostInitializationProcessor(
   IncrementalGeneratorPostInitializationContext ctx
 )
 {
-  public void Execute()
-  {
-    GeneratorHelpers.AddEmbeddedSource(
-      ctx, 
-      "Attributes/LwxTimerAttribute.cs", 
-      "LwxTimerAttribute.g.cs"
-    );
-  }
+    public void Execute()
+    {
+        GeneratorHelpers.AddEmbeddedSource(
+          ctx,
+          "Attributes/LwxTimerAttribute.cs",
+          "LwxTimerAttribute.g.cs"
+        );
+    }
 }

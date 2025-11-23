@@ -11,13 +11,13 @@ namespace Lwx.Archetype.MicroService.Generator.Processors;
 internal class LwxServiceBusProducerPostInitializationProcessor(
   IncrementalGeneratorPostInitializationContext ctx
 )
-{  
-  public void Execute()
-  {
-    GeneratorHelpers.AddEmbeddedSource(
-      ctx, 
-      "Attributes/LwxServiceBusProducerAttribute.cs", 
-      "LwxServiceBusProducerAttribute.g.cs"
-    );
-  }
+{
+    public void Execute()
+    {
+        GeneratorHelpers.AddEmbeddedSource(
+          ctx,
+          "Attributes/LwxServiceBusProducerAttribute.cs",
+          "LwxServiceBusProducerAttribute.g.cs"
+        );
+    }
 }

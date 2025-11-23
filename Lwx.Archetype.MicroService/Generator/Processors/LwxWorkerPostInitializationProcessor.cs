@@ -12,11 +12,11 @@ internal class LwxWorkerPostInitializationProcessor(
   IncrementalGeneratorPostInitializationContext ctx
 )
 {
-  public void Execute()
+    public void Execute()
     {
         GeneratorHelpers.AddEmbeddedSource(
-          ctx, 
-          "Attributes/LwxWorkerAttribute.cs", 
+          ctx,
+          "Attributes/LwxWorkerAttribute.cs",
           "LwxWorkerAttribute.g.cs"
         );
     }

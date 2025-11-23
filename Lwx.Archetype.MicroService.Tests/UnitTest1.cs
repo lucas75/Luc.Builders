@@ -76,18 +76,18 @@ public class UnitTest1
             Directory.CreateDirectory(Path);
 
             // create minimal web project which references the generator as an analyzer
-                        var asmDir = System.IO.Path.GetDirectoryName(typeof(UnitTest1).Assembly.Location)!;
-                        var repoRoot = asmDir;
-                        // walk up until we find the repository solution file
-                        while (!System.IO.File.Exists(System.IO.Path.Combine(repoRoot, "Luc.Util.Web.sln")))
-                        {
-                            var parent = System.IO.Path.GetFullPath(System.IO.Path.Combine(repoRoot, ".."));
-                            if (parent == repoRoot) break; // reached root
-                            repoRoot = parent;
-                        }
+            var asmDir = System.IO.Path.GetDirectoryName(typeof(UnitTest1).Assembly.Location)!;
+            var repoRoot = asmDir;
+            // walk up until we find the repository solution file
+            while (!System.IO.File.Exists(System.IO.Path.Combine(repoRoot, "Luc.Util.Web.sln")))
+            {
+                var parent = System.IO.Path.GetFullPath(System.IO.Path.Combine(repoRoot, ".."));
+                if (parent == repoRoot) break; // reached root
+                repoRoot = parent;
+            }
 
-                        var generatorPath = System.IO.Path.Combine(repoRoot, "Lwx.Archetype.MicroService", "Lwx.Archetype.MicroService.csproj");
-                        var csproj = $"""
+            var generatorPath = System.IO.Path.Combine(repoRoot, "Lwx.Archetype.MicroService", "Lwx.Archetype.MicroService.csproj");
+            var csproj = $"""
                                 <Project Sdk="Microsoft.NET.Sdk.Web">
                                     <PropertyGroup>
                                         <TargetFramework>net9.0</TargetFramework>

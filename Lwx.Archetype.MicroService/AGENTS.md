@@ -13,7 +13,8 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
 - **Diagnostic System**: Custom error codes (LWX001-LWX005) for compile-time validation
 
 ## Recent Development History
- - Introduced `LwxServiceConfig` as the microservice descriptor attribute (file: `ServiceConfig.cs`). The generator prefers `[LwxServiceConfig]` for service metadata and no longer supports `[LwxSwagger]`.
+ - Modified the auto-generated Program.g.cs to place the Main method as top-level statements, enhancing the ServiceConfig class by calling its Configure methods for builder and app configuration.
+ - Enhanced incremental source generator to detect ServiceConfig classes by name and validate their Configure methods for correct signatures (public static void Configure(WebApplicationBuilder) or Configure(WebApplication)), reporting diagnostics LWX014 and LWX015 for invalid signatures or unexpected public methods.
  - Enforced presence of `ServiceConfig.cs` in projects using the generator (diagnostic LWX011).
  - Enforced presence of `ServiceConfig.cs` in projects using the generator (diagnostic LWX011).
  - Enforced that `[LwxServiceConfig]` may only appear in a file named `ServiceConfig.cs` (diagnostic LWX012).

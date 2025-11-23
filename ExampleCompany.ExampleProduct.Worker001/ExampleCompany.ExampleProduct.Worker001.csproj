@@ -7,6 +7,9 @@
     <LangVersion>preview</LangVersion>
     <RootNamespace>ExampleCompany.ExampleProduct.Worker001</RootNamespace>
     <AssemblyName>ExampleCompany.ExampleProduct.Worker001</AssemblyName>
+    <!-- Emit generated sources to disk for easier inspection during development -->
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
   <ItemGroup>

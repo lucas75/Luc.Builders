@@ -7,19 +7,19 @@ namespace ExampleCompany.ExampleProduct.Worker001.Endpoints.Proc01;
     Uri = "POST /proc01/start",
     SecurityProfile = "public",
     Summary = "Start proccess 01",
-    Description = "Blah Blah",    
+    Description = "Blah Blah",
     Publish = LwxStage.Development
 )]
 public static partial class EndpointProc01Start
 {
-  public async static Task<SimpleResponseDto> Execute(
+    public async static Task<SimpleResponseDto> Execute(
 
-  )
-  {
-    // pretend is doing work
-    await Task.CompletedTask;
+    )
+    {
+        // pretend is doing work
+        await Task.CompletedTask;
 
 
-    return new SimpleResponseDto { Ok = true };
-  }
+        return new SimpleResponseDto { Ok = true };
+    }
 }

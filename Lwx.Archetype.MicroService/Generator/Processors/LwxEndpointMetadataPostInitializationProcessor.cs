@@ -10,12 +10,12 @@ internal class LwxEndpointMetadataPostInitializationProcessor(
   IncrementalGeneratorPostInitializationContext ctx
 )
 {
-  public void Execute()
-  {
-    GeneratorHelpers.AddEmbeddedSource(
-      ctx, 
-      "Attributes/LwxEndpointMetadata.cs", 
-      "LwxEndpointMetadata.g.cs"
-    );
-  }
+    public void Execute()
+    {
+        GeneratorHelpers.AddEmbeddedSource(
+          ctx,
+          "Attributes/LwxEndpointMetadata.cs",
+          "LwxEndpointMetadata.g.cs"
+        );
+    }
 }

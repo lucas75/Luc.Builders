@@ -10,8 +10,8 @@ internal class LwxEndpointExtensionsPostInitializationProcessor(
   IncrementalGeneratorPostInitializationContext ctx
 )
 {
-  public void Execute()
-  {
-    // LwxConfigure is now generated dynamically in the main generator
-  }
+    public void Execute()
+    {
+        // LwxConfigure is now generated dynamically in the main generator
+    }
 }

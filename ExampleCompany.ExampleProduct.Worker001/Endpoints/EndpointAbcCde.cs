@@ -12,14 +12,14 @@ namespace ExampleCompany.ExampleProduct.Worker001.Endpoints;
 )]
 public static partial class EndpointAbcCde
 {
-  public async static Task<SimpleResponseDto> Execute(
+    public async static Task<SimpleResponseDto> Execute(
 
-  )
-  {
-    // pretend is doing work
-    await Task.CompletedTask;
+    )
+    {
+        // pretend is doing work
+        await Task.CompletedTask;
 
 
-    return new SimpleResponseDto { Ok = true };
-  }
+        return new SimpleResponseDto { Ok = true };
+    }
 }

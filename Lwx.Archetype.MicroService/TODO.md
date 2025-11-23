@@ -9,6 +9,7 @@ This TODO collects short-term work items and follow-ups for the Lwx source gener
 - Enforce that classes with `Lwx...` attributes must have file path matching their namespace (diagnostic LWX007).
 - Added validation across processors (DTOs, endpoints, workers, timers, service bus/event hub)
  - Added support for naming exceptions via `[LwxEndpoint(NamingExceptionJustification = "...")]` and informational diagnostic LWX008 when used
+- Enhanced incremental source generator to detect ServiceConfig classes by name and validate their Configure methods for correct signatures (public static void Configure(WebApplicationBuilder) or Configure(WebApplication)).
 
 ## Short-term (next)
 - Add unit tests / integration tests for the naming rules and diagnostics (LWX001, LWX007).

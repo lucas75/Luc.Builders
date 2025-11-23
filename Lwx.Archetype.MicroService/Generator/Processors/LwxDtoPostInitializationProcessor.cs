@@ -14,23 +14,23 @@ internal class LwxDtoPostInitializationProcessor(
     public void Execute()
     {
         GeneratorHelpers.AddEmbeddedSource(
-            ctx, 
-            "Attributes/LwxDtoAttribute.cs", 
+            ctx,
+            "Attributes/LwxDtoAttribute.cs",
             "LwxDtoAttribute.g.cs"
         );
         GeneratorHelpers.AddEmbeddedSource(
-            ctx, 
-            "Attributes/DtoType.cs", 
+            ctx,
+            "Attributes/DtoType.cs",
             "DtoType.g.cs"
         );
         GeneratorHelpers.AddEmbeddedSource(
-            ctx, 
-            "Attributes/LwxDtoPropertyAttribute.cs", 
+            ctx,
+            "Attributes/LwxDtoPropertyAttribute.cs",
             "LwxDtoPropertyAttribute.g.cs"
         );
         GeneratorHelpers.AddEmbeddedSource(
-            ctx, 
-            "Attributes/LwxDtoIgnoreAttribute.cs", 
+            ctx,
+            "Attributes/LwxDtoIgnoreAttribute.cs",
             "LwxDtoIgnoreAttribute.g.cs"
         );
     }

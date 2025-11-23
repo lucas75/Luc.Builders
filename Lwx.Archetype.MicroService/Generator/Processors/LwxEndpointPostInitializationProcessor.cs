@@ -10,17 +10,17 @@ internal class LwxEndpointPostInitializationProcessor(
   IncrementalGeneratorPostInitializationContext ctx
 )
 {
-  public void Execute()
-  {
-    GeneratorHelpers.AddEmbeddedSource(
-      ctx, 
-      "Attributes/LwxEndpointAttribute.cs", 
-      "LwxEndpointAttribute.g.cs"
-    );
-    GeneratorHelpers.AddEmbeddedSource(
-      ctx, 
-      "Attributes/LwxStage.cs", 
-      "LwxStage.g.cs"
-    );
-  }
+    public void Execute()
+    {
+        GeneratorHelpers.AddEmbeddedSource(
+          ctx,
+          "Attributes/LwxEndpointAttribute.cs",
+          "LwxEndpointAttribute.g.cs"
+        );
+        GeneratorHelpers.AddEmbeddedSource(
+          ctx,
+          "Attributes/LwxStage.cs",
+          "LwxStage.g.cs"
+        );
+    }
 }

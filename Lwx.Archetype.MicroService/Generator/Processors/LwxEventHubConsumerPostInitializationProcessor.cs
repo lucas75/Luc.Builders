@@ -12,12 +12,12 @@ internal class LwxEventHubConsumerPostInitializationProcessor(
   IncrementalGeneratorPostInitializationContext ctx
 )
 {
-  public void Execute()
-  {
-    GeneratorHelpers.AddEmbeddedSource(
-      ctx, 
-      "Attributes/LwxEventHubConsumerAttribute.cs", 
-      "LwxEventHubConsumerAttribute.g.cs"
-    );
-  }
+    public void Execute()
+    {
+        GeneratorHelpers.AddEmbeddedSource(
+          ctx,
+          "Attributes/LwxEventHubConsumerAttribute.cs",
+          "LwxEventHubConsumerAttribute.g.cs"
+        );
+    }
 }

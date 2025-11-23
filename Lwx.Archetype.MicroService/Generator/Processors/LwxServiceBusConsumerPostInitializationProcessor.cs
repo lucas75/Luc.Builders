@@ -12,12 +12,12 @@ internal class LwxServiceBusConsumerPostInitializationProcessor(
   IncrementalGeneratorPostInitializationContext ctx
 )
 {
-  public void Execute()
-  {
-    GeneratorHelpers.AddEmbeddedSource(
-      ctx, 
-      "Attributes/LwxServiceBusConsumerAttribute.cs",
-      "LwxServiceBusConsumerAttribute.g.cs"
-    );
-  }
+    public void Execute()
+    {
+        GeneratorHelpers.AddEmbeddedSource(
+          ctx,
+          "Attributes/LwxServiceBusConsumerAttribute.cs",
+          "LwxServiceBusConsumerAttribute.g.cs"
+        );
+    }
 }

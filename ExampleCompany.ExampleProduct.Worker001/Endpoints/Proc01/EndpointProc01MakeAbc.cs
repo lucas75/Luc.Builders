@@ -14,14 +14,14 @@ namespace ExampleCompany.ExampleProduct.Worker001.Endpoints.Proc01;
 )]
 public static partial class EndpointProc01MakeAbc
 {
-  public async static Task<SimpleResponseDto> Execute(
-    [FromQuery(Name = "proc")] string procId
-  )
-  {
-    // pretend is doing work
-    await Task.CompletedTask;
+    public async static Task<SimpleResponseDto> Execute(
+      [FromQuery(Name = "proc")] string procId
+    )
+    {
+        // pretend is doing work
+        await Task.CompletedTask;
 
 
-    return new SimpleResponseDto { Ok = true };
-  }
+        return new SimpleResponseDto { Ok = true };
+    }
 }

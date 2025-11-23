@@ -14,11 +14,11 @@ public static partial class ServiceConfig
 {
     public static void Configure(WebApplicationBuilder _)
     {
-        
+
     }
 
     public static void Configure(WebApplication _)
     {
-        
+
     }
 }
