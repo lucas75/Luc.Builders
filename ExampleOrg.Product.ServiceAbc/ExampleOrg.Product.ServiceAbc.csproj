@@ -18,7 +18,7 @@
 
   <ItemGroup>
     <ProjectReference 
-      Include="..\Lwx.Archetype.MicroService\Lwx.Archetype.MicroService.csproj" 
+      Include="..\Lwx.MicroService\Lwx.MicroService.csproj" 
       OutputItemType="Analyzer" 
       ReferenceOutputAssembly="false"
       />

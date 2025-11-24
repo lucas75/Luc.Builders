@@ -1,5 +1,5 @@
 using ExampleOrg.Product.ServiceAbc.Dto;
-using Lwx.Archetype.MicroService.Atributes;
+using Lwx.MicroService.Atributes;
 
 namespace ExampleOrg.Product.ServiceAbc.Endpoints.Proc01;
 

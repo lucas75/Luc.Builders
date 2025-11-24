@@ -1,4 +1,4 @@
-using Lwx.Archetype.MicroService.Atributes;
+using Lwx.MicroService.Atributes;
 using Microsoft.AspNetCore.Builder;
 
 namespace ExampleOrg.Product.ServiceAbc;

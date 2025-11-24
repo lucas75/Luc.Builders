@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
-using Lwx.Archetype.MicroService;
-using Lwx.Archetype.MicroService.Atributes;
+using Lwx.MicroService;
+using Lwx.MicroService.Atributes;
 
 namespace ExampleOrg.Product.ServiceAbc.Dto;
 

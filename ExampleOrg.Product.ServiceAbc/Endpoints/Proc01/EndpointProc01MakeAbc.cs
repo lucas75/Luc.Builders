@@ -1,7 +1,7 @@
 using ExampleOrg.Product.ServiceAbc.Dto;
-using Lwx.Archetype.MicroService.Atributes;
+using Lwx.MicroService.Atributes;
 using Microsoft.AspNetCore.Mvc;
-using Lwx.Archetype.MicroService;
+using Lwx.MicroService;
 
 namespace ExampleOrg.Product.ServiceAbc.Endpoints.Proc01;
 
