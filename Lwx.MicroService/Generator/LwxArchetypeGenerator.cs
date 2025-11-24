@@ -1,4 +1,5 @@
 using System;
+#nullable enable
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,12 +11,12 @@ using Lwx.MicroService.Generator.Processors;
 
 namespace Lwx.MicroService.Generator;
 
-internal sealed class FoundAttribute(string attributeName, ISymbol targetSymbol, Location location, AttributeData attributeData)
+internal sealed class FoundAttribute(string attributeName, ISymbol targetSymbol, Location location, AttributeData? attributeData)
 {
     public string AttributeName { get; } = attributeName;
     public ISymbol TargetSymbol { get; } = targetSymbol;
     public Location Location { get; } = location;
-    public AttributeData AttributeData { get; } = attributeData;
+    public AttributeData? AttributeData { get; } = attributeData;
 }
 
 [Generator(LanguageNames.CSharp)]
@@ -65,6 +66,7 @@ public class LwxArchetypeGenerator : IIncrementalGenerator
             var endpointNames = new List<string>();
             foreach (var f in found)
             {
+                if (f == null) continue;
                 if (f.AttributeName == LwxConstants.LwxEndpoint)
                 {
                     new LwxEndpointTypeProcessor(f, spc, compilation).Execute();
@@ -112,7 +114,7 @@ public class LwxArchetypeGenerator : IIncrementalGenerator
                 }
             }
 
-            var swaggerAttr = found.FirstOrDefault(f => f.AttributeName == LwxConstants.LwxServiceConfig)?.AttributeData;
+            var swaggerAttr = found.FirstOrDefault(f => f != null && f.AttributeName == LwxConstants.LwxServiceConfig)?.AttributeData;
             if (swaggerAttr == null)
             {
                 // If no ServiceConfig attribute is present, emit an error diagnostic requiring it.
@@ -178,6 +180,7 @@ public class LwxArchetypeGenerator : IIncrementalGenerator
             var serviceConfigs = tuple.Right;
             foreach (var sc in serviceConfigs)
             {
+                if (sc == null) continue;
                 ValidateServiceConfigConfigureMethods(sc, spc, compilation);
             }
         });
@@ -385,7 +388,7 @@ public class LwxArchetypeGenerator : IIncrementalGenerator
         // return the generated source so callers may reference it (for diagnostics, tests, etc.)
         return source;
     }
-    private static FoundAttribute Transform(GeneratorSyntaxContext ctx)
+    private static FoundAttribute? Transform(GeneratorSyntaxContext ctx)
     {
         var attributeSyntax = (AttributeSyntax)ctx.Node;
 

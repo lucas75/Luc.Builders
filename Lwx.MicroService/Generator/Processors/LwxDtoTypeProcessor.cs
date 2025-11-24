@@ -80,7 +80,7 @@ namespace Lwx.MicroService.Generator.Processors
                 "}\n"; GeneratorHelpers.AddGeneratedFile(ctx, $"LwxDto_{className}.g.cs", source);
         }
 
-        private DtoType GetDtoType(AttributeData attrData)
+        private DtoType GetDtoType(AttributeData? attrData)
         {
             if (attrData == null) return DtoType.Normal;
 
