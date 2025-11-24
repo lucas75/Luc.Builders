@@ -5,9 +5,9 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lwx.Archetype.MicroService", "Lwx.Archetype.MicroService\Lwx.Archetype.MicroService.csproj", "{68C5096D-36FF-4AC2-87C5-E63E1326CE09}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleCompany.ExampleProduct.Worker001", "ExampleCompany.ExampleProduct.Worker001\ExampleCompany.ExampleProduct.Worker001.csproj", "{6C95AD64-D326-4E02-93CE-39BEA4F0B474}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleOrg.Product.ServiceAbc", "ExampleOrg.Product.ServiceAbc\ExampleOrg.Product.ServiceAbc.csproj", "{6C95AD64-D326-4E02-93CE-39BEA4F0B474}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleCompany.ExampleProduct.Worket001.Tests", "ExampleCompany.ExampleProduct.Worket001.Tests\ExampleCompany.ExampleProduct.Worket001.Tests.csproj", "{53D671F9-0655-4978-8D0A-697F4D809AB1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleOrg.Product.ServiceAbc.Tests", "ExampleOrg.Product.ServiceAbc.Tests\ExampleOrg.Product.ServiceAbc.Tests.csproj", "{53D671F9-0655-4978-8D0A-697F4D809AB1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lwx.Archetype.MicroService.Tests", "Lwx.Archetype.MicroService.Tests\Lwx.Archetype.MicroService.Tests.csproj", "{D9D213B9-DFF0-4730-B75C-CC71E87812A3}"
 EndProject

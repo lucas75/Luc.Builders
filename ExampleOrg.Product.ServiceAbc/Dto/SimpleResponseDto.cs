@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 using Lwx.Archetype.MicroService;
 using Lwx.Archetype.MicroService.Atributes;
 
-namespace ExampleCompany.ExampleProduct.Worker001.Dto;
+namespace ExampleOrg.Product.ServiceAbc.Dto;
 
 [LwxDto(Type = DtoType.Normal)]
 public partial class SimpleResponseDto

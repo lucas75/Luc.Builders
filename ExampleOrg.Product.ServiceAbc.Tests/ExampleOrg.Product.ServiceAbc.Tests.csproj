@@ -5,8 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
-    <RootNamespace>ExampleCompany.ExampleProduct.Worket001.Tests</RootNamespace>
-    <AssemblyName>ExampleCompany.ExampleProduct.Worket001.Tests</AssemblyName>
+    <RootNamespace>ExampleOrg.Product.ServiceAbc.Tests</RootNamespace>
+    <AssemblyName>ExampleOrg.Product.ServiceAbc.Tests</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ExampleCompany.ExampleProduct.Worker001\ExampleCompany.ExampleProduct.Worker001.csproj" />
+    <ProjectReference Include="..\ExampleOrg.Product.ServiceAbc\ExampleOrg.Product.ServiceAbc.csproj" />
     <Using Include="Xunit" />
   </ItemGroup>
 

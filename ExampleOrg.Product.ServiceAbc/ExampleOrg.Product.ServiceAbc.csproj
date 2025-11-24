@@ -5,8 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>preview</LangVersion>
-    <RootNamespace>ExampleCompany.ExampleProduct.Worker001</RootNamespace>
-    <AssemblyName>ExampleCompany.ExampleProduct.Worker001</AssemblyName>
+    <RootNamespace>ExampleOrg.Product.ServiceAbc</RootNamespace>
+    <AssemblyName>ExampleOrg.Product.ServiceAbc</AssemblyName>
     <!-- Emit generated sources to disk for easier inspection during development -->
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>

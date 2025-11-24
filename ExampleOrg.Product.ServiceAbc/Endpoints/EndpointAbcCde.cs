@@ -1,7 +1,7 @@
-using ExampleCompany.ExampleProduct.Worker001.Dto;
+using ExampleOrg.Product.ServiceAbc.Dto;
 using Lwx.Archetype.MicroService.Atributes;
 
-namespace ExampleCompany.ExampleProduct.Worker001.Endpoints;
+namespace ExampleOrg.Product.ServiceAbc.Endpoints;
 
 [LwxEndpoint(
     Uri = "GET /abc/cde",

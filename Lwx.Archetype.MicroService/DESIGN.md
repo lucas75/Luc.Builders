@@ -2,13 +2,13 @@ ExampleProduct.Worker001# HARD RULES FOR MICROSERVICE ARCHETYPE
 
 ## DEFINITIONS
 
-- For the purpose of these rules, the "root namespace" of a project is defined as the default namespace specified in the project file (e.g., `<RootNamespace>` in a .csproj file). This is typically the same as the project name unless explicitly overridden. In the examples below the project is ExampleCompany.ExampleProduct.ExampleService and the root namespace is ExampleCompany.ExampleProduct.ExampleService.
+- For the purpose of these rules, the "root namespace" of a project is defined as the default namespace specified in the project file (e.g., `<RootNamespace>` in a .csproj file). This is typically the same as the project name unless explicitly overridden. In the examples below the project is ExampleOrg.Product.ServiceAbc and the root namespace is ExampleOrg.Product.ServiceAbc.
 
 ## RULES FOR CONSUMING PROJECTS
 
 ### General
 
-- ALL classes with Lwx attributes (endpoints, DTOs, workers, timers, service bus consumers/producers) MUST be defined in files whose paths match their namespaces relative to the project root namespace. For example, a class `ExampleCompany.ExampleProduct.ExampleService.Abc.Cde` should be located at `Abc/Cde.cs` relative to the project root namespace.
+- ALL classes with Lwx attributes (endpoints, DTOs, workers, timers, service bus consumers/producers) MUST be defined in files whose paths match their namespaces relative to the project root namespace. For example, a class `ExampleOrg.Product.ServiceAbc.Abc.Cde` should be located at `Abc/Cde.cs` relative to the project root namespace.
 
 # Lwx Archetype — Formal Design and Rules (RFC-style)
 
@@ -26,9 +26,9 @@ It is written in a formal "RFC-style" using normative keywords (MUST, MUST NOT, 
 Terminology and Conventions
 ===========================
 
-1.  The term "root namespace" refers to the default project namespace (typically from the project file's `<RootNamespace>`). Example: a project `ExampleCompany.ExampleProduct.ExampleService` will have root namespace `ExampleCompany.ExampleProduct.ExampleService`.
+1.  The term "root namespace" refers to the default project namespace (typically from the project file's `<RootNamespace>`). Example: a project `ExampleOrg.Product.ServiceAbc` will have root namespace `ExampleOrg.Product.ServiceAbc`.
 
-Note: in the examples that follow this document assumes the consuming project is named `ExampleCompany.ExampleProduct.ExampleService` and the root namespace is `ExampleCompany.ExampleProduct.ExampleService` unless explicitly stated otherwise.
+Note: in the examples that follow this document assumes the consuming project is named `ExampleOrg.Product.ServiceAbc` and the root namespace is `ExampleOrg.Product.ServiceAbc` unless explicitly stated otherwise.
 
 2.  Normative language uses the following interpretation (as per RFC 2119):
 
@@ -50,7 +50,7 @@ Requirements for Consuming Projects
 General
 ------
 
-- A consuming project that uses the Lwx generator MUST ensure that every class annotated with any Lwx attribute (e.g., `[LwxEndpoint]`, `[LwxServiceConfig]`) has a file path that mirrors its namespace relative to the project's root namespace. Example: `ExampleCompany.ExampleProduct.ExampleService.Abc.Cde` MUST be declared in `Abc/Cde.cs`.
+- A consuming project that uses the Lwx generator MUST ensure that every class annotated with any Lwx attribute (e.g., `[LwxEndpoint]`, `[LwxServiceConfig]`) has a file path that mirrors its namespace relative to the project's root namespace. Example: `ExampleOrg.Product.ServiceAbc.Abc.Cde` MUST be declared in `Abc/Cde.cs`.
 
 - The generator uses this convention to produce canonical placeholder types and mapping helpers. The generator reports diagnostic `LWX007` when this rule is violated.
 
@@ -88,7 +88,7 @@ ServiceConfig (root-level application configuration)
 Endpoints
 ---------
 
-1.  Endpoints are declared with the `[LwxEndpoint]` attribute and MUST satisfy file-location and namespace constraints: their namespace MUST contain the `.Endpoints` segment (e.g., `ExampleCompany.ExampleProduct.ExampleService.Endpoints[.Segment...]`). Violation of this namespace rule MUST produce `LWX002`.
+1.  Endpoints are declared with the `[LwxEndpoint]` attribute and MUST satisfy file-location and namespace constraints: their namespace MUST contain the `.Endpoints` segment (e.g., `ExampleOrg.Product.ServiceAbc.Endpoints[.Segment...]`). Violation of this namespace rule MUST produce `LWX002`.
 
 2.  The `[LwxEndpoint]` attribute MAY contain a `Uri` value in the form `"VERB /path"` (e.g., `"GET /users/{id}"`). When provided, the generator uses the `Uri` to compute a canonical endpoint type name and mapping behavior.
 
@@ -202,7 +202,7 @@ Appendix: Examples
 ServiceConfig example (normative)
 
 ```csharp
-namespace ExampleCompany.ExampleProduct.ExampleService;
+namespace ExampleOrg.Product.ServiceAbc;
 
 [LwxServiceConfig(
     Title = "MyUnit Worker 001 API",
@@ -226,7 +226,7 @@ public partial class ServiceConfig
 Endpoint example (normative)
 
 ```csharp
-namespace ExampleCompany.ExampleProduct.ExampleService.Endpoints;
+namespace ExampleOrg.Product.ServiceAbc.Endpoints;
 
 [LwxEndpoint("GET /abc/{id}",
     SecurityProfile = "MyAuth",

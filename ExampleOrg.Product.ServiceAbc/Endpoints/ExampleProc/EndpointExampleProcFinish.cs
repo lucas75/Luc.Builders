@@ -1,7 +1,7 @@
 using Lwx.Archetype.MicroService.Atributes;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ExampleCompany.ExampleProduct.Worker001.Endpoints.ExampleProc;
+namespace ExampleOrg.Product.ServiceAbc.Endpoints.ExampleProc;
 
 [LwxEndpoint("GET /example-proc/finish")]
 public partial class EndpointExampleProcFinish

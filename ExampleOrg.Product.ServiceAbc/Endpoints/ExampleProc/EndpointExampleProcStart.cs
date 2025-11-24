@@ -1,6 +1,6 @@
 using Lwx.Archetype.MicroService.Atributes;
 
-namespace ExampleCompany.ExampleProduct.Worker001.Endpoints.ExampleProc;
+namespace ExampleOrg.Product.ServiceAbc.Endpoints.ExampleProc;
 
 [LwxEndpoint("GET /example-proc/start")]
 public partial class EndpointExampleProcStart

@@ -4,8 +4,8 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>ExampleCompany.ExampleProduct.Archetipe.MicroService</RootNamespace>
-    <AssemblyName>ExampleCompany.ExampleProduct.Archetipe.MicroService</AssemblyName>
+    <RootNamespace>ExampleOrg.Product.Archetype.MicroService</RootNamespace>
+    <AssemblyName>ExampleOrg.Product.Archetype.MicroService</AssemblyName>
   </PropertyGroup>
 
 </Project>
