@@ -261,7 +261,7 @@ public class UnitTest1
             var asmDir = System.IO.Path.GetDirectoryName(typeof(UnitTest1).Assembly.Location)!;
             var repoRoot = asmDir;
             // walk up until we find the repository solution file
-            while (!System.IO.File.Exists(System.IO.Path.Combine(repoRoot, "Luc.Util.Web.sln")))
+            while (!System.IO.File.Exists(System.IO.Path.Combine(repoRoot, "Lwx.Builders.sln")))
             {
                 var parent = System.IO.Path.GetFullPath(System.IO.Path.Combine(repoRoot, ".."));
                 if (parent == repoRoot) break; // reached root
