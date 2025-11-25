@@ -1,4 +1,4 @@
-ExampleProduct.Worker001# HARD RULES FOR MICROSERVICE ARCHETYPE
+ExampleProduct.Worker001 — HARD RULES FOR MICROSERVICE BUILDER (Lwx.Builders.MicroService)
 
 ## DEFINITIONS
 
@@ -10,11 +10,11 @@ ExampleProduct.Worker001# HARD RULES FOR MICROSERVICE ARCHETYPE
 
 - ALL classes with Lwx attributes (endpoints, DTOs, workers, timers, service bus consumers/producers) MUST be defined in files whose paths match their namespaces relative to the project root namespace. For example, a class `ExampleOrg.Product.ServiceAbc.Abc.Cde` should be located at `Abc/Cde.cs` relative to the project root namespace.
 
-# Lwx Archetype — Formal Design and Rules (RFC-style)
+# Lwx Builders.MicroService — Formal Design and Rules (RFC-style)
 
 Status: PROPOSED
 
-Authors: Lwx Archetype maintainers
+Authors: Lwx Builders.MicroService maintainers
 
 Abstract
 ========
@@ -70,7 +70,7 @@ ServiceConfig (root-level application configuration)
 
 4.  GenerateMain behaviour
 
-    - If `GenerateMain = true` is specified on the attribute, the consuming project MUST NOT declare its own `Main` entry point. If a `Program.cs` (or user-provided Main) is present when `GenerateMain = true`, the archetype WILL emit an error diagnostic (LWX013) because the generator synthesizes the application entry point.
+    - If `GenerateMain = true` is specified on the attribute, the consuming project MUST NOT declare its own `Main` entry point. If a `Program.cs` (or user-provided Main) is present when `GenerateMain = true`, the generator WILL emit an error diagnostic (LWX013) because the generator synthesizes the application entry point.
 
     - When `GenerateMain = true`, the generator expects `ServiceConfig` to optionally provide two static methods to participate in startup configuration:
 
