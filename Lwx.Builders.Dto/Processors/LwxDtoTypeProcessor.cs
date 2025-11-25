@@ -163,11 +163,17 @@ namespace Lwx.Builders.Dto.Processors
                 .FirstOrDefault(a => a.AttributeClass?.Name == "LwxDtoPropertyAttribute");
 
             string? jsonName = null;
-            Type? jsonConverter = null;
+            string? jsonConverterName = null;
             if (dtoPropAttr != null)
             {
                 jsonName = dtoPropAttr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "JsonName").Value.Value as string;
-                jsonConverter = dtoPropAttr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "JsonConverter").Value.Value as Type;
+                // The JsonConverter named argument is a typeof(...) expression; Roslyn represents it as a TypedConstant with Kind == Type
+                var jsonConvConst = dtoPropAttr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "JsonConverter").Value;
+                if (jsonConvConst.Kind == Microsoft.CodeAnalysis.TypedConstantKind.Type && jsonConvConst.Value is INamedTypeSymbol convSym)
+                {
+                    // Use the symbol display string so generated source references the converter type by name
+                    jsonConverterName = convSym.ToDisplayString();
+                }
             }
 
             var existingJsonProp = prop.GetAttributes()
@@ -215,9 +221,9 @@ namespace Lwx.Builders.Dto.Processors
                 attributes.Add("[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]");
             }
 
-            if (jsonConverter != null)
+            if (jsonConverterName != null)
             {
-                attributes.Add($"[JsonConverter(typeof({jsonConverter.FullName}))]");
+                attributes.Add($"[JsonConverter(typeof({jsonConverterName}))]");
             }
             else if (prop.Type.TypeKind == TypeKind.Enum)
             {
