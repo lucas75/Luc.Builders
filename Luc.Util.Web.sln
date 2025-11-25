@@ -3,13 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lwx.MicroService", "Lwx.MicroService\Lwx.MicroService.csproj", "{68C5096D-36FF-4AC2-87C5-E63E1326CE09}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lwx.Builders.MicroService", "Lwx.Builders.MicroService\Lwx.Builders.MicroService.csproj", "{68C5096D-36FF-4AC2-87C5-E63E1326CE09}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleOrg.Product.ServiceAbc", "ExampleOrg.Product.ServiceAbc\ExampleOrg.Product.ServiceAbc.csproj", "{6C95AD64-D326-4E02-93CE-39BEA4F0B474}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleOrg.Product.ServiceAbc.Tests", "ExampleOrg.Product.ServiceAbc.Tests\ExampleOrg.Product.ServiceAbc.Tests.csproj", "{53D671F9-0655-4978-8D0A-697F4D809AB1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lwx.MicroService.Tests", "Lwx.MicroService.Tests\Lwx.MicroService.Tests.csproj", "{D9D213B9-DFF0-4730-B75C-CC71E87812A3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lwx.Builders.MicroService.Tests", "Lwx.Builders.MicroService.Tests\Lwx.Builders.MicroService.Tests.csproj", "{D9D213B9-DFF0-4730-B75C-CC71E87812A3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

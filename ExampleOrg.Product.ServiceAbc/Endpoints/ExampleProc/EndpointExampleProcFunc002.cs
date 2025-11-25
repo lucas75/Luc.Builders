@@ -1,4 +1,4 @@
-using Lwx.MicroService.Atributes;
+using Lwx.Builders.MicroService.Atributes;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ExampleOrg.Product.ServiceAbc.Endpoints.ExampleProc;
