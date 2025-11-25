@@ -11,6 +11,7 @@
 - Split large methods in smaller helper methods for clarity.
 - Never commit to git.
 - Do NOT use @" strings.
+- Changes in doc (.md files) doesn't require compile and test.
 
 AI agent verification checklist
 ------------------------------
