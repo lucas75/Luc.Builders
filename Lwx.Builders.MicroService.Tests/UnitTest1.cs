@@ -64,6 +64,8 @@ public class UnitTest1
             """
         );
 
+        
+
         var (exit, output) = dir.Build();
 
         Assert.NotEqual(0, exit);
@@ -124,6 +126,126 @@ public class UnitTest1
         // Always assert the generated file contains the Main method so behavior is validated regardless of CLI diagnostic output
         var generatedContent = File.ReadAllText(genRoot);
         Assert.Contains("public static void Main(string[] args)", generatedContent);
+    }
+
+    [Fact]
+    public void ServiceConfig_PublishSwagger_None_OmitsSwaggerCodeInEndpointExtensions()
+    {
+        using var dir = new TempProject();
+
+        // ensure generated sources are written to disk
+        var csprojPath = Path.Combine(dir.Path, "TestProj.csproj");
+        var csprojText = File.ReadAllText(csprojPath);
+        if (!csprojText.Contains("<EmitCompilerGeneratedFiles>"))
+        {
+            csprojText = csprojText.Replace("</PropertyGroup>",
+                "  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>\n  <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>\n</PropertyGroup>");
+            File.WriteAllText(csprojPath, csprojText);
+        }
+
+        var nsDir = System.IO.Path.Combine(dir.Path, "TempProject");
+        Directory.CreateDirectory(nsDir);
+        File.WriteAllText(Path.Combine(nsDir, "ServiceConfig.cs"),
+            """
+            namespace TempProject;
+            using Lwx.Builders.MicroService.Atributes;
+            using Microsoft.AspNetCore.Builder;
+
+            [LwxServiceConfig(PublishSwagger = LwxStage.None)]
+            public static partial class ServiceConfig
+            {
+                public static void Configure(WebApplicationBuilder b) { }
+                public static void Configure(WebApplication a) { }
+            }
+            """
+        );
+
+        // inject minimal stubs to satisfy OpenAPI/Swagger types & extension methods so the generated code compiles
+        File.WriteAllText(Path.Combine(nsDir, "SwaggerStubs.cs"),
+            """
+            namespace Microsoft.OpenApi.Models
+            {
+                public class OpenApiInfo
+                {
+                    public string Title { get; set; }
+                    public string Description { get; set; }
+                    public string Version { get; set; }
+                }
+            }
+
+            namespace Microsoft.Extensions.DependencyInjection
+            {
+                public static class SwaggerServiceCollectionExtensions
+                {
+                    public static IServiceCollection AddSwaggerGen(this IServiceCollection svc, object? opts = null) => svc;
+                }
+            }
+
+            namespace Microsoft.AspNetCore.Builder
+            {
+                public static class SwaggerAppExtensions
+                {
+                    public static void UseSwagger(this WebApplication app) { }
+                    public static void UseSwaggerUI(this WebApplication app, object? opts = null) { }
+                }
+            }
+            """
+        );
+
+        var (exit, output) = dir.Build();
+        // build may fail if consumer project is missing full swagger packages; we only need to assert the generated source
+
+        var genRoot = Directory.EnumerateFiles(dir.Path, "LwxEndpointExtensions.g.cs", SearchOption.AllDirectories).FirstOrDefault();
+        Assert.False(string.IsNullOrEmpty(genRoot), "LwxEndpointExtensions.g.cs should be emitted to disk");
+
+        var generatedContent = File.ReadAllText(genRoot);
+
+        // No swagger registration code should be present when PublishSwagger is None
+        Assert.DoesNotContain("AddSwaggerGen", generatedContent);
+        Assert.DoesNotContain("UseSwagger", generatedContent);
+    }
+
+    [Fact]
+    public void ServiceConfig_PublishSwagger_Development_IncludesSwaggerCodeInEndpointExtensions()
+    {
+        using var dir = new TempProject();
+
+        var csprojPath = Path.Combine(dir.Path, "TestProj.csproj");
+        var csprojText = File.ReadAllText(csprojPath);
+        if (!csprojText.Contains("<EmitCompilerGeneratedFiles>"))
+        {
+            csprojText = csprojText.Replace("</PropertyGroup>",
+                "  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>\n  <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>\n</PropertyGroup>");
+            File.WriteAllText(csprojPath, csprojText);
+        }
+
+        var nsDir = System.IO.Path.Combine(dir.Path, "TempProject");
+        Directory.CreateDirectory(nsDir);
+        File.WriteAllText(Path.Combine(nsDir, "ServiceConfig.cs"),
+            """
+            namespace TempProject;
+            using Lwx.Builders.MicroService.Atributes;
+            using Microsoft.AspNetCore.Builder;
+
+            [LwxServiceConfig(PublishSwagger = LwxStage.Development)]
+            public static partial class ServiceConfig
+            {
+                public static void Configure(WebApplicationBuilder b) { }
+                public static void Configure(WebApplication a) { }
+            }
+            """
+        );
+
+        var (exit, output) = dir.Build();
+
+        var genRoot = Directory.EnumerateFiles(dir.Path, "LwxEndpointExtensions.g.cs", SearchOption.AllDirectories).FirstOrDefault();
+        Assert.False(string.IsNullOrEmpty(genRoot), "LwxEndpointExtensions.g.cs should be emitted to disk");
+
+        var generatedContent = File.ReadAllText(genRoot);
+
+        // Expect swagger setup code to be present when PublishSwagger is Development
+        Assert.Contains("AddSwaggerGen", generatedContent);
+        Assert.Contains("UseSwagger", generatedContent);
     }
 
     private sealed class TempProject : IDisposable
