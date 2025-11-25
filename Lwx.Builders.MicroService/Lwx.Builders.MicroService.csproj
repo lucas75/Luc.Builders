@@ -21,9 +21,7 @@
   <!-- Embedded attribute source files for the generator (Attributes/ contains public attribute definitions) -->
   <ItemGroup>
     <EmbeddedResource Include="Attributes\**\*.cs" />
-    <EmbeddedResource Include="Templates\LwxEndpointExtensions.cs" />    
     <Compile Remove="Templates\**\*.cs" />
-    <!-- exclude legacy/duplicate processors folder (moved to root Processors/) -->
     <Compile Remove="Generator\Processors\**\*.cs" />
   </ItemGroup>
 
