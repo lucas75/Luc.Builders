@@ -269,6 +269,7 @@ public class UnitTest1
             }
 
             var generatorPath = System.IO.Path.Combine(repoRoot, "Lwx.Builders.MicroService", "Lwx.Builders.MicroService.csproj");
+            var dtoPath = System.IO.Path.Combine(repoRoot, "Lwx.Builders.Dto", "Lwx.Builders.Dto.csproj");
             var csproj = $"""
                                 <Project Sdk="Microsoft.NET.Sdk.Web">
                                     <PropertyGroup>
@@ -279,6 +280,7 @@ public class UnitTest1
 
                                     <ItemGroup>
                                         <ProjectReference Include="{generatorPath}" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+                                        <ProjectReference Include="{dtoPath}" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
                                     </ItemGroup>
                                 </Project>
                                 """;

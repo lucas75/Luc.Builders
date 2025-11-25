@@ -2,11 +2,10 @@ using System;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
-using Lwx.Builders.MicroService.Processors;
 using System.Text;
-using Lwx.Builders.MicroService;
+using Lwx.Builders.Dto.Processors;
 
-namespace Lwx.Builders.MicroService.Processors;
+namespace Lwx.Builders.Dto.Processors;
 
 internal class LwxDtoPostInitializationProcessor(
     IncrementalGeneratorPostInitializationContext ctx

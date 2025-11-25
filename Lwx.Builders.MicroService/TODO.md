@@ -13,10 +13,21 @@ This TODO collects short-term work items and follow-ups for the Lwx source gener
 
 ## Short-term (next)
 - Add unit tests / integration tests for the naming rules and diagnostics (LWX001, LWX007).
+ - Add unit tests / integration tests for the naming rules and diagnostics (LWX001, LWX007).
  - Add unit tests / integration tests for the naming rules and diagnostics (LWX001, LWX007, LWX008).
 
  - Add support for a dedicated microservice descriptor attribute `LwxServiceConfig` (ServiceConfig.cs).
  - Update generator to prefer `LwxServiceConfig` and use it for swagger/service configuration generation.
+ - Add support for a dedicated microservice descriptor attribute `LwxServiceConfig` (ServiceConfig.cs).
+ - Update generator to prefer `LwxServiceConfig` and use it for swagger/service configuration generation.
+
+## DTO & Generator Split — Follow-ups
+
+- `LwxDto` processing has been extracted into a dedicated project `Lwx.Builders.Dto` (attributes, processors, and `DtoGenerator.cs`). Follow-up tasks:
+	- Add focused Roslyn-driver unit tests under `Lwx.Builders.Dto.Tests` to validate diagnostics and generated sources for DTO scenarios (faster feedback than full solution tests).
+	- Add tests for DTO edge cases: dictionary-style DTOs, backing-field vs dictionary storage, JsonConverter scenarios, enum handling, property validation errors.
+	- Add CI job step to validate `Lwx.Builders.Dto` analyzer against sample consumer projects (ensures API compatibility and correct embedding as analyzer/referenceOutputAssembly=false).
+	- Consider publishing `Lwx.Builders.Dto` as independent package or release artifact; update README and changelog accordingly.
 
 ### Examples
 

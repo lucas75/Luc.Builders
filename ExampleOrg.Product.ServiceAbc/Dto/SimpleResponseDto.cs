@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using Lwx.Builders.MicroService.Atributes;
+using Lwx.Builders.Dto.Atributes;
 
 namespace ExampleOrg.Product.ServiceAbc.Dto;
 

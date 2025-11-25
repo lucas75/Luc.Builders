@@ -1,48 +1,12 @@
 using System;
 #nullable enable
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
-namespace Lwx.Builders.MicroService.Processors;
-
-internal static class LwxConstants
-{
-    public const string LwxEndpointAttribute = nameof(Atributes.LwxEndpointAttribute);
-    public const string LwxWorkerAttribute = nameof(Atributes.LwxWorkerAttribute);
-    public const string LwxServiceBusConsumerAttribute = nameof(Atributes.LwxServiceBusConsumerAttribute);
-    public const string LwxEventHubConsumerAttribute = nameof(Atributes.LwxEventHubConsumerAttribute);
-    public const string LwxTimerAttribute = nameof(Atributes.LwxTimerAttribute);
-    public const string LwxServiceBusProducerAttribute = nameof(Atributes.LwxServiceBusProducerAttribute);
-    public const string LwxServiceConfigAttribute = nameof(Atributes.LwxServiceConfigAttribute);
-
-    public static readonly string LwxEndpoint = LwxEndpointAttribute.Replace("Attribute", "");
-    public static readonly string LwxWorker = LwxWorkerAttribute.Replace("Attribute", "");
-    public static readonly string LwxServiceBusConsumer = LwxServiceBusConsumerAttribute.Replace("Attribute", "");
-    public static readonly string LwxEventHubConsumer = LwxEventHubConsumerAttribute.Replace("Attribute", "");
-    public static readonly string LwxTimer = LwxTimerAttribute.Replace("Attribute", "");
-    public static readonly string LwxServiceBusProducer = LwxServiceBusProducerAttribute.Replace("Attribute", "");
-    public static readonly string LwxServiceConfig = LwxServiceConfigAttribute.Replace("Attribute", "");
-
-    public static readonly string[] AttributeNames = new[] {
-        LwxEndpoint,
-        LwxWorker,
-        LwxServiceBusConsumer,
-        LwxEventHubConsumer,
-        LwxTimer,
-        LwxServiceBusProducer,
-        LwxServiceConfig
-    };
-}
-
-internal sealed class FoundAttribute(string attributeName, ISymbol targetSymbol, Location location, AttributeData? attributeData)
-{
-    public string AttributeName { get; } = attributeName;
-    public ISymbol TargetSymbol { get; } = targetSymbol;
-    public Location Location { get; } = location;
-    public AttributeData? AttributeData { get; } = attributeData;
-}
+namespace Lwx.Builders.Dto.Processors;
 
 internal static class GeneratorHelpers
 {
@@ -71,13 +35,14 @@ internal static class GeneratorHelpers
 
     internal static void AddEmbeddedSource(IncrementalGeneratorPostInitializationContext ctx, string fileName, string generatedName)
     {
-        var asm = typeof(Generator).Assembly;
-        var expectedName = "Lwx.Builders.MicroService." + fileName.Replace('/', '.').Replace('\\', '.');
-        var rname = asm.GetManifestResourceNames()
+        var asm = typeof(object).Assembly; // placeholder to get assembly is not used; we'll obtain our assembly below
+        var ourAsm = typeof(GeneratorHelpers).Assembly;
+        var expectedName = "Lwx.Builders.Dto." + fileName.Replace('/', '.').Replace('\\', '.');
+        var rname = ourAsm.GetManifestResourceNames()
             .FirstOrDefault(n => n == expectedName);
-            if (rname != null)
-            {
-                using var s = asm.GetManifestResourceStream(rname)!;
+        if (rname != null)
+        {
+            using var s = ourAsm.GetManifestResourceStream(rname)!;
             using var sr = new System.IO.StreamReader(s);
             var src = sr.ReadToEnd();
             ctx.AddSource(generatedName, SourceText.From(src, System.Text.Encoding.UTF8));
@@ -85,17 +50,12 @@ internal static class GeneratorHelpers
         else
         {
             throw new InvalidOperationException(
-                $"Programming error in source generator: Embedded resource '{expectedName}' not found. " +
-                "The Attributes folder contains templates that must be embedded as source. " +
-                "Templates contains templates that must be embedded. " +
-                "Ensure the file paths and LogicalName in the project file match the internal names."
-            );
+                $"Programming error in source generator: Embedded resource '{expectedName}' not found. The Attributes folder must contain embedded source files.");
         }
     }
 
     internal static void ValidateFilePathMatchesNamespace(ISymbol symbol, SourceProductionContext ctx)
     {
-        // If missing source location, skip validation (could be metadata or generated)
         var loc = symbol.Locations.FirstOrDefault(l => l.IsInSource);
         if (loc == null) return;
 
@@ -105,7 +65,6 @@ internal static class GeneratorHelpers
         var fullNs = symbol.ContainingNamespace?.ToDisplayString() ?? string.Empty;
         var assemblyRoot = symbol.ContainingAssembly?.Name ?? string.Empty;
 
-        // Compute remaining namespace segments after assembly root
         string remaining;
         if (string.Equals(fullNs, assemblyRoot, StringComparison.Ordinal))
         {
@@ -120,14 +79,10 @@ internal static class GeneratorHelpers
         var segments = remaining.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
         if (segments.Length == 0) return;
 
-        // Expected relative path: If the last namespace segment equals the type name then the file path
-        // should be <...previousSegments>/<typeName>.cs (e.g. namespace MyProj.Abc.Cde -> Abc/Cde.cs).
-        // Otherwise the file path should be <...segments>/<TypeName>.cs (e.g. namespace MyProj.Endpoints.ExampleProc -> Endpoints/ExampleProc/TypeName.cs).
         string expectedRelative;
         var last = segments[^1];
         if (string.Equals(last, symbol.Name, StringComparison.Ordinal))
         {
-            // use previous segments as folder(s), final file is last (type name)
             var dirSegments = segments.Length > 1 ? segments.Take(segments.Length - 1).ToArray() : Array.Empty<string>();
             expectedRelative = dirSegments.Length > 0 ? System.IO.Path.Combine(dirSegments) + System.IO.Path.DirectorySeparatorChar + symbol.Name + ".cs" : symbol.Name + ".cs";
         }
@@ -136,13 +91,11 @@ internal static class GeneratorHelpers
             expectedRelative = System.IO.Path.Combine(segments) + System.IO.Path.DirectorySeparatorChar + symbol.Name + ".cs";
         }
 
-        // Normalize separators
         var normalizedFile = filePath.Replace('\\', '/');
         var normalizedExpected = expectedRelative.Replace('\\', '/');
 
         if (!normalizedFile.EndsWith(normalizedExpected, StringComparison.OrdinalIgnoreCase))
         {
-            // Propose message with expected suffix to help developer
             var descriptor = new DiagnosticDescriptor(
                 "LWX007",
                 "Source file path does not match namespace",
@@ -154,4 +107,25 @@ internal static class GeneratorHelpers
             ctx.ReportDiagnostic(Diagnostic.Create(descriptor, loc, symbol.Name, fullNs, expectedRelative));
         }
     }
+}
+
+internal static class LwxConstants
+{
+    public const string LwxDtoAttribute = nameof(Atributes.LwxDtoAttribute);
+    public const string LwxDtoPropertyAttribute = nameof(Atributes.LwxDtoPropertyAttribute);
+    public const string LwxDtoIgnoreAttribute = nameof(Atributes.LwxDtoIgnoreAttribute);
+
+    public static readonly string LwxDto = LwxDtoAttribute.Replace("Attribute", "");
+    public static readonly string LwxDtoProperty = LwxDtoPropertyAttribute.Replace("Attribute", "");
+    public static readonly string LwxDtoIgnore = LwxDtoIgnoreAttribute.Replace("Attribute", "");
+
+    public static readonly string[] AttributeNames = new[] { LwxDto, LwxDtoProperty, LwxDtoIgnore };
+}
+
+internal sealed class FoundAttribute(string attributeName, ISymbol targetSymbol, Location location, AttributeData? attributeData)
+{
+    public string AttributeName { get; } = attributeName;
+    public ISymbol TargetSymbol { get; } = targetSymbol;
+    public Location Location { get; } = location;
+    public AttributeData? AttributeData { get; } = attributeData;
 }

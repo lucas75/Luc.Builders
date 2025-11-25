@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleOrg.Product.ServiceA
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lwx.Builders.MicroService.Tests", "Lwx.Builders.MicroService.Tests\Lwx.Builders.MicroService.Tests.csproj", "{D9D213B9-DFF0-4730-B75C-CC71E87812A3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lwx.Builders.Dto", "Lwx.Builders.Dto\Lwx.Builders.Dto.csproj", "{59EDA15F-6EAD-49D6-861D-67B8A017ED0B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{D9D213B9-DFF0-4730-B75C-CC71E87812A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D9D213B9-DFF0-4730-B75C-CC71E87812A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D9D213B9-DFF0-4730-B75C-CC71E87812A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{59EDA15F-6EAD-49D6-861D-67B8A017ED0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{59EDA15F-6EAD-49D6-861D-67B8A017ED0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{59EDA15F-6EAD-49D6-861D-67B8A017ED0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{59EDA15F-6EAD-49D6-861D-67B8A017ED0B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

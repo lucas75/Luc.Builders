@@ -7,8 +7,7 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Lwx.Builders.MicroService.Processors;
-using Lwx.Builders.MicroService;
+using Lwx.Builders.Dto.Processors;
 
 internal enum DtoType
 {
@@ -16,9 +15,8 @@ internal enum DtoType
     Dictionary
 }
 
-namespace Lwx.Builders.MicroService.Processors
+namespace Lwx.Builders.Dto.Processors
 {
-
     internal class LwxDtoTypeProcessor
     {
         private FoundAttribute attr;
@@ -34,7 +32,6 @@ namespace Lwx.Builders.MicroService.Processors
 
         public void Execute()
         {
-            // ensure the source file path matches the declared namespace for DTO types
             GeneratorHelpers.ValidateFilePathMatchesNamespace(attr.TargetSymbol, ctx);
 
             if (attr.TargetSymbol is not INamedTypeSymbol classSymbol)
@@ -106,20 +103,18 @@ namespace Lwx.Builders.MicroService.Processors
                     {
                         if (hasDtoIgnore)
                         {
-                            // Skip ignored properties
                             continue;
                         }
                         members.Add(prop);
                     }
                     else
                     {
-                        // Report error for properties without [LwxDtoProperty] or [LwxDtoIgnore]
                         ctx.ReportDiagnostic(Diagnostic.Create(
                             new DiagnosticDescriptor(
                                 "LWX005",
                                 "DTO property must have [LwxDtoProperty] or [LwxDtoIgnore]",
                                 "Property '{0}' in DTO class must be decorated with [LwxDtoProperty] or [LwxDtoIgnore].",
-                                "Lwx.Builders.MicroService",
+                                "Lwx.Builders.Dto",
                                 DiagnosticSeverity.Error,
                                 true
                             ),
@@ -130,13 +125,12 @@ namespace Lwx.Builders.MicroService.Processors
                 }
                 else if (member is IFieldSymbol field && !field.IsImplicitlyDeclared)
                 {
-                    // Forbid fields
                     ctx.ReportDiagnostic(Diagnostic.Create(
                         new DiagnosticDescriptor(
                             "LWX006",
                             "DTO fields are not allowed",
                             "Field '{0}' in DTO class is not allowed. Use properties instead.",
-                            "Lwx.Builders.MicroService",
+                            "Lwx.Builders.Dto",
                             DiagnosticSeverity.Error,
                             true
                         ),
@@ -144,7 +138,6 @@ namespace Lwx.Builders.MicroService.Processors
                         field.Name
                     ));
                 }
-                // Ignore other members
             }
             return members;
         }
@@ -166,7 +159,6 @@ namespace Lwx.Builders.MicroService.Processors
             var propType = prop.Type.ToDisplayString();
             var isNullable = prop.Type.NullableAnnotation == NullableAnnotation.Annotated || prop.Type.IsReferenceType;
 
-            // Get LwxDtoProperty attribute
             var dtoPropAttr = prop.GetAttributes()
                 .FirstOrDefault(a => a.AttributeClass?.Name == "LwxDtoPropertyAttribute");
 
@@ -178,17 +170,14 @@ namespace Lwx.Builders.MicroService.Processors
                 jsonConverter = dtoPropAttr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "JsonConverter").Value.Value as Type;
             }
 
-            // Check existing JsonPropertyName
             var existingJsonProp = prop.GetAttributes()
                 .FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == "System.Text.Json.Serialization.JsonPropertyNameAttribute");
 
             if (existingJsonProp != null && jsonName != null)
             {
-                // Conflict, but for now, use existing
                 jsonName = null;
             }
 
-            // Validate type
             if (!IsSupportedType(prop.Type, compilation))
             {
                 ctx.ReportDiagnostic(Diagnostic.Create(
@@ -196,7 +185,7 @@ namespace Lwx.Builders.MicroService.Processors
                         "LWX003",
                         "Unsupported DTO property type",
                         "Property '{0}' has an unsupported type. Supported types are primitives, enums, types with [LwxDto], or types with a JsonConverter.",
-                        "Lwx.Builders.MicroService",
+                        "Lwx.Builders.Dto",
                         DiagnosticSeverity.Error,
                         true
                     ),
@@ -206,7 +195,6 @@ namespace Lwx.Builders.MicroService.Processors
                 return null;
             }
 
-            // For enums, check JsonPropertyName on constants
             if (prop.Type.TypeKind == TypeKind.Enum)
             {
                 if (prop.Type is INamedTypeSymbol enumType)
@@ -217,19 +205,16 @@ namespace Lwx.Builders.MicroService.Processors
 
             var attributes = new List<string>();
 
-            // JsonPropertyName
             if (jsonName != null)
             {
-                attributes.Add($"[JsonPropertyName(\"{jsonName}\")]");
+                attributes.Add($"[JsonPropertyName(\"{jsonName}\")] " );
             }
 
-            // JsonIgnore for nullable
             if (isNullable)
             {
                 attributes.Add("[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]");
             }
 
-            // JsonConverter
             if (jsonConverter != null)
             {
                 attributes.Add($"[JsonConverter(typeof({jsonConverter.FullName}))]");
@@ -247,16 +232,16 @@ namespace Lwx.Builders.MicroService.Processors
                 var fieldName = $"_{char.ToLower(propName[0])}{propName.Substring(1)}";
                 getterSetter = $"get => {fieldName};\n                set => {fieldName} = value;";
             }
-            else // Dictionary
+            else
             {
                 var key = jsonName ?? propName;
                 getterSetter = $"get => _properties.TryGetValue(\"{key}\", out var value) && value is not null ? ({propType})value : default;\n                set => _properties[\"{key}\"] = value;";
             }
             return $"{attrString}{(prop.IsRequired ? "required " : "")}public partial {propType} {propName}\n            {{\n                {getterSetter}\n            }}";
         }
+
         private bool IsSupportedType(ITypeSymbol type, Compilation compilation)
         {
-            // Primitives
             if (type.SpecialType is
                 Microsoft.CodeAnalysis.SpecialType.System_Boolean or
                 Microsoft.CodeAnalysis.SpecialType.System_Byte or
@@ -273,7 +258,6 @@ namespace Lwx.Builders.MicroService.Processors
                 Microsoft.CodeAnalysis.SpecialType.System_String) return true;
             if (type.TypeKind == TypeKind.Enum) return true;
             if (type.IsReferenceType && type.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxDtoAttribute")) return true;
-            // Assume if has JsonConverter in attr, it's ok, checked in GenerateProperty
             return false;
         }
 
@@ -289,7 +273,7 @@ namespace Lwx.Builders.MicroService.Processors
                             "LWX004",
                             "Enum constant missing JsonPropertyName",
                             "Enum constant '{0}' in '{1}' should have [JsonPropertyName] for proper serialization.",
-                            "Lwx.Builders.MicroService",
+                            "Lwx.Builders.Dto",
                             DiagnosticSeverity.Warning,
                             true
                         ),

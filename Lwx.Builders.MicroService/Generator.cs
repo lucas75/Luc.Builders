@@ -29,7 +29,6 @@ public class Generator : IIncrementalGenerator
         {
             // Use each processor's GenerateAttribute method
             new Processors.LwxEndpointPostInitializationProcessor(ctx).Execute();
-            new Processors.LwxDtoPostInitializationProcessor(ctx).Execute();
             new Processors.LwxWorkerPostInitializationProcessor(ctx).Execute();
             new Processors.LwxServiceBusConsumerPostInitializationProcessor(ctx).Execute();
             new Processors.LwxEventHubConsumerPostInitializationProcessor(ctx).Execute();
@@ -70,10 +69,6 @@ public class Generator : IIncrementalGenerator
                 {
                     new Processors.LwxEndpointTypeProcessor(f, spc, compilation).Execute();
                     endpointNames.Add(f.TargetSymbol.ToDisplayString());
-                }
-                else if (f.AttributeName == LwxConstants.LwxDto)
-                {
-                    new Processors.LwxDtoTypeProcessor(f, spc, compilation).Execute();
                 }
                 else if (f.AttributeName == LwxConstants.LwxWorker)
                 {
