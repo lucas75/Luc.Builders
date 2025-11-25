@@ -176,12 +176,46 @@ namespace Lwx.Builders.Dto.Processors
                 }
             }
 
+            // Automatically provide default converters for DateTimeOffset, DateOnly, and TimeOnly
+            if (jsonConverterName == null)
+            {
+                if (prop.Type.ToDisplayString() == "System.DateTimeOffset")
+                {
+                    jsonConverterName = "System.Text.Json.Serialization.JsonConverter<System.DateTimeOffset>";
+                }
+                else if (prop.Type.ToDisplayString() == "System.DateOnly")
+                {
+                    jsonConverterName = "System.Text.Json.Serialization.JsonConverter<System.DateOnly>";
+                }
+                else if (prop.Type.ToDisplayString() == "System.TimeOnly")
+                {
+                    jsonConverterName = "System.Text.Json.Serialization.JsonConverter<System.TimeOnly>";
+                }
+            }
+
             var existingJsonProp = prop.GetAttributes()
                 .FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == "System.Text.Json.Serialization.JsonPropertyNameAttribute");
 
             if (existingJsonProp != null && jsonName != null)
             {
                 jsonName = null;
+            }
+
+            // Warn if using DateTime, recommend DateTimeOffset
+            if (prop.Type.ToDisplayString() == "System.DateTime")
+            {
+                ctx.ReportDiagnostic(Diagnostic.Create(
+                    new DiagnosticDescriptor(
+                        "LWX007",
+                        "Consider using DateTimeOffset instead of DateTime",
+                        "Property '{0}' uses DateTime which can be ambiguous due to time zone handling. Consider using DateTimeOffset for better clarity and to avoid potential issues.",
+                        "Lwx.Builders.Dto",
+                        DiagnosticSeverity.Warning,
+                        true
+                    ),
+                    prop.Locations.FirstOrDefault(),
+                    propName
+                ));
             }
 
             if (!IsSupportedType(prop.Type, compilation))
@@ -264,6 +298,8 @@ namespace Lwx.Builders.Dto.Processors
                 Microsoft.CodeAnalysis.SpecialType.System_String) return true;
             if (type.TypeKind == TypeKind.Enum) return true;
             if (type.IsReferenceType && type.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxDtoAttribute")) return true;
+            // Support DateTimeOffset, DateOnly, and TimeOnly with default converters
+            if (type.ToDisplayString() is "System.DateTimeOffset" or "System.DateOnly" or "System.TimeOnly") return true;
             return false;
         }
 

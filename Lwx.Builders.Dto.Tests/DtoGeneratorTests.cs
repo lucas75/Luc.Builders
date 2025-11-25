@@ -322,4 +322,89 @@ public class DtoGeneratorTests
         Assert.Contains("public partial int Ok", text);
         Assert.DoesNotContain("public partial int Ignored", text);
     }
+
+    [Fact]
+    public void DateTimeTypes_Automatically_Get_JsonConverters()
+    {
+        var src = """
+        using Lwx.Builders.Dto.Atributes;
+        namespace TempDtoDates;
+
+        [LwxDto(Type = DtoType.Normal)]
+        public partial class DateDto
+        {
+            [LwxDtoProperty(JsonName = "offset")]
+            public partial System.DateTimeOffset Offset { get; set; }
+
+            [LwxDtoProperty(JsonName = "date")]
+            public partial System.DateOnly Date { get; set; }
+
+            [LwxDtoProperty(JsonName = "time")]
+            public partial System.TimeOnly Time { get; set; }
+        }
+        """;
+
+        var compilation = CSharpCompilation.Create(
+            "compDates",
+            new[] { CSharpSyntaxTree.ParseText(src) },
+            new[] {
+                MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(System.Text.Json.JsonSerializer).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(Lwx.Builders.Dto.DtoGenerator).Assembly.Location),
+            },
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        var generator = new Lwx.Builders.Dto.DtoGenerator();
+        var driver = CSharpGeneratorDriver.Create(generator);
+        var after = driver.RunGenerators(compilation);
+        var run = after.GetRunResult();
+
+        // Ensure no LWX003 diagnostics for these supported types
+        var hasLwx003 = run.Results.SelectMany(r => r.Diagnostics).Any(d => d.Id == "LWX003");
+        Assert.False(hasLwx003, "DateTimeOffset, DateOnly, and TimeOnly should be supported without JsonConverter");
+
+        var gen = run.Results.SelectMany(r => r.GeneratedSources).FirstOrDefault(g => g.HintName.Contains("LwxDto_DateDto"));
+        Assert.True(gen.HintName != null && gen.HintName.Contains("LwxDto_DateDto"));
+        var text = gen!.SourceText.ToString();
+
+        // Check that JsonConverter attributes are automatically added
+        Assert.Contains("JsonConverter(typeof(System.Text.Json.Serialization.JsonConverter<System.DateTimeOffset>))", text);
+        Assert.Contains("JsonConverter(typeof(System.Text.Json.Serialization.JsonConverter<System.DateOnly>))", text);
+        Assert.Contains("JsonConverter(typeof(System.Text.Json.Serialization.JsonConverter<System.TimeOnly>))", text);
+    }
+
+    [Fact]
+    public void DateTime_Property_Warns_LWX007_Recommend_DateTimeOffset()
+    {
+        var src = """
+        using Lwx.Builders.Dto.Atributes;
+        namespace TempDtoDateTime;
+
+        [LwxDto(Type = DtoType.Normal)]
+        public partial class DateTimeDto
+        {
+            [LwxDtoProperty(JsonName = "timestamp", JsonConverter = typeof(System.Text.Json.Serialization.JsonConverter<System.DateTime>))]
+            public partial System.DateTime Timestamp { get; set; }
+        }
+        """;
+
+        var compilation = CSharpCompilation.Create(
+            "compDateTime",
+            new[] { CSharpSyntaxTree.ParseText(src) },
+            new[] {
+                MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(System.Text.Json.JsonSerializer).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(Lwx.Builders.Dto.DtoGenerator).Assembly.Location),
+            },
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        var generator = new Lwx.Builders.Dto.DtoGenerator();
+        var driver = CSharpGeneratorDriver.Create(generator);
+        var after = driver.RunGenerators(compilation);
+        var run = after.GetRunResult();
+
+        // Should warn LWX007 for DateTime usage
+        var hasLwx007 = run.Results.SelectMany(r => r.Diagnostics).Any(d => d.Id == "LWX007");
+        Assert.True(hasLwx007, "Expected LWX007 warning when using DateTime, recommending DateTimeOffset");
+    }
 }

@@ -21,6 +21,7 @@ Use `README.md` for usage instructions; keep this file focused on implementation
   - `LWX004` — Enum constants missing `JsonPropertyName` (warning).
   - `LWX005` — Property missing `LwxDtoProperty` or `LwxDtoIgnore`.
   - `LWX006` — Fields are not allowed inside DTO classes.
+  - `LWX007` — Consider using `DateTimeOffset` instead of `DateTime` (warning).
 
 ## Project layout
 
