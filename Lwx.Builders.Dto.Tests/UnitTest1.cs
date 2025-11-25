@@ -1,129 +1,80 @@
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis;
 using Xunit;
 
 public class UnitTest1
 {
     [Fact]
-    public void DtoAttribute_Embedding_GeneratesAttributes()
+    public void DtoGenerator_Generates_For_Partial_Properties()
     {
-        using var dir = new TempProject();
+        var src = """
+        using Lwx.Builders.Dto.Atributes;
+        namespace TempDto;
+        [LwxDto(Type = DtoType.Normal)]
+        public partial class SimpleDto
+        {
+            [LwxDtoProperty(JsonName = "id")]
+            public required partial int Id { get; set; }
 
-        // Create a DTO class using the embedded attributes (generator should add attributes as sources)
-        var nsDir = Path.Combine(dir.Path, "TempDto");
-        Directory.CreateDirectory(nsDir);
-        File.WriteAllText(Path.Combine(nsDir, "SimpleDto.cs"),
-            """
-            namespace TempDto;
-            using Lwx.Builders.Dto.Atributes;
+            [LwxDtoProperty(JsonName = "name")]
+            public partial string? Name { get; set; }
+        }
+        """;
 
-            [LwxDto(Type = DtoType.Normal)]
-            public partial class SimpleDto
-            {
-                [LwxDtoProperty(JsonName = "id")]
-                public required int Id { get; set; }
+        var compilation = CSharpCompilation.Create(
+            "comp",
+            new[] { CSharpSyntaxTree.ParseText(src) },
+            new[] {
+                MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(System.Text.Json.JsonSerializer).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(System.Runtime.GCSettings).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(Lwx.Builders.Dto.DtoGenerator).Assembly.Location),
+            },
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
-                [LwxDtoProperty(JsonName = "name")]
-                public string? Name { get; set; }
-            }
-            """
-        );
+        var generator = new Lwx.Builders.Dto.DtoGenerator();
+        var driver = CSharpGeneratorDriver.Create(generator);
+        var driverAfter = driver.RunGenerators(compilation);
+        var run = driverAfter.GetRunResult();
+        Assert.Empty(run.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
 
-        var (exit, output) = dir.Build();
-        Assert.Equal(0, exit);
-
-        var genRoot = Directory.EnumerateFiles(dir.Path, "LwxDto_SimpleDto.g.cs", SearchOption.AllDirectories).FirstOrDefault();
-        Assert.False(string.IsNullOrEmpty(genRoot), "LwxDto_SimpleDto.g.cs should be emitted to disk");
-
-        var generatedContent = File.ReadAllText(genRoot);
-        Assert.Contains("public partial class SimpleDto", generatedContent);
-        Assert.Contains("public partial int Id", generatedContent);
-        Assert.Contains("public partial string? Name", generatedContent);
+        var gen = run.Results.SelectMany(r => r.GeneratedSources).FirstOrDefault(g => g.HintName.Contains("LwxDto_SimpleDto"));
+        Assert.True(gen.HintName != null && gen.HintName.Contains("LwxDto_SimpleDto"));
+        var text = gen!.SourceText.ToString();
+        Assert.Contains("public partial class SimpleDto", text);
+        Assert.Contains("public partial int Id", text);
+        Assert.Contains("public partial string? Name", text);
     }
 
     [Fact]
-    public void DtoProperty_MissingAttribute_EmitsLWX005()
+    public void DtoGenerator_Reports_LWX005_When_Missing_Property_Attribute()
     {
-        using var dir = new TempProject();
-
-        var nsDir = Path.Combine(dir.Path, "TempDto2");
-        Directory.CreateDirectory(nsDir);
-        File.WriteAllText(Path.Combine(nsDir, "BrokenDto.cs"),
-            """
-            namespace TempDto2;
-            using Lwx.Builders.Dto.Atributes;
-
-            [LwxDto(Type = DtoType.Normal)]
-            public partial class BrokenDto
-            {
-                // missing LwxDtoProperty or LwxDtoIgnore
-                public int Bad { get; set; }
-            }
-            """
-        );
-
-        var (exit, output) = dir.Build();
-        Assert.NotEqual(0, exit);
-        Assert.Contains("LWX005", output);
-    }
-
-    private sealed class TempProject : IDisposable
-    {
-        public string Path { get; }
-
-        public TempProject()
+        var src = """
+        using Lwx.Builders.Dto.Atributes;
+        namespace TempDto2;
+        [LwxDto(Type = DtoType.Normal)]
+        public partial class BrokenDto
         {
-            Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.IO.Path.GetRandomFileName());
-            Directory.CreateDirectory(Path);
-
-            // create minimal project which references the dto generator as an analyzer
-            var repoRoot = System.IO.Path.GetDirectoryName(typeof(UnitTest1).Assembly.Location)!;
-            while (!System.IO.File.Exists(System.IO.Path.Combine(repoRoot, "Luc.Util.Web.sln")))
-            {
-                var parent = System.IO.Path.GetFullPath(System.IO.Path.Combine(repoRoot, ".."));
-                if (parent == repoRoot) break;
-                repoRoot = parent;
-            }
-
-            var dtoPath = System.IO.Path.Combine(repoRoot, "Lwx.Builders.Dto", "Lwx.Builders.Dto.csproj");
-            var csproj = $"""
-                            <Project Sdk=\"Microsoft.NET.Sdk\">
-                                <PropertyGroup>
-                                    <TargetFramework>net9.0</TargetFramework>
-                                    <ImplicitUsings>enable</ImplicitUsings>
-                                    <Nullable>enable</Nullable>
-                                </PropertyGroup>
-
-                                <ItemGroup>
-                                    <ProjectReference Include=\"{dtoPath}\" OutputItemType=\"Analyzer\" ReferenceOutputAssembly=\"false\" />
-                                </ItemGroup>
-                            </Project>
-                            """;
-
-            File.WriteAllText(System.IO.Path.Combine(Path, "TestProj.csproj"), csproj);
-            File.WriteAllText(System.IO.Path.Combine(Path, "Program.cs"), "var x = 1; Console.WriteLine(x);");
+            public partial int Bad { get; set; }
         }
+        """;
 
-        public (int exitCode, string output) Build()
-        {
-            var psi = new ProcessStartInfo("dotnet", "build --nologo")
-            {
-                WorkingDirectory = Path,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false
-            };
+        var compilation = CSharpCompilation.Create(
+            "comp2",
+            new[] { CSharpSyntaxTree.ParseText(src) },
+            new[] {
+                MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(Lwx.Builders.Dto.DtoGenerator).Assembly.Location),
+            },
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
-            using var p = Process.Start(psi) ?? throw new InvalidOperationException("failed to start dotnet");
-            var outp = p.StandardOutput!.ReadToEnd() + p.StandardError!.ReadToEnd();
-            p.WaitForExit();
-            return (p.ExitCode, outp);
-        }
-
-        public void Dispose()
-        {
-            try { Directory.Delete(Path, true); } catch { }
-        }
+        var generator = new Lwx.Builders.Dto.DtoGenerator();
+        var driver = CSharpGeneratorDriver.Create(generator);
+        var driverAfter = driver.RunGenerators(compilation);
+        var run = driverAfter.GetRunResult();
+        // The processor should report LWX005 for the missing property attribute
+        var has = run.Results.SelectMany(r => r.Diagnostics).Any(d => d.Id == "LWX005");
+        Assert.True(has, "Expected diagnostic LWX005 to be reported when DTO property is missing LwxDtoProperty or LwxDtoIgnore");
     }
 }
