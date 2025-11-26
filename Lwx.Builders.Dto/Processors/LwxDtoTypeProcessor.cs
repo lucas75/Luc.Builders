@@ -181,22 +181,8 @@ namespace Lwx.Builders.Dto.Processors
                 }
             }
 
-            // Automatically provide default converters for DateTimeOffset, DateOnly, and TimeOnly
-            if (jsonConverterName == null)
-            {
-                if (prop.Type.ToDisplayString() == "System.DateTimeOffset")
-                {
-                    jsonConverterName = "System.Text.Json.Serialization.JsonConverter<System.DateTimeOffset>";
-                }
-                else if (prop.Type.ToDisplayString() == "System.DateOnly")
-                {
-                    jsonConverterName = "System.Text.Json.Serialization.JsonConverter<System.DateOnly>";
-                }
-                else if (prop.Type.ToDisplayString() == "System.TimeOnly")
-                {
-                    jsonConverterName = "System.Text.Json.Serialization.JsonConverter<System.TimeOnly>";
-                }
-            }
+            // Do not emit JsonConverter attributes for built-in date/time types; rely on the runtime's default converters.
+            // Keep jsonConverterName null so no JsonConverter attribute is added for DateTimeOffset/DateOnly/TimeOnly.
 
             var existingJsonProp = prop.GetAttributes()
                 .FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == "System.Text.Json.Serialization.JsonPropertyNameAttribute");

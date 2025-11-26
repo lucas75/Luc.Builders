@@ -1,5 +1,5 @@
 using Lwx.Builders.Dto.Atributes;
-namespace BadDto.Dto;
+namespace ErrorDto.Dto;
 
 [LwxDto(Type = DtoType.Normal)]
 public partial class BadDto

@@ -13,7 +13,7 @@ How to build and inspect
 
 2. Generated sources are emitted to the project's obj/generated folder (we set EmitCompilerGeneratedFiles and CompilerGeneratedFilesOutputPath in the samples).
 
-3. Tests use tests/DtoGeneratorTests.cs to run and inspect these sample projects. You can run the tests by executing the normal test target:
+3. Tests use the NegativeTests tests to run and inspect these sample projects (see `NegativeTests.cs` which calls `SharedTestHelpers.BuildAndRunSampleProject`). You can run the tests by executing the normal test target:
 
    dotnet test Lwx.Builders.Dto.Tests/Lwx.Builders.Dto.Tests.csproj
 
