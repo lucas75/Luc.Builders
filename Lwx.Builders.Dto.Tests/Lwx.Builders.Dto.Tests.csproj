@@ -15,5 +15,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Lwx.Builders.Dto\Lwx.Builders.Dto.csproj" />
+    <Compile Remove="SampleProjects\**\*.cs" />
   </ItemGroup>
 </Project>

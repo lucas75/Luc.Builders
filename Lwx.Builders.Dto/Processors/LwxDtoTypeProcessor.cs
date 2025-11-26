@@ -172,7 +172,12 @@ namespace Lwx.Builders.Dto.Processors
                 if (jsonConvConst.Kind == Microsoft.CodeAnalysis.TypedConstantKind.Type && jsonConvConst.Value is INamedTypeSymbol convSym)
                 {
                     // Use the symbol display string so generated source references the converter type by name
-                    jsonConverterName = convSym.ToDisplayString();
+                    // Use fully-qualified name (global::...) to avoid ambiguity when emitted in the target namespace
+                    jsonConverterName = convSym.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                    if (!jsonConverterName.StartsWith("global::", StringComparison.Ordinal))
+                    {
+                        jsonConverterName = "global::" + jsonConverterName;
+                    }
                 }
             }
 

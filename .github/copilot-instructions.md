@@ -12,6 +12,7 @@
 - Never commit to git.
 - Do NOT use @" strings.
 - Changes in doc (.md files) doesn't require compile and test.
+- When you find something difficult, ask the operator for clarification.
 
 AI agent verification checklist
 ------------------------------
