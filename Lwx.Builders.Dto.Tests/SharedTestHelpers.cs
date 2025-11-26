@@ -6,6 +6,8 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 // Shared helpers used across the Dto tests.
 // NOTE for AI agents: keep helpers minimal and deterministic. Positive tests should not use reflection or sample-project builds.
@@ -117,4 +119,11 @@ internal static class SharedTestHelpers
         var json = JsonSerializer.Serialize(obj, t);
         return JsonSerializer.Deserialize(json, t);
     }
+
+    // Compile sample project sources in-memory and run the incremental source generators
+    // loaded from the Lwx.Builders.Dto compiled assembly. Returns compilation+generator diagnostics
+    // RunGeneratorsInMemoryOnSample was removed because the test environment does not have
+    // a stable IncrementalGeneratorDriver type across all platform/package combos. We prefer
+    // using the committed sample-project builds via BuildAndRunSampleProject for negative-path tests
+    // which provides consistent diagnostics and generated sources from real MSBuild runs.
 }

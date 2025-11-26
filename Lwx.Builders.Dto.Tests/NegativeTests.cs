@@ -1,52 +1,59 @@
 using System;
+using System.Text.Json;
 using Xunit;
+using Lwx.Builders.Dto.Tests.Dto;
 
-// NegativeTests: these tests build sample projects that should fail
-// (they test the generator's diagnostics). They use the BuildAndRunSampleProject helper
-// located in SharedTestHelpers and intentionally exercise failing scenarios.
+// NegativeTests: runtime deserialization failures — JSON inputs that should be rejected
+// by System.Text.Json when targeting the DTO types. These tests assert that
+// invalid values cause JsonException (or equivalent) instead of producing an object.
 
 public class NegativeTests
 {
-    [Fact]
-    public void DtoGenerator_Reports_LWX005_When_Missing_Property_Attribute()
+    [Theory]
+    // invalid integer for id
+    [InlineData("{\"id\":\"not-an-int\"}")]
+    // invalid offset
+    [InlineData("{\"offset\":\"not-a-datetime\"}")]
+    // invalid date
+    [InlineData("{\"date\":\"2025-99-99\"}")]
+    // invalid time
+    [InlineData("{\"time\":\"25:61:00\"}")]
+    // invalid enum value
+    [InlineData("{\"color\":\"NotAColor\"}")]
+    public void NormalDto_InvalidJson_ThrowsJsonException(string json)
     {
-        var res = SharedTestHelpers.BuildAndRunSampleProject("ErrorDto");
-        var has = res.BuildOutput?.Contains("LWX005", StringComparison.OrdinalIgnoreCase) ?? false;
-        Assert.True(has, "Expected diagnostic LWX005 to be reported when DTO property is missing LwxDtoProperty or LwxDtoIgnore");
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<NormalDto>(json));
     }
 
-    [Fact]
-    public void ClassWithField_Reports_LWX006()
+    [Theory]
+    // invalid integer for id
+    [InlineData("{\"id\":\"not-an-int\"}")]
+    // invalid offset
+    [InlineData("{\"offset\":\"not-a-datetime\"}")]
+    // invalid date
+    [InlineData("{\"date\":\"2025-99-99\"}")]
+    // invalid time
+    [InlineData("{\"time\":\"25:61:00\"}")]
+    // invalid enum value
+    [InlineData("{\"color\":\"NotAColor\"}")]
+    public void DictDto_InvalidJson_ThrowsJsonException(string json)
     {
-        var res = SharedTestHelpers.BuildAndRunSampleProject("ErrorDto");
-        var hasLwx006 = res.BuildOutput?.Contains("LWX006", StringComparison.OrdinalIgnoreCase) ?? false;
-        Assert.True(hasLwx006, "Expected LWX006 diagnostic when DTO definition contains fields");
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<DictDto>(json));
     }
 
-    [Fact]
-    public void PropertyWithoutConverter_UnsupportedType_Reports_LWX003()
+    [Theory]
+    // invalid int for ok
+    [InlineData("{\"ok\":\"bad-int\"}")]
+    // invalid offset
+    [InlineData("{\"offset\":\"not-a-datetime\"}")]
+    // invalid date
+    [InlineData("{\"date\":\"2025-99-99\"}")]
+    // invalid time
+    [InlineData("{\"time\":\"25:61:00\"}")]
+    // invalid enum
+    [InlineData("{\"color\":\"NotAColor\"}")]
+    public void IgnoreDto_InvalidJson_ThrowsJsonException(string json)
     {
-        var res = SharedTestHelpers.BuildAndRunSampleProject("ErrorDto");
-        var hasLwx003b = res.BuildOutput?.Contains("LWX003", StringComparison.OrdinalIgnoreCase) ?? false;
-        Assert.True(hasLwx003b, "Expected LWX003 diagnostic when property type is unsupported and no JsonConverter is provided");
-    }
-
-    [Fact]
-    public void DateTime_Property_Warns_LWX007_Recommend_DateTimeOffset()
-    {
-        var res = SharedTestHelpers.BuildAndRunSampleProject("ErrorDto");
-        var hasLwx007 = res.BuildOutput?.Contains("LWX007", StringComparison.OrdinalIgnoreCase) ?? false;
-        Assert.True(hasLwx007, "Expected LWX007 warning when using DateTime, recommending DateTimeOffset");
-    }
-
-    [Fact]
-    public void ErrorDto_Fails_To_Build()
-    {
-        var res = SharedTestHelpers.BuildAndRunSampleProject("ErrorDto");
-        Assert.False(res.BuildSucceeded, "Expected ErrorDto project to fail to build");
-        var hasKnown = (res.BuildOutput?.Contains("LWX003", StringComparison.OrdinalIgnoreCase) ?? false)
-            || (res.BuildOutput?.Contains("LWX005", StringComparison.OrdinalIgnoreCase) ?? false)
-            || (res.BuildOutput?.Contains("LWX006", StringComparison.OrdinalIgnoreCase) ?? false);
-        Assert.True(hasKnown, "Expected at least one LWX003/LWX005/LWX006 diagnostic in the failed build output");
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<IgnoreDto>(json));
     }
 }

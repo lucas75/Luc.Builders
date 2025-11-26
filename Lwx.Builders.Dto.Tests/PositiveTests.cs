@@ -1,5 +1,6 @@
 using System;
 using System.Text.Json;
+using System.Globalization;
 using Xunit;
 using Lwx.Builders.Dto.Tests.Dto;
 
@@ -67,5 +68,53 @@ public class PositiveTests
         dict = (DictDto?)SharedTestHelpers.SerializeAndUnserializeJson(dict);
         Assert.NotNull(dict);
         Assert.Equal(9, dict!.Id);
+    }
+
+    [Theory]
+    [InlineData("2025-11-26T15:30:00+02:00","2025-11-26","15:30:00")]
+    [InlineData("2025-11-26T13:30:00Z","2025-11-26","15:30:00")]
+    [InlineData("2025-11-26T15:30:00.123+02:00","2025-11-26","15:30:00.123")]
+    [InlineData("2025-11-26T15:30:00+02:00","2025-11-26","15:30")]
+    [InlineData("2025-11-26T13:30:00Z","2025-11-26","15:30:00.123")]
+    public void DateTimeJsonParsing_AcceptsMultipleFormats(string offset, string date, string time)
+    {
+        var json = $"{{\"id\":1,\"name\":\"n\",\"value\":\"v\",\"color\":\"Green\",\"offset\":\"{offset}\",\"date\":\"{date}\",\"time\":\"{time}\"}}";
+        var dto = JsonSerializer.Deserialize<NormalDto>(json);
+        Assert.NotNull(dto);
+        Assert.Equal(DateOnly.Parse(date), dto!.Date);
+        Assert.Equal(TimeOnly.Parse(time), dto.Time);
+        Assert.Equal(DateTimeOffset.Parse(offset), dto.Offset);
+    }
+
+    [Theory]
+    [InlineData("2025-11-26T15:30:00+02:00","2025-11-26","15:30:00")]
+    [InlineData("2025-11-26T13:30:00Z","2025-11-26","15:30:00")]
+    [InlineData("2025-11-26T15:30:00.123+02:00","2025-11-26","15:30:00.123")]
+    [InlineData("2025-11-26T15:30:00+02:00","2025-11-26","15:30")]
+    [InlineData("2025-11-26T13:30:00Z","2025-11-26","15:30:00.123")]
+    public void DictDto_DateTimeJsonParsing_AcceptsMultipleFormats(string offset, string date, string time)
+    {
+        var json = $"{{\"id\":1,\"name\":\"n\",\"value\":\"v\",\"color\":\"Green\",\"offset\":\"{offset}\",\"date\":\"{date}\",\"time\":\"{time}\"}}";
+        var dto = JsonSerializer.Deserialize<DictDto>(json);
+        Assert.NotNull(dto);
+        Assert.Equal(DateOnly.Parse(date), dto!.Date);
+        Assert.Equal(TimeOnly.Parse(time), dto.Time);
+        Assert.Equal(DateTimeOffset.Parse(offset), dto.Offset);
+    }
+
+    [Theory]
+    [InlineData("2025-11-26T15:30:00+02:00","2025-11-26","15:30:00")]
+    [InlineData("2025-11-26T13:30:00Z","2025-11-26","15:30:00")]
+    [InlineData("2025-11-26T15:30:00.123+02:00","2025-11-26","15:30:00.123")]
+    [InlineData("2025-11-26T15:30:00+02:00","2025-11-26","15:30")]
+    [InlineData("2025-11-26T13:30:00Z","2025-11-26","15:30:00.123")]
+    public void IgnoreDto_DateTimeJsonParsing_AcceptsMultipleFormats(string offset, string date, string time)
+    {
+        var json = $"{{\"ignored\":999,\"ok\":5,\"value\":\"v\",\"color\":\"Green\",\"offset\":\"{offset}\",\"date\":\"{date}\",\"time\":\"{time}\"}}";
+        var dto = JsonSerializer.Deserialize<IgnoreDto>(json);
+        Assert.NotNull(dto);
+        Assert.Equal(DateOnly.Parse(date), dto!.Date);
+        Assert.Equal(TimeOnly.Parse(time), dto.Time);
+        Assert.Equal(DateTimeOffset.Parse(offset), dto.Offset);
     }
 }
