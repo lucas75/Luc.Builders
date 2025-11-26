@@ -12,4 +12,8 @@ public class MyStringConverter : JsonConverter<string>
         => writer.WriteStringValue(value);
 }
 
-public enum MyColors { Red = 0, Green = 1 }
+public enum MyColors
+{
+    [JsonPropertyName("Red")] Red = 0,
+    [JsonPropertyName("Green")] Green = 1
+}

@@ -11,7 +11,7 @@ public partial class NormalDto
     public partial string? Name { get; set; }
 
     [LwxDtoProperty(JsonName = "value", JsonConverter = typeof(MyStringConverter))]
-    public partial string Value { get; set; }
+    public partial string? Value { get; set; }
 
     [LwxDtoProperty(JsonName = "color")]
     public partial MyColors Color { get; set; }
