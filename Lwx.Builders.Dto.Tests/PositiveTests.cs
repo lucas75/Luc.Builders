@@ -72,11 +72,11 @@ public class PositiveTests
     }
 
     [Theory]
-    [InlineData("""{"id":1,"name":"n","value":"v","color":"Green","offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", "2025-11-26", "15:30:00", "2025-11-26T15:30:00+02:00")]
-    [InlineData("""{"id":1,"name":"n","value":"v","color":"Green","offset":"2025-11-26T13:30:00Z","date":"2025-11-26","time":"15:30:00"}""", "2025-11-26", "15:30:00", "2025-11-26T13:30:00Z")]
-    [InlineData("""{"id":1,"name":"n","value":"v","color":"Green","offset":"2025-11-26T15:30:00.123+02:00","date":"2025-11-26","time":"15:30:00.123"}""", "2025-11-26", "15:30:00.123", "2025-11-26T15:30:00.123+02:00")]
-    [InlineData("""{"id":1,"name":"n","value":"v","color":"Green","offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30"}""", "2025-11-26", "15:30", "2025-11-26T15:30:00+02:00")]
-    [InlineData("""{"id":1,"name":"n","value":"v","color":"Green","offset":"2025-11-26T13:30:00Z","date":"2025-11-26","time":"15:30:00.123"}""", "2025-11-26", "15:30:00.123", "2025-11-26T13:30:00Z")]
+    [InlineData("""{"id":1,"date":"2025-11-26","time":"15:30:00","offset":"2025-11-26T15:30:00+02:00"}""", "2025-11-26", "15:30:00", "2025-11-26T15:30:00+02:00")]
+    [InlineData("""{"id":1,"date":"2025-11-26","time":"15:30:00","offset":"2025-11-26T13:30:00Z"}""", "2025-11-26", "15:30:00", "2025-11-26T13:30:00Z")]
+    [InlineData("""{"id":1,"date":"2025-11-26","time":"15:30:00.123","offset":"2025-11-26T15:30:00.123+02:00"}""", "2025-11-26", "15:30:00.123", "2025-11-26T15:30:00.123+02:00")]
+    [InlineData("""{"id":1,"date":"2025-11-26","time":"15:30","offset":"2025-11-26T15:30:00+02:00"}""", "2025-11-26", "15:30", "2025-11-26T15:30:00+02:00")]
+    [InlineData("""{"id":1,"date":"2025-11-26","time":"15:30:00.123","offset":"2025-11-26T13:30:00Z"}""", "2025-11-26", "15:30:00.123", "2025-11-26T13:30:00Z")]
     public void DateTimeJsonParsing_AcceptsMultipleFormats(string json, string date, string time, string offset)
     {
         var dto = JsonSerializer.Deserialize<NormalDto>(json);
@@ -87,11 +87,11 @@ public class PositiveTests
     }
 
     [Theory]
-    [InlineData("""{"id":1,"name":"n","value":"v","color":"Green","offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", "2025-11-26", "15:30:00", "2025-11-26T15:30:00+02:00")]
-    [InlineData("""{"id":1,"name":"n","value":"v","color":"Green","offset":"2025-11-26T13:30:00Z","date":"2025-11-26","time":"15:30:00"}""", "2025-11-26", "15:30:00", "2025-11-26T13:30:00Z")]
-    [InlineData("""{"id":1,"name":"n","value":"v","color":"Green","offset":"2025-11-26T15:30:00.123+02:00","date":"2025-11-26","time":"15:30:00.123"}""", "2025-11-26", "15:30:00.123", "2025-11-26T15:30:00.123+02:00")]
-    [InlineData("""{"id":1,"name":"n","value":"v","color":"Green","offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30"}""", "2025-11-26", "15:30", "2025-11-26T15:30:00+02:00")]
-    [InlineData("""{"id":1,"name":"n","value":"v","color":"Green","offset":"2025-11-26T13:30:00Z","date":"2025-11-26","time":"15:30:00.123"}""", "2025-11-26", "15:30:00.123", "2025-11-26T13:30:00Z")]
+    [InlineData("""{"id":1,"date":"2025-11-26","time":"15:30:00","offset":"2025-11-26T15:30:00+02:00"}""", "2025-11-26", "15:30:00", "2025-11-26T15:30:00+02:00")]
+    [InlineData("""{"id":1,"date":"2025-11-26","time":"15:30:00","offset":"2025-11-26T13:30:00Z"}""", "2025-11-26", "15:30:00", "2025-11-26T13:30:00Z")]
+    [InlineData("""{"id":1,"date":"2025-11-26","time":"15:30:00.123","offset":"2025-11-26T15:30:00.123+02:00"}""", "2025-11-26", "15:30:00.123", "2025-11-26T15:30:00.123+02:00")]
+    [InlineData("""{"id":1,"date":"2025-11-26","time":"15:30","offset":"2025-11-26T15:30:00+02:00"}""", "2025-11-26", "15:30", "2025-11-26T15:30:00+02:00")]
+    [InlineData("""{"id":1,"date":"2025-11-26","time":"15:30:00.123","offset":"2025-11-26T13:30:00Z"}""", "2025-11-26", "15:30:00.123", "2025-11-26T13:30:00Z")]
     public void DictDto_DateTimeJsonParsing_AcceptsMultipleFormats(string json, string date, string time, string offset)
     {
         var dto = JsonSerializer.Deserialize<DictDto>(json);
@@ -117,10 +117,10 @@ public class PositiveTests
     }
 
     [Theory]
-    [InlineData("""{"id":1,"name":"n","value":"v","color":"Green","offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", """{"id":1,"name":"n","value":"v","color":1,"offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", """{"id":1,"ignored":0,"ok":1,"value":"v","color":1,"offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", MyColors.Green)]
-    [InlineData("""{"id":1,"name":"n","value":"v","color":"Red","offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", """{"id":1,"name":"n","value":"v","color":0,"offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", """{"id":1,"ignored":0,"ok":1,"value":"v","color":0,"offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", MyColors.Red)]
-    [InlineData("""{"id":1,"name":"n","value":"v","color":1,"offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", """{"id":1,"name":"n","value":"v","color":1,"offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", """{"id":1,"ignored":0,"ok":1,"value":"v","color":1,"offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", MyColors.Green)]
-    [InlineData("""{"id":1,"name":"n","value":"v","color":0,"offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", """{"id":1,"name":"n","value":"v","color":0,"offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", """{"id":1,"ignored":0,"ok":1,"value":"v","color":0,"offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", MyColors.Red)]
+    [InlineData("""{"id":1,"color":"Green"}""", """{"id":1,"color":1}""", """{"id":1,"color":1}""", MyColors.Green)]
+    [InlineData("""{"id":1,"color":"Red"}""", """{"id":1,"color":0}""", """{"id":1,"color":0}""", MyColors.Red)]
+    [InlineData("""{"id":1,"color":1}""", """{"id":1,"color":1}""", """{"id":1,"color":1}""", MyColors.Green)]
+    [InlineData("""{"id":1,"color":0}""", """{"id":1,"color":0}""", """{"id":1,"color":0}""", MyColors.Red)]
     public void EnumJsonParsing_AcceptsNamesAndNumbers(string normalJson, string dictJson, string ignoreJson, MyColors expected)
     {
         var dto = JsonSerializer.Deserialize<NormalDto>(normalJson);
@@ -141,10 +141,10 @@ public class PositiveTests
     }
 
     [Theory]
-    [InlineData("""{"id":0,"name":"n","value":"v","color":"Green","offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", 0)]
-    [InlineData("""{"id":1,"name":"n","value":"v","color":"Green","offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", 1)]
-    [InlineData("""{"id":-1,"name":"n","value":"v","color":"Green","offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", -1)]
-    [InlineData("""{"id":2147483647,"name":"n","value":"v","color":"Green","offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", 2147483647)]
+    [InlineData("""{"id":0}""", 0)]
+    [InlineData("""{"id":1}""", 1)]
+    [InlineData("""{"id":-1}""", -1)]
+    [InlineData("""{"id":2147483647}""", 2147483647)]
     public void IntJsonParsing_AcceptsNumericValues(string json, int id)
     {
         var dto = JsonSerializer.Deserialize<NormalDto>(json);
@@ -155,17 +155,17 @@ public class PositiveTests
         Assert.NotNull(d2);
         Assert.Equal(id, d2!.Id);
 
-        var jsonIgnore = $"{{\"id\":{id},\"ignored\":0,\"ok\":{id},\"value\":\"v\",\"color\":\"Green\",\"offset\":\"2025-11-26T15:30:00+02:00\",\"date\":\"2025-11-26\",\"time\":\"15:30:00\"}}";
+        var jsonIgnore = $"{{\"id\":{id},\"ok\":{id}}}";
         var ig = JsonSerializer.Deserialize<IgnoreDto>(jsonIgnore);
         Assert.NotNull(ig);
         Assert.Equal(id, ig!.Ok);
     }
 
     [Theory]
-    [InlineData("""{"id":1,"name":"","value":"","color":"Green","offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", "")]
-    [InlineData("""{"id":1,"name":"a","value":"a","color":"Green","offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", "a")]
-    [InlineData("""{"id":1,"name":"こんにちは","value":"こんにちは","color":"Green","offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", "こんにちは")]
-    [InlineData("""{"id":1,"name":"a very long string that is still fine for the DTO property — repeat a few times to be sure","value":"a very long string that is still fine for the DTO property — repeat a few times to be sure","color":"Green","offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", "a very long string that is still fine for the DTO property — repeat a few times to be sure")]
+    [InlineData("""{"id":1,"name":"","value":""}""", "")]
+    [InlineData("""{"id":1,"name":"a","value":"a"}""", "a")]
+    [InlineData("""{"id":1,"name":"こんにちは","value":"こんにちは"}""", "こんにちは")]
+    [InlineData("""{"id":1,"name":"a very long string that is still fine for the DTO property — repeat a few times to be sure","value":"a very long string that is still fine for the DTO property — repeat a few times to be sure"}""", "a very long string that is still fine for the DTO property — repeat a few times to be sure")]
     public void StringJsonParsing_AcceptsVariousStrings(string json, string value)
     {
         var dto = JsonSerializer.Deserialize<NormalDto>(json);
