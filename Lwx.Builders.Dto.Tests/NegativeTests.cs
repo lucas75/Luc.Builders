@@ -11,15 +11,21 @@ public class NegativeTests
 {
     [Theory]
     // invalid integer for id
-    [InlineData("{\"id\":\"not-an-int\"}")]
+    [InlineData("""{"id":"not-an-int"}""")]
     // invalid offset
-    [InlineData("{\"offset\":\"not-a-datetime\"}")]
+    [InlineData("""{"offset":"not-a-datetime"}""")]
     // invalid date
-    [InlineData("{\"date\":\"2025-99-99\"}")]
+    [InlineData("""{"date":"2025-99-99"}""")]
     // invalid time
-    [InlineData("{\"time\":\"25:61:00\"}")]
+    [InlineData("""{"time":"25:61:00"}""")]
     // invalid enum value
-    [InlineData("{\"color\":\"NotAColor\"}")]
+    [InlineData("""{"color":"NotAColor"}""")]
+    // integer overflow
+    [InlineData("""{"id":999999999999999999999}""")]
+    // floating point for integer
+    [InlineData("""{"id":1.23}""")]
+    // malformed JSON (guaranteed parser error)
+    [InlineData("""{""")]
     public void NormalDto_InvalidJson_ThrowsJsonException(string json)
     {
         Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<NormalDto>(json));
@@ -27,15 +33,21 @@ public class NegativeTests
 
     [Theory]
     // invalid integer for id
-    [InlineData("{\"id\":\"not-an-int\"}")]
+    [InlineData("""{"id":"not-an-int"}""")]
     // invalid offset
-    [InlineData("{\"offset\":\"not-a-datetime\"}")]
+    [InlineData("""{"offset":"not-a-datetime"}""")]
     // invalid date
-    [InlineData("{\"date\":\"2025-99-99\"}")]
+    [InlineData("""{"date":"2025-99-99"}""")]
     // invalid time
-    [InlineData("{\"time\":\"25:61:00\"}")]
+    [InlineData("""{"time":"25:61:00"}""")]
     // invalid enum value
-    [InlineData("{\"color\":\"NotAColor\"}")]
+    [InlineData("""{"color":"NotAColor"}""")]
+    // integer overflow
+    [InlineData("""{"id":999999999999999999999}""")]
+    // floating point for integer
+    [InlineData("""{"id":1.23}""")]
+    // malformed JSON (guaranteed parser error)
+    [InlineData("""{""")]
     public void DictDto_InvalidJson_ThrowsJsonException(string json)
     {
         Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<DictDto>(json));
@@ -43,17 +55,37 @@ public class NegativeTests
 
     [Theory]
     // invalid int for ok
-    [InlineData("{\"ok\":\"bad-int\"}")]
+    [InlineData("""{"ok":"bad-int"}""")]
     // invalid offset
-    [InlineData("{\"offset\":\"not-a-datetime\"}")]
+    [InlineData("""{"offset":"not-a-datetime"}""")]
     // invalid date
-    [InlineData("{\"date\":\"2025-99-99\"}")]
+    [InlineData("""{"date":"2025-99-99"}""")]
     // invalid time
-    [InlineData("{\"time\":\"25:61:00\"}")]
+    [InlineData("""{"time":"25:61:00"}""")]
     // invalid enum
-    [InlineData("{\"color\":\"NotAColor\"}")]
+    [InlineData("""{"color":"NotAColor"}""")]
+    // integer overflow
+    [InlineData("""{"ok":999999999999999999999}""")]
+    // floating point for integer
+    [InlineData("""{"ok":1.23}""")]
+    // malformed JSON (guaranteed parser error)
+    [InlineData("""{""")]
     public void IgnoreDto_InvalidJson_ThrowsJsonException(string json)
     {
         Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<IgnoreDto>(json));
     }
+
+    [Theory]
+    // malformed JSON (guaranteed parser error)
+    [InlineData("""{""")]
+    // explicit text that's not valid JSON
+    [InlineData("""not-json""")]
+    public void CustomHolder_InvalidJson_ThrowsJsonException(string json)
+    {
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<NegativeCustomHolder>(json));
+    }
+
+    // small types used purely for the custom-object negative tests
+    public class NegativeCustomHolder { public NegativeNested Nested { get; set; } = new(); }
+    public class NegativeNested { public int X { get; set; } }
 }

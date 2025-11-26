@@ -5,23 +5,23 @@ namespace Lwx.Builders.Dto.Tests.Dto;
 public partial class DictDto
 {
     [LwxDtoProperty(JsonName = "id")]
-    public partial int Id { get; set; }
+    public required partial int Id { get; set; }
 
     [LwxDtoProperty(JsonName = "name")]
-    public partial string Name { get; set; }
+    public partial string? Name { get; set; }
 
     [LwxDtoProperty(JsonName = "value", JsonConverter = typeof(MyStringConverter))]
-    public partial string Value { get; set; }
+    public partial string? Value { get; set; }
 
     [LwxDtoProperty(JsonName = "color")]
-    public partial MyColors Color { get; set; }
+    public partial MyColors? Color { get; set; }
 
     [LwxDtoProperty(JsonName = "offset")]
-    public partial System.DateTimeOffset Offset { get; set; }
+    public partial System.DateTimeOffset? Offset { get; set; }
 
     [LwxDtoProperty(JsonName = "date")]
-    public partial System.DateOnly Date { get; set; }
+    public partial System.DateOnly? Date { get; set; }
 
     [LwxDtoProperty(JsonName = "time")]
-    public partial System.TimeOnly Time { get; set; }
+    public partial System.TimeOnly? Time { get; set; }
 }

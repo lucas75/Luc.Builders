@@ -157,7 +157,14 @@ namespace Lwx.Builders.Dto.Processors
         {
             var propName = prop.Name;
             var propType = prop.Type.ToDisplayString();
+            // Consider nullable value types (Nullable<T>) and reference types as nullable
             var isNullable = prop.Type.NullableAnnotation == NullableAnnotation.Annotated || prop.Type.IsReferenceType;
+            if (!isNullable && prop.Type is INamedTypeSymbol named && named.IsGenericType)
+            {
+                // System.Nullable<T>
+                var pd = named.ConstructedFrom?.ToDisplayString();
+                if (pd == "System.Nullable<T>") isNullable = true;
+            }
 
             var dtoPropAttr = prop.GetAttributes()
                 .FirstOrDefault(a => a.AttributeClass?.Name == "LwxDtoPropertyAttribute");
@@ -250,10 +257,19 @@ namespace Lwx.Builders.Dto.Processors
             {
                 attributes.Add($"[JsonConverter(typeof({jsonConverterName}))]");
             }
-            else if (prop.Type.TypeKind == TypeKind.Enum)
+            else
             {
-                attributes.Add("[JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]");
+                // For enums we want the JsonStringEnumConverter. Also support nullable enum types (Nullable<T> where T is enum).
+                if (prop.Type.TypeKind == TypeKind.Enum)
+                {
+                    attributes.Add("[JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]");
+                }
+                else if (prop.Type is INamedTypeSymbol nn && nn.IsGenericType && nn.ConstructedFrom?.ToDisplayString() == "System.Nullable<T>" && nn.TypeArguments.Length == 1 && nn.TypeArguments[0].TypeKind == TypeKind.Enum)
+                {
+                    attributes.Add("[JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]");
+                }
             }
+            // (no-op)
 
             var attrString = attributes.Count > 0 ? string.Join("\n", attributes) + "\n" : "";
 
@@ -273,6 +289,11 @@ namespace Lwx.Builders.Dto.Processors
 
         private bool IsSupportedType(ITypeSymbol type, Compilation compilation)
         {
+            // Handle Nullable<T> by checking its underlying type
+            if (type is INamedTypeSymbol named && named.IsGenericType && named.ConstructedFrom?.ToDisplayString() == "System.Nullable<T>")
+            {
+                return IsSupportedType(named.TypeArguments[0], compilation);
+            }
             if (type.SpecialType is
                 Microsoft.CodeAnalysis.SpecialType.System_Boolean or
                 Microsoft.CodeAnalysis.SpecialType.System_Byte or

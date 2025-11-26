@@ -58,12 +58,13 @@ public class StructuralTests
     public void DateTimeTypes_Automatically_Get_JsonConverters()
     {
         var t = typeof(IgnoreDto);
-        Assert.Equal(typeof(System.DateTimeOffset), t.GetProperty("Offset")?.PropertyType);
-        Assert.Equal(typeof(System.DateOnly), t.GetProperty("Date")?.PropertyType);
-        Assert.Equal(typeof(System.TimeOnly), t.GetProperty("Time")?.PropertyType);
+        Assert.Equal(typeof(System.DateTimeOffset?), t.GetProperty("Offset")?.PropertyType);
+        Assert.Equal(typeof(System.DateOnly?), t.GetProperty("Date")?.PropertyType);
+        Assert.Equal(typeof(System.TimeOnly?), t.GetProperty("Time")?.PropertyType);
 
         var instance = new IgnoreDto
-        {
+            {
+                Id = 9,
             Offset = System.DateTimeOffset.Now,
             Date = System.DateOnly.FromDateTime(DateTime.Today),
             Time = System.TimeOnly.FromDateTime(DateTime.Now)
