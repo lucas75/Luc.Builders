@@ -81,9 +81,9 @@ public class PositiveTests
     {
         var dto = JsonSerializer.Deserialize<NormalDto>(json);
         Assert.NotNull(dto);
-        Assert.Equal(DateOnly.Parse(date), dto!.Date);
+        Assert.Equal(DateOnly.Parse(date), dto!.Dt);
         Assert.Equal(TimeOnly.Parse(time), dto.Time);
-        Assert.Equal(DateTimeOffset.Parse(offset), dto.Offset);
+        Assert.Equal(DateTimeOffset.Parse(offset), dto.Dh);
     }
 
     [Theory]
@@ -96,9 +96,9 @@ public class PositiveTests
     {
         var dto = JsonSerializer.Deserialize<DictDto>(json);
         Assert.NotNull(dto);
-        Assert.Equal(DateOnly.Parse(date), dto!.Date);
+        Assert.Equal(DateOnly.Parse(date), dto!.Dt);
         Assert.Equal(TimeOnly.Parse(time), dto.Time);
-        Assert.Equal(DateTimeOffset.Parse(offset), dto.Offset);
+        Assert.Equal(DateTimeOffset.Parse(offset), dto.Dh);
     }
 
     [Theory]
