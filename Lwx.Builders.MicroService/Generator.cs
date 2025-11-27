@@ -68,7 +68,13 @@ public class Generator : IIncrementalGenerator
                 if (f.AttributeName == LwxConstants.LwxEndpoint)
                 {
                     new Processors.LwxEndpointTypeProcessor(f, spc, compilation).Execute();
-                    endpointNames.Add(f.TargetSymbol.ToDisplayString());
+                    var fullName = f.TargetSymbol.ToDisplayString();
+                    var asmName = compilation.AssemblyName ?? string.Empty;
+                    if (!string.IsNullOrEmpty(asmName) && fullName.StartsWith(asmName + ".", StringComparison.Ordinal))
+                    {
+                        fullName = fullName.Substring(asmName.Length + 1);
+                    }
+                    endpointNames.Add(fullName);
                 }
                 else if (f.AttributeName == LwxConstants.LwxWorker)
                 {
