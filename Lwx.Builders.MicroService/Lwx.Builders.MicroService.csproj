@@ -5,6 +5,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <LangVersion>preview</LangVersion>
+    <nullable>enable</nullable>
     <NoWarn>CS0618;CS0612;CS9113</NoWarn>
     <!-- Ensure outputs use the Builders project name so build artifacts match the new namespace -->
     <AssemblyName>Lwx.Builders.MicroService</AssemblyName>

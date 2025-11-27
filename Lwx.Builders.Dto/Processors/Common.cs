@@ -1,5 +1,5 @@
-using System;
 #nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -106,6 +106,12 @@ internal static class GeneratorHelpers
 
             ctx.ReportDiagnostic(Diagnostic.Create(descriptor, loc, symbol.Name, fullNs, expectedRelative));
         }
+    }
+
+    internal static IReadOnlyDictionary<string, TypedConstant> ToNamedArgumentMap(this AttributeData? attributeData)
+    {
+        if (attributeData == null) return new Dictionary<string, TypedConstant>(StringComparer.Ordinal);
+        return attributeData.NamedArguments.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.Ordinal);
     }
 }
 

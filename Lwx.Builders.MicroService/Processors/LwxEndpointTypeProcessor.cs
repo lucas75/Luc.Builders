@@ -34,15 +34,15 @@ internal class LwxEndpointTypeProcessor(
         GenerateSourceFiles(name, ns, rootNs, endpointClassName, optionalFirstSegment, uriArg, securityProfile, summary, description, publishLiteral);
     }
 
-    private string ExtractUriArgument()
+    private string? ExtractUriArgument()
     {
         if (attr.AttributeData == null)
         {
             return null;
         }
 
-        var uriNamed = attr.AttributeData.NamedArguments.FirstOrDefault(kv => kv.Key == "Uri");
-        if (!uriNamed.Equals(default(KeyValuePair<string, TypedConstant>)) && uriNamed.Value.Value is string s)
+        var named = attr.AttributeData.ToNamedArgumentMap();
+        if (named.TryGetValue("Uri", out var uriTc) && uriTc.Value is string s)
         {
             return s;
         }
@@ -56,7 +56,7 @@ internal class LwxEndpointTypeProcessor(
         return null;
     }
 
-    private bool ValidateEndpointNaming(string uriArg, string name, string ns)
+    private bool ValidateEndpointNaming(string? uriArg, string name, string ns)
     {
         if (string.IsNullOrEmpty(uriArg))
         {
@@ -111,11 +111,11 @@ internal class LwxEndpointTypeProcessor(
         if (!acceptableNames.Contains(attr.TargetSymbol.Name, StringComparer.Ordinal))
         {
             // Check for a naming exception provided by the user on the attribute
-            string namingException = null;
+            string? namingException = null;
             if (attr.AttributeData != null)
             {
-                var exc = attr.AttributeData.NamedArguments.FirstOrDefault(kv => kv.Key == "NamingExceptionJustification");
-                if (!exc.Equals(default(KeyValuePair<string, TypedConstant>)) && exc.Value.Value is string txt)
+                var named = attr.AttributeData.ToNamedArgumentMap();
+                if (named.TryGetValue("NamingExceptionJustification", out var exc) && exc.Value is string txt)
                 {
                     namingException = txt?.Trim();
                 }
@@ -175,7 +175,7 @@ internal class LwxEndpointTypeProcessor(
         return true;
     }
 
-    private (string rootNs, string endpointClassName, string optionalFirstSegment) ComputeEndpointNames(string uriArg, string name, string ns)
+    private (string rootNs, string endpointClassName, string optionalFirstSegment) ComputeEndpointNames(string? uriArg, string name, string ns)
     {
         const string endpointsNamespace = "Endpoints";
 
@@ -194,7 +194,7 @@ internal class LwxEndpointTypeProcessor(
             rootNs = rootNs.Substring(0, rootNs.Length - suffix.Length);
         }
 
-        string endpointClassName = null;
+        string? endpointClassName = null;
         string optionalFirstSegment = string.Empty;
 
         if (!string.IsNullOrEmpty(uriArg))
@@ -230,60 +230,55 @@ internal class LwxEndpointTypeProcessor(
         return (rootNs, endpointClassName, optionalFirstSegment);
     }
 
-    private (string securityProfile, string summary, string description, string publishLiteral) ExtractAttributeMetadata()
+    private (string? securityProfile, string? summary, string? description, string? publishLiteral) ExtractAttributeMetadata()
     {
-        string securityProfile = null;
-        string summary = null;
-        string description = null;
+        string? securityProfile = null;
+        string? summary = null;
+        string? description = null;
         string publishLiteral = "Lwx.Builders.MicroService.Atributes.LwxStage.None";
 
-        if (attr.AttributeData != null)
-        {
-            var m = attr.AttributeData.NamedArguments.FirstOrDefault(kv => kv.Key == "SecurityProfile");
-            if (!m.Equals(default(KeyValuePair<string, TypedConstant>)) && m.Value.Value is string s)
+            if (attr.AttributeData != null)
             {
-                securityProfile = s;
-            }
-
-            var m2 = attr.AttributeData.NamedArguments.FirstOrDefault(kv => kv.Key == "Summary");
-            if (!m2.Equals(default(KeyValuePair<string, TypedConstant>)) && m2.Value.Value is string s2)
-            {
-                summary = s2;
-            }
-
-            var m3 = attr.AttributeData.NamedArguments.FirstOrDefault(kv => kv.Key == "Description");
-            if (!m3.Equals(default(KeyValuePair<string, TypedConstant>)) && m3.Value.Value is string s3)
-            {
-                description = s3;
-            }
-
-            var m4 = attr.AttributeData.NamedArguments.FirstOrDefault(kv => kv.Key == "Publish");
-            if (!m4.Equals(default(KeyValuePair<string, TypedConstant>)) && m4.Value.Value != null)
-            {
-                // typed constant for enum returns the underlying numeric value; map to literal
-                var raw = m4.Value.Value;
-                if (raw is int iv)
+                var named = attr.AttributeData.ToNamedArgumentMap();
+                if (named.TryGetValue("SecurityProfile", out var sp) && sp.Value is string s)
                 {
-                    publishLiteral = iv switch
+                    securityProfile = s;
+                }
+
+                if (named.TryGetValue("Summary", out var sum) && sum.Value is string s2)
+                {
+                    summary = s2;
+                }
+
+                if (named.TryGetValue("Description", out var d) && d.Value is string s3)
+                {
+                    description = s3;
+                }
+
+                if (named.TryGetValue("Publish", out var p) && p.Value != null)
+                {
+                    var raw = p.Value;
+                    if (raw is int iv)
                     {
-                        1 => "Lwx.Builders.MicroService.Atributes.LwxStage.Development",
-                        2 => "Lwx.Builders.MicroService.Atributes.LwxStage.Production",
-                        _ => "Lwx.Builders.MicroService.Atributes.LwxStage.None"
-                    };
-                }
-                else
-                {
-                    // fallback use ToString
-                    var tmp = m4.Value.Value.ToString() ?? "Lwx.Builders.MicroService.Atributes.LwxStage.None";
-                    publishLiteral = tmp.Contains('.') ? tmp : ("Lwx.Builders.MicroService." + tmp);
+                        publishLiteral = iv switch
+                        {
+                            1 => "Lwx.Builders.MicroService.Atributes.LwxStage.Development",
+                            2 => "Lwx.Builders.MicroService.Atributes.LwxStage.Production",
+                            _ => "Lwx.Builders.MicroService.Atributes.LwxStage.None"
+                        };
+                    }
+                    else
+                    {
+                        var tmp = p.Value.ToString() ?? "Lwx.Builders.MicroService.Atributes.LwxStage.None";
+                        publishLiteral = tmp.Contains('.') ? tmp : ("Lwx.Builders.MicroService." + tmp);
+                    }
                 }
             }
-        }
 
         return (securityProfile, summary, description, publishLiteral);
     }
 
-    private void GenerateSourceFiles(string name, string ns, string rootNs, string endpointClassName, string optionalFirstSegment, string uriArg, string securityProfile, string summary, string description, string publishLiteral)
+    private void GenerateSourceFiles(string name, string ns, string rootNs, string endpointClassName, string? optionalFirstSegment, string? uriArg, string? securityProfile, string? summary, string? description, string? publishLiteral)
     {
         var source = $$"""
             // <auto-generated/>

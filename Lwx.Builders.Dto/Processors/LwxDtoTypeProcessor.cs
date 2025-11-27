@@ -82,8 +82,8 @@ namespace Lwx.Builders.Dto.Processors
         {
             if (attrData == null) return DtoType.Normal;
 
-            var typeArg = attrData.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Type");
-            if (typeArg.Value.Value is int value)
+            var namedMap = attrData.ToNamedArgumentMap();
+            if (namedMap.TryGetValue("Type", out var typeArg) && typeArg.Value is int value)
             {
                 return (DtoType)value;
             }
@@ -173,9 +173,13 @@ namespace Lwx.Builders.Dto.Processors
             string? jsonConverterName = null;
             if (dtoPropAttr != null)
             {
-                jsonName = dtoPropAttr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "JsonName").Value.Value as string;
+                var propArgs = dtoPropAttr.ToNamedArgumentMap();
+                if (propArgs.TryGetValue("JsonName", out var jn) && jn.Value is string jns)
+                {
+                    jsonName = jns;
+                }
                 // The JsonConverter named argument is a typeof(...) expression; Roslyn represents it as a TypedConstant with Kind == Type
-                var jsonConvConst = dtoPropAttr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "JsonConverter").Value;
+                propArgs.TryGetValue("JsonConverter", out var jsonConvConst);
                 if (jsonConvConst.Kind == Microsoft.CodeAnalysis.TypedConstantKind.Type && jsonConvConst.Value is INamedTypeSymbol convSym)
                 {
                     // Use the symbol display string so generated source references the converter type by name

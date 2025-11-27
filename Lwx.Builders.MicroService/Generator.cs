@@ -105,8 +105,8 @@ public class Generator : IIncrementalGenerator
                     var attrData = f.AttributeData;
                     if (attrData != null)
                     {
-                        var m = attrData.NamedArguments.FirstOrDefault(kv => kv.Key == "GenerateMain");
-                        if (!m.Equals(default(KeyValuePair<string, TypedConstant>)) && m.Value.Value is bool b)
+                        var named = attrData.ToNamedArgumentMap();
+                        if (named.TryGetValue("GenerateMain", out var gm) && gm.Value is bool b)
                         {
                             generateMain = b;
                         }
@@ -195,26 +195,25 @@ public class Generator : IIncrementalGenerator
 
         if (swaggerAttr != null)
         {
-            var m1 = swaggerAttr.NamedArguments.FirstOrDefault(kv => kv.Key == "Title");
-            if (!m1.Equals(default(KeyValuePair<string, TypedConstant>)) && m1.Value.Value is string s1)
+            var named = swaggerAttr.ToNamedArgumentMap();
+            if (named.TryGetValue("Title", out var t) && t.Value is string s1)
             {
                 title = s1;
             }
-            var m2 = swaggerAttr.NamedArguments.FirstOrDefault(kv => kv.Key == "Description");
-            if (!m2.Equals(default(KeyValuePair<string, TypedConstant>)) && m2.Value.Value is string s2)
+
+            if (named.TryGetValue("Description", out var d) && d.Value is string s2)
             {
                 description = s2;
             }
-            var m3 = swaggerAttr.NamedArguments.FirstOrDefault(kv => kv.Key == "Version");
-            if (!m3.Equals(default(KeyValuePair<string, TypedConstant>)) && m3.Value.Value is string s3)
+
+            if (named.TryGetValue("Version", out var v) && v.Value is string s3)
             {
                 version = s3;
             }
 
-            var m4 = swaggerAttr.NamedArguments.FirstOrDefault(kv => kv.Key == "PublishSwagger");
-            if (!m4.Equals(default(KeyValuePair<string, TypedConstant>)) && m4.Value.Value != null)
+            if (named.TryGetValue("PublishSwagger", out var p) && p.Value != null)
             {
-                var raw = m4.Value.Value;
+                var raw = p.Value;
                 if (raw is int iv)
                 {
                     publishLiteral = iv switch
@@ -226,7 +225,7 @@ public class Generator : IIncrementalGenerator
                 }
                 else
                 {
-                    var tmp = m4.Value.Value.ToString() ?? "Lwx.Builders.MicroService.Atributes.LwxStage.None";
+                    var tmp = raw.ToString() ?? "Lwx.Builders.MicroService.Atributes.LwxStage.None";
                     publishLiteral = tmp.Contains('.') ? tmp : ("Lwx.Builders.MicroService.Atributes.LwxStage." + tmp);
                 }
             }
@@ -234,21 +233,6 @@ public class Generator : IIncrementalGenerator
 
         var hasSwagger = swaggerAttr != null && publishLiteral != "Lwx.Builders.MicroService.Atributes.LwxStage.None";
 
-        // Escape values that will be embedded into generated C# string literals.
-        static string EscapeForCSharp(string s)
-        {
-            if (s == null) return string.Empty;
-            return s
-                .Replace("\\", "\\\\")
-                .Replace("\"", "\\\"")
-                .Replace("\r\n", "\\n")
-                .Replace("\r", "\\n")
-                .Replace("\n", "\\n");
-        }
-
-        var escTitle = EscapeForCSharp(title);
-        var escDescription = EscapeForCSharp(description);
-        var escVersion = EscapeForCSharp(version);
         string swaggerServicesCode;
 
         var srcEnvContition = 
@@ -268,11 +252,11 @@ public class Generator : IIncrementalGenerator
                 {
                     builder.Services.AddSwaggerGen(options =>
                     {
-                        options.SwaggerDoc("{{escVersion}}", new Microsoft.OpenApi.Models.OpenApiInfo
-                        {
-                            Title = "{{escTitle}}",
-                            Description = "{{escDescription}}",
-                            Version = "{{escVersion}}"
+                        options.SwaggerDoc("{{Util.EscapeForCSharp(version)}}", new Microsoft.OpenApi.Models.OpenApiInfo
+                        { 
+                            Title = "{{Util.EscapeForCSharp(title)}}",
+                            Description = "{{Util.EscapeForCSharp(description)}}",
+                            Version = "{{Util.EscapeForCSharp(version)}}"
                         });
                     });
                 }
@@ -293,7 +277,7 @@ public class Generator : IIncrementalGenerator
                     app.UseSwagger();
                     app.UseSwaggerUI(options =>
                     {
-                        options.DocumentTitle = "{{escTitle}}";
+                        options.DocumentTitle = "{{Util.EscapeForCSharp(title)}}";
                     });
                 }
                 """;
@@ -521,38 +505,3 @@ public class Generator : IIncrementalGenerator
     }
 }
 
-// Helper extension to fix indentation when embedding generated multi-line text
-internal static class LwxGeneratedStringExtensions
-{
-    public static string FixIndent(this StringBuilder source, int indentLevels)
-    {
-        if (source == null) return string.Empty;
-        return source.ToString().FixIndent(indentLevels);
-    }
-
-    /// <summary>
-    /// Fix the indentation of a multi-line snippet. The parameter <paramref name="indentLevels"/>
-    /// is treated as indentation levels and expanded to spaces using 4 spaces per level.
-    /// For example, FixIndent(1) prefixes each non-empty line with 4 spaces.
-    /// </summary>
-    public static string FixIndent(this string source, int indentLevels)
-    {
-        if (string.IsNullOrEmpty(source)) return source;
-        if (indentLevels <= 0) return source;
-        // Treat indentLevels as the number of indentation units (4 spaces each)
-        var spacesPerLevel = 4;
-        var indent = indentLevels * spacesPerLevel;
-        var indentStr = new string(' ', indent);
-        // Normalize line endings to \n for predictable behavior
-        var normalized = source.Replace("\r\n", "\n").Replace("\r", "\n");
-        var lines = normalized.Split('\n');
-        for (int i = 0; i < lines.Length; i++)
-        {
-            if (!string.IsNullOrEmpty(lines[i]))
-            {
-                lines[i] = indentStr + lines[i];
-            }
-        }
-        return string.Join("\n", lines);
-    }
-}

@@ -43,34 +43,33 @@ internal class LwxServiceConfigTypeProcessor(
         var name = GeneratorHelpers.SafeIdentifier(attr.TargetSymbol.Name);
         var ns = attr.TargetSymbol.ContainingNamespace?.ToDisplayString() ?? "Generated";
 
-        string title = null;
-        string description = null;
-        string version = null;
+        string? title = null;
+        string? description = null;
+        string? version = null;
         string publishLiteral = "Lwx.Builders.MicroService.Atributes.LwxStage.None";
         bool generateMain = false;
 
         if (attr.AttributeData != null)
         {
-            var m1 = attr.AttributeData.NamedArguments.FirstOrDefault(kv => kv.Key == "Title");
-            if (!m1.Equals(default(KeyValuePair<string, TypedConstant>)) && m1.Value.Value is string s1)
+            var named = attr.AttributeData.ToNamedArgumentMap();
+            if (named.TryGetValue("Title", out var t) && t.Value is string s1)
             {
                 title = s1;
             }
-            var m2 = attr.AttributeData.NamedArguments.FirstOrDefault(kv => kv.Key == "Description");
-            if (!m2.Equals(default(KeyValuePair<string, TypedConstant>)) && m2.Value.Value is string s2)
+
+            if (named.TryGetValue("Description", out var d) && d.Value is string s2)
             {
                 description = s2;
             }
-            var m3 = attr.AttributeData.NamedArguments.FirstOrDefault(kv => kv.Key == "Version");
-            if (!m3.Equals(default(KeyValuePair<string, TypedConstant>)) && m3.Value.Value is string s3)
+
+            if (named.TryGetValue("Version", out var v) && v.Value is string s3)
             {
                 version = s3;
             }
 
-            var m4 = attr.AttributeData.NamedArguments.FirstOrDefault(kv => kv.Key == "PublishSwagger");
-            if (!m4.Equals(default(KeyValuePair<string, TypedConstant>)) && m4.Value.Value != null)
+            if (named.TryGetValue("PublishSwagger", out var p) && p.Value != null)
             {
-                var raw = m4.Value.Value;
+                var raw = p.Value;
                 if (raw is int iv)
                 {
                     publishLiteral = iv switch
@@ -82,13 +81,12 @@ internal class LwxServiceConfigTypeProcessor(
                 }
                 else
                 {
-                    var tmp = m4.Value.Value.ToString() ?? "Lwx.Builders.MicroService.Atributes.LwxStage.None";
+                    var tmp = raw.ToString() ?? "Lwx.Builders.MicroService.Atributes.LwxStage.None";
                     publishLiteral = tmp.Contains('.') ? tmp : ("Lwx.Builders.MicroService.Atributes.LwxStage." + tmp);
                 }
             }
 
-            var m5 = attr.AttributeData.NamedArguments.FirstOrDefault(kv => kv.Key == "GenerateMain");
-            if (!m5.Equals(default(KeyValuePair<string, TypedConstant>)) && m5.Value.Value is bool b)
+            if (named.TryGetValue("GenerateMain", out var gm) && gm.Value is bool b)
             {
                 generateMain = b;
             }

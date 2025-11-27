@@ -1,4 +1,6 @@
+#nullable enable
 using System;
+using System.Collections.Generic;
 #nullable enable
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -48,7 +50,7 @@ internal static class GeneratorHelpers
 {
     private static readonly Regex _sanitizer = new("[^a-zA-Z0-9_]+", RegexOptions.Compiled);
 
-    internal static string SafeIdentifier(string value)
+    internal static string SafeIdentifier(string? value)
         => string.IsNullOrEmpty(value) ? "_" : _sanitizer.Replace(value, "_");
 
     internal static string PascalSafe(string value)
@@ -91,6 +93,13 @@ internal static class GeneratorHelpers
                 "Ensure the file paths and LogicalName in the project file match the internal names."
             );
         }
+    }
+
+    internal static IReadOnlyDictionary<string, TypedConstant> ToNamedArgumentMap(this AttributeData? attributeData)
+    {
+        if (attributeData == null) return new Dictionary<string, TypedConstant>(StringComparer.Ordinal);
+        // Convert the ImmutableArray<KeyValuePair<string, TypedConstant>> into a dictionary for easy lookup
+        return attributeData.NamedArguments.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.Ordinal);
     }
 
     internal static void ValidateFilePathMatchesNamespace(ISymbol symbol, SourceProductionContext ctx)
