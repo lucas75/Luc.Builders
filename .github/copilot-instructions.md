@@ -14,6 +14,28 @@
 - Changes in doc (.md files) doesn't require compile and test.
 - When you find something difficult, ask the operator for clarification.
 
+Source generation style guidelines
+-----------------------------------
+When building multi-line code snippets for source generators:
+1. Use raw interpolated string literals in block format:
+   ```csharp
+   srcBuilder.Append($$"""
+       {{variable}}.MethodCall();
+       
+       """);
+   ```
+2. Generate snippets WITHOUT embedded indentation (no leading spaces inside the raw string).
+3. Apply indentation at template inclusion time using `.FixIndent(levels)` where `levels` is the number of indentation levels (4 spaces per level):
+   ```csharp
+   var source = $$"""
+      namespace {{ns}}
+      {
+         {{srcBuilder.FixIndent(1)}} // 1 level == 4 spaces
+      }
+      """;
+   ```
+4. The `FixIndent` extension normalizes line endings and prefixes non-empty lines with the specified indentation (levels * 4 spaces).
+
 AI agent verification checklist
 ------------------------------
 1. Environment & SDK check
