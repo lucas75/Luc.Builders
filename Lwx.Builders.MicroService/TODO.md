@@ -18,6 +18,8 @@ This TODO collects short-term work items and follow-ups for the Lwx source gener
 
  - Add support for a dedicated microservice descriptor attribute `LwxServiceConfig` (ServiceConfig.cs).
  - Update generator to prefer `LwxServiceConfig` and use it for swagger/service configuration generation.
+
+ - Ensure all generators in the workspace adopt the canonical raw-template style (use $$""" templates with no embedded indentation and apply `.FixIndent(levels)` at inclusion). Add `FixIndent` helpers in generator projects where missing and update AGENTS.md/TODO.md to match the global policy.
  - Add support for a dedicated microservice descriptor attribute `LwxServiceConfig` (ServiceConfig.cs).
  - Update generator to prefer `LwxServiceConfig` and use it for swagger/service configuration generation.
 

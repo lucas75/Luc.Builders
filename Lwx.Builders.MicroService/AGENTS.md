@@ -82,6 +82,7 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
 
 ### Source Generation
 - Raw string literals ($$"""...""") for generated code
+  - Follow global policy: all generators must use raw $$""" templates with no embedded leading indentation, and apply `.FixIndent(levels)` when composing templates. See `/.github/copilot-instructions.md` for the canonical rules. If this file previously suggested a different approach, it was intentionally replaced to follow the global guidance.
 - File naming patterns: `LwxEndpoint_{name}.g.cs`, `LwxEndpoint_{name}.Configure.g.cs`
 - Namespace computation: Strip ".Endpoints" suffixes for root namespaces
 - Diagnostic reporting with custom descriptors and location info

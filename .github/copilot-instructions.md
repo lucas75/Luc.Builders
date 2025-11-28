@@ -14,7 +14,7 @@
 - Changes in doc (.md files) doesn't require compile and test.
 - When you find something difficult, ask the operator for clarification.
 
-Source generation style guidelines
+Source generation style guidelines (required)
 -----------------------------------
 When building multi-line code snippets for source generators:
 1. Use raw interpolated string literals in block format:
@@ -24,8 +24,8 @@ When building multi-line code snippets for source generators:
        
        """);
    ```
-2. Generate snippets WITHOUT embedded indentation (no leading spaces inside the raw string).
-3. Apply indentation at template inclusion time using `.FixIndent(levels)` where `levels` is the number of indentation levels (4 spaces per level):
+2. Generate snippets WITHOUT embedded indentation (no leading spaces inside the raw string). This is required for consistency and to avoid fragile leading whitespace in generated artifacts.
+3. Apply indentation at template inclusion time using `.FixIndent(levels)` where `levels` is the number of indentation levels (4 spaces per level). Each generator project must provide or reuse a `FixIndent` helper (string/StringBuilder ext.) so templates can be composed consistently.
    ```csharp
    var source = $$"""
       namespace {{ns}}
@@ -35,6 +35,18 @@ When building multi-line code snippets for source generators:
       """;
    ```
 4. The `FixIndent` extension normalizes line endings and prefixes non-empty lines with the specified indentation (levels * 4 spaces).
+
+Important enforcement and local project guidance
+-----------------------------------------------
+- This repository's canonical policy is the section above. All generators across the workspace MUST follow this template style.
+- If a project's `AGENTS.md` or `TODO.md` suggests an alternative approach to embedding multi-line generated source, update that file to match this policy or remove contradictory guidance so the project falls back to this global instruction.
+- When you add or update a generator, ensure:
+   - You use $$""" raw interpolated templates for blocks of generated source.
+   - Snippets inside templates are not indented (no leading whitespace) — use `.FixIndent()` on the final inclusion site.
+   - You add or reuse a `FixIndent` helper in the generator project (string/StringBuilder extension) if one doesn't already exist.
+   - Avoid manual string concatenation for multi-line blocks — raw templates are clearer and safer.
+
+If uncertain, prefer the global policy in this file and update local AGENTS.md/TODO.md to match.
 
 AI agent verification checklist
 ------------------------------

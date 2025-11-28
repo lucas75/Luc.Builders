@@ -77,6 +77,14 @@ dotnet build Lwx.Builders.Dto.Tests/SampleProjects/<ProjectName> -v:m
    - Avoid adding reflection or build-time logic into runtime tests. If a test needs to examine generated code or diagnostics, put it in `StructuralTests.cs` or `CompileErrorTests.cs` and follow the sample-projects approach.
    - When adding new tests or DTOs, follow the established small, readable coding style used in the repo and keep methods short.
 
+   Generator template policy
+   -------------------------
+   - When writing or updating generators in this workspace, use the canonical generator template style defined in `/.github/copilot-instructions.md`:
+      - Use $$""" raw interpolated templates for multi-line generated code
+      - Do not embed leading indentation inside templates; apply `.FixIndent(levels)` at inclusion sites
+      - Add or reuse a `FixIndent` helper in the generator project if missing
+      - If this file or tests suggested a different template approach, it was superseded by the canonical policy in the repo root and should be updated accordingly.
+
 8. Documentation & changelog
    - Update this `AGENTS.md` file with a short history of large changes and why they were made.
    - If a change requires broader project knowledge (e.g., cross-repository), leave a short note for maintainers and a link to the relevant discussion/issue.
