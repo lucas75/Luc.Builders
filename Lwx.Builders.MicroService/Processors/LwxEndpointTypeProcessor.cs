@@ -281,10 +281,9 @@ internal class LwxEndpointTypeProcessor(
 
     private void GenerateSourceFiles(string name, string ns, string rootNs, string endpointClassName, string? optionalFirstSegment, string? uriArg, string? securityProfile, string? summary, string? description, string? publishLiteral)
     {
-        // NOTE: prior versions generated a separate marker class and endpoints file.
-        // Those outputs were consolidated into a single LwxEndpoint_{name}.g.cs file
-        // (created below). The old "source" and "endpointsNsSource" templates are
-        // kept out to avoid producing the redundant marker artifacts.
+        // NOTE: prior versions generated separate placeholder/marker classes and
+        // additional endpoint files. We now emit a single generated file per endpoint
+        // that matches the endpoint class naming rules (for example: EndpointAbcCde.g.cs).
 
         // Generate a mapping extension method in the consumer namespace. This produces iterative
         // minimal-API mapping calls (e.g., app.MapGet / app.MapPost) and applies simple stage
@@ -299,7 +298,6 @@ internal class LwxEndpointTypeProcessor(
             }
         }
 
-        var mapMethodName = $"MapLwxEndpoints_{GeneratorHelpers.SafeIdentifier(name)}";
         var pathPart = string.IsNullOrEmpty(uriArg) ? string.Empty : (uriArg.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length > 1 ? uriArg.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)[1] : uriArg.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)[0]);
         var mapMethod = httpVerb switch
         {
@@ -316,16 +314,8 @@ internal class LwxEndpointTypeProcessor(
         var nestedNs = !string.IsNullOrEmpty(optionalFirstSegment) && targetNs.IndexOf($".Endpoints.{optionalFirstSegment}", StringComparison.OrdinalIgnoreCase) >= 0
             ? optionalFirstSegment : null;
 
-        // Use the actual declared type (safe and correct) for mapping. In most cases this equals
-        // the generated endpoint class name, but when a naming exception is used the declared type
-        // will be different — so prefer the actual declared type symbol.
-        // The mapping uses the local Execute method (declared in the same partial class),
-        // so we don't need to generate handler-qualified names anymore.
-        var endpointQName = !string.IsNullOrEmpty(nestedNs)
-            ? $"global::{rootNs}.Endpoints.{GeneratorHelpers.SafeIdentifier(optionalFirstSegment)}.{GeneratorHelpers.PascalSafe(endpointClassName)}"
-            : $"global::{rootNs}.Endpoints.{GeneratorHelpers.PascalSafe(endpointClassName)}";
-
-        // configureSource is not used when consolidating output into a single file.
+        // No longer generate separate placeholder or mapping files — this method emits a
+        // single generated file per endpoint containing the `Configure(WebApplication app)` helper.
 
         // Compute a short publish token for human-readable comment output.
         var shortPublish = publishLiteral != null && publishLiteral.Contains('.')
@@ -346,9 +336,7 @@ internal class LwxEndpointTypeProcessor(
         var usingsBlock = string.Join("\n", headerUsings.Select(u => $"using {u};"));
 
         // Decide where the endpoint class should live (rootNs.Endpoints or nested sub-namespace)
-        var endpointNamespace = string.IsNullOrEmpty(nestedNs)
-            ? $"{rootNs}.Endpoints"
-            : $"{rootNs}.Endpoints.{GeneratorHelpers.SafeIdentifier(nestedNs)}";
+        // (kept as informative metadata only — the generated class is placed in `ns` below)
 
         // Build the Configure method body depending on publish setting.
         string configureMethod;
