@@ -85,6 +85,7 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
 - Raw string literals ($$"""...""") for generated code
   - Follow global policy: all generators must use raw $$""" templates with no embedded leading indentation, and apply `.FixIndent(levels)` when composing templates. See `/.github/copilot-instructions.md` for the canonical rules. If this file previously suggested a different approach, it was intentionally replaced to follow the global guidance.
  - File naming patterns: by default `Endpoint<TypeName>.g.cs` (for example `EndpointAbcCde.g.cs`); when a `NamingExceptionJustification` is present the generator will include the full namespace in the filename to disambiguate (for example `ExampleOrg.Product.ServiceAbc.Endpoints.EndpointOldStart.g.cs`).
+ - Use file-scoped namespaces in generated files when possible (e.g. `namespace ExampleOrg.Product.ServiceAbc.Endpoints;`) to reduce indentation and produce cleaner output.
 - Namespace computation: Strip ".Endpoints" suffixes for root namespaces
 - Diagnostic reporting with custom descriptors and location info
 

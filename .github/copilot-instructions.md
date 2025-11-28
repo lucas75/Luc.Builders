@@ -36,6 +36,9 @@ When building multi-line code snippets for source generators:
    ```
 4. The `FixIndent` extension normalizes line endings and prefixes non-empty lines with the specified indentation (levels * 4 spaces).
 
+5. Use file-scoped namespaces in generated files where possible (C# 10+ style):
+   - Emit `namespace {{ns}};` at the top of generated files instead of block-style `namespace {{ns}} { ... }` when the generated file's content does not require nested scope. This produces cleaner output and avoids extra indentation.
+
 Important enforcement and local project guidance
 -----------------------------------------------
 - This repository's canonical policy is the section above. All generators across the workspace MUST follow this template style.
@@ -47,6 +50,13 @@ Important enforcement and local project guidance
    - Avoid manual string concatenation for multi-line blocks — raw templates are clearer and safer.
 
 If uncertain, prefer the global policy in this file and update local AGENTS.md/TODO.md to match.
+
+Generator output naming conventions (recommended)
+-----------------------------------------------
+- Prefer generated file names that match the primary type being generated to make it easier to map artifacts back to source types and avoid collisions. Example:
+   - Endpoint generators should emit `Endpoint{TypeName}.g.cs` for normal endpoints.
+   - If an attribute includes a naming exception/justification (e.g., `NamingExceptionJustification`) and the declared type name might collide, consider emitting a namespace-qualified file name `{{FullNamespace}}.{{TypeName}}.g.cs` to disambiguate.
+- Avoid emitting additional marker classes or duplicate placeholder types unless they serve a specific compatibility purpose.
 
 AI agent verification checklist
 ------------------------------

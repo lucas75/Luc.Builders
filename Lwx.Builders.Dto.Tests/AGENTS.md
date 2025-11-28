@@ -84,6 +84,7 @@ dotnet build Lwx.Builders.Dto.Tests/SampleProjects/<ProjectName> -v:m
       - Do not embed leading indentation inside templates; apply `.FixIndent(levels)` at inclusion sites
       - Add or reuse a `FixIndent` helper in the generator project if missing
       - If this file or tests suggested a different template approach, it was superseded by the canonical policy in the repo root and should be updated accordingly.
+      - Prefer file-scoped namespaces in generated files (C# 10+ style) — e.g. `namespace {{ns}};` — to reduce nesting and trailing braces in generated sources.
 
 8. Documentation & changelog
    - Update this `AGENTS.md` file with a short history of large changes and why they were made.
