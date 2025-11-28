@@ -390,11 +390,6 @@ internal class LwxEndpointTypeProcessor(
                     public static void Configure(WebApplication app)
                     {
                         // Publish={{shortPublish}}
-                        var endpoint = {{(mapMethod == "MapMethods" ? "app.MapMethods(\"" + (pathPart ?? string.Empty) + "\", new[] { \"" + httpVerb + "\" }, Execute)" : "app." + mapMethod + "(\"" + (pathPart ?? string.Empty) + "\", Execute)")}};
-                        endpoint = endpoint.WithName("{{endpointClassName}}");
-                        {{(securityProfile is not null ? "endpoint.RequireAuthorization(\"" + securityProfile + "\");" : string.Empty)}}
-                        {{(summary is not null ? "endpoint.WithDisplayName(\"" + summary + "\");" : string.Empty)}}
-                        endpoint = endpoint.WithMetadata(new LwxEndpointMetadata());
                     }
                 }
             }
