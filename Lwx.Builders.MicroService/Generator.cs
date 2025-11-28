@@ -306,7 +306,7 @@ public class Generator : IIncrementalGenerator
                     /// <param name="builder">The web application builder.</param>
                     public static void LwxConfigure(this WebApplicationBuilder builder)
                     {
-                        {{swaggerServicesCode.FixIndent(6)}}
+                        {{swaggerServicesCode.FixIndent(3,indentFirstLine: false)}}
                     }
 
                     /// <summary>
@@ -315,7 +315,7 @@ public class Generator : IIncrementalGenerator
                     /// <param name="app">The web application instance.</param>
                     public static void LwxConfigure(this WebApplication app)
                     {
-                        {{swaggerAppCode.FixIndent(6)}}
+                        {{swaggerAppCode.FixIndent(3,indentFirstLine: false)}}
 
                         var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
                         lifetime.ApplicationStarted.Register(() =>

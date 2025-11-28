@@ -34,10 +34,10 @@ internal static class Util
 // Helper extension to fix indentation when embedding generated multi-line text
 internal static class LwxGeneratedStringExtensions
 {
-    public static string FixIndent(this StringBuilder source, int indentLevels)
+    public static string FixIndent(this StringBuilder source, int indentLevels, bool indentFirstLine = true)
     {
         if (source == null) return string.Empty;
-        return source.ToString().FixIndent(indentLevels);
+        return source.ToString().FixIndent(indentLevels, indentFirstLine);
     }
 
     /// <summary>
@@ -45,7 +45,7 @@ internal static class LwxGeneratedStringExtensions
     /// is treated as indentation levels and expanded to spaces using 4 spaces per level.
     /// For example, FixIndent(1) prefixes each non-empty line with 4 spaces.
     /// </summary>
-    public static string FixIndent(this string source, int indentLevels)
+    public static string FixIndent(this string source, int indentLevels, bool indentFirstLine = true)
     {
         if (string.IsNullOrEmpty(source)) return source;
         if (indentLevels <= 0) return source;
@@ -60,6 +60,10 @@ internal static class LwxGeneratedStringExtensions
         {
             if (!string.IsNullOrEmpty(lines[i]))
             {
+                if (i == 0 && !indentFirstLine)
+                {
+                    continue;
+                }
                 lines[i] = indentStr + lines[i];
             }
         }
