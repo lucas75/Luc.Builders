@@ -9,7 +9,7 @@ namespace Lwx.Builders.MicroService.Processors;
 internal class LwxEndpointTypeProcessor(
     FoundAttribute attr,
     SourceProductionContext ctx,
-    Compilation _
+    Compilation compilation
 )
 {
     public void Execute()
@@ -337,7 +337,29 @@ internal class LwxEndpointTypeProcessor(
         // Use the actual declared type (safe and correct) for mapping. In most cases this equals
         // the generated endpoint class name, but when a naming exception is used the declared type
         // will be different — so prefer the actual declared type symbol.
-        var declaredHandlerQName = $"global::{attr.TargetSymbol.ToDisplayString()}";
+        // Prefer unqualified names when the handler belongs to the same assembly
+        var targetAssemblyName = attr.TargetSymbol.ContainingAssembly?.Name;
+        var useShortNames = !string.IsNullOrEmpty(targetAssemblyName) && !string.IsNullOrEmpty(compilation.AssemblyName) && string.Equals(targetAssemblyName, compilation.AssemblyName, StringComparison.Ordinal);
+
+        string declaredHandlerQName;
+        if (useShortNames)
+        {
+            // Remove the root namespace prefix (rootNs) so the handler can be referenced as
+            // Endpoints.SubNamespace.TypeName when we add `using {rootNs};` at the top of the file.
+            var full = attr.TargetSymbol.ToDisplayString();
+            if (!string.IsNullOrEmpty(rootNs) && full.StartsWith(rootNs + ".", StringComparison.Ordinal))
+            {
+                declaredHandlerQName = full.Substring(rootNs.Length + 1);
+            }
+            else
+            {
+                declaredHandlerQName = full;
+            }
+        }
+        else
+        {
+            declaredHandlerQName = $"global::{attr.TargetSymbol.ToDisplayString()}";
+        }
         var endpointQName = !string.IsNullOrEmpty(nestedNs)
             ? $"global::{rootNs}.Endpoints.{GeneratorHelpers.SafeIdentifier(optionalFirstSegment)}.{GeneratorHelpers.PascalSafe(endpointClassName)}"
             : $"global::{rootNs}.Endpoints.{GeneratorHelpers.PascalSafe(endpointClassName)}";
@@ -359,6 +381,7 @@ internal class LwxEndpointTypeProcessor(
             using Microsoft.AspNetCore.Authorization;
             using Microsoft.Extensions.Hosting;
             using Lwx.Builders.MicroService.Atributes;
+            {{(useShortNames ? $"using {rootNs};" : string.Empty)}}
 
             namespace {{ns}}
             {
@@ -391,6 +414,7 @@ internal class LwxEndpointTypeProcessor(
             using Microsoft.AspNetCore.Authorization;
             using Microsoft.Extensions.Hosting;
             using Lwx.Builders.MicroService.Atributes;
+            {{(useShortNames ? $"using {rootNs};" : string.Empty)}}
 
             namespace {{ns}}
             {
