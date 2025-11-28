@@ -120,7 +120,7 @@ Endpoints
 
 5.  Generated mapping behaviour
 
-    - For each valid endpoint the generator MUST emit a consumer-side mapping helper file named `LwxEndpoint_<TypeName>.Configure.g.cs` containing a method `Configure(WebApplication app)` that:
+    - For each valid endpoint the generator MUST emit a consumer-side mapping helper file containing a method `Configure(WebApplication app)` in a generated file named to match the endpoint type. By default the generator emits `Endpoint<TypeName>.g.cs` files (for example `EndpointAbcCde.g.cs`). If a `NamingExceptionJustification` is present the generator will include the full namespace in the filename to avoid collisions (for example `ExampleOrg.Product.ServiceAbc.Endpoints.EndpointOldStart.g.cs`).
 
         - Chooses the correct `Map*` method based on the HTTP verb present in the `Uri` (GET→MapGet, POST→MapPost, PUT→MapPut, DELETE→MapDelete, PATCH→MapMethods).
         - Applies stage gating using `Publish` (e.g., Development/Production/None) so endpoints only map in allowed runtime environments.
@@ -128,7 +128,7 @@ Endpoints
         - Applies `WithDisplayName` when `Summary` is supplied.
         - Adds a `LwxEndpointMetadata` instance so runtime code can identify generated endpoints.
 
-6.  The generator also emits lightweight canonical placeholder types under the root project's `.Endpoints` namespace so other code can take a stable dependency on the generated canonical types. Filenames follow `LwxEndpoint_<TypeName>*.g.cs`.
+6.  The generator also emits lightweight canonical placeholder types under the root project's `.Endpoints` namespace so other code can take a stable dependency on the generated canonical types. Generated files match the endpoint class naming rules described above.
 
 Attribute Reference (Endpoints)
 ------------------------------
@@ -169,7 +169,7 @@ Generated Sources and Developer Ergonomics
 
 2.  When `GenerateMain = true` the generator will create a companion file `ServiceConfig.Main.g.cs` containing a partial `ServiceConfig` type with a `Main` method in the same namespace as the declared `ServiceConfig` symbol. The presence of `ServiceConfig.Main.g.cs` MAY be surfaced as an informational diagnostic (`LWX016`) that includes the generated source text.
 
-3.  Endpoint generated files follow the `LwxEndpoint_<TypeName>*.g.cs` convention and include both placeholder types (for stable type references) and `Configure` helpers in the consuming namespace to perform the `app.Map*` wiring.
+3.  Endpoint generated files follow the naming convention described above and include both placeholder types (for stable type references) and `Configure` helpers in the consuming namespace to perform the `app.Map*` wiring.
 
 Testing and CI guidance
 =======================
