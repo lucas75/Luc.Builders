@@ -334,10 +334,10 @@ internal class LwxEndpointTypeProcessor(
         if (publishLiteral != null && publishLiteral.EndsWith(".None", StringComparison.Ordinal))
         {
             configureMethod = $$"""
-                    public static void Configure(WebApplication app)
-                    {
-                        // Publish={{shortPublish}}
-                    }
+                public static void Configure(WebApplication app)
+                {
+                    // Publish={{shortPublish}}
+                }
                 """;
         }
         else

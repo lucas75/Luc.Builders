@@ -69,14 +69,13 @@ namespace Lwx.Builders.Dto.Processors
                 #nullable enable
                 using System.Text.Json.Serialization;
 
-                namespace {{ns}}
+                namespace {{ns}};
+
+                public partial class {{className}}
                 {
-                    public partial class {{className}}
-                    {
-                {{backingFields.FixIndent(2)}}
-                {{dictionaryField.FixIndent(2)}}
-                {{string.Join("\n\n", generatedProperties).FixIndent(2)}}
-                    }
+                {{backingFields.FixIndent(1)}}
+                {{dictionaryField.FixIndent(1)}}
+                {{string.Join("\n\n", generatedProperties).FixIndent(1)}}
                 }
                 """;
 
