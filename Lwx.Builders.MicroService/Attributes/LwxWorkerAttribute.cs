@@ -31,5 +31,31 @@ namespace Lwx.Builders.MicroService.Atributes
         /// Initializes a new instance of the <see cref="LwxWorkerAttribute"/> class.
         /// </summary>
         public LwxWorkerAttribute() { }
+
+        /// <summary>
+        /// Optional: a human-friendly name for the worker. Defaults to the class name when not provided.
+        /// </summary>
+        public string Name { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Optional: description for the worker. Helpful for documentation or configuration samples.
+        /// </summary>
+        public string Description { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Optional: number of threads / instances desired for the worker. Defaults to 2.
+        /// </summary>
+        public int Threads { get; set; } = 2;
+
+        /// <summary>
+        /// Health policy for the worker — controls how the platform treats worker failures.
+        /// </summary>
+        public LwxWorkerPolicy Policy { get; set; } = LwxWorkerPolicy.AlwaysHealthy;
+
+        /// <summary>
+        /// The stage in which this worker should run (Development/Production/None).
+        /// Defaults to None (disabled) so projects must explicitly opt-in.
+        /// </summary>
+        public LwxStage Stage { get; set; } = LwxStage.None;
     }
 }

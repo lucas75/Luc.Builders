@@ -19,5 +19,26 @@ internal class LwxWorkerPostInitializationProcessor(
           "Attributes/LwxWorkerAttribute.cs",
           "LwxWorkerAttribute.g.cs"
         );
+
+        // Also embed the worker policy enum so consuming projects receive the full contract
+        GeneratorHelpers.AddEmbeddedSource(
+          ctx,
+          "Attributes/LwxWorkerPolicy.cs",
+          "LwxWorkerPolicy.g.cs"
+        );
+
+        // Embed FromConfig attribute so consumers can annotate parameters
+        GeneratorHelpers.AddEmbeddedSource(
+          ctx,
+          "Attributes/FromConfigAttribute.cs",
+          "FromConfigAttribute.g.cs"
+        );
+
+        // Expose a worker descriptor type to consumer projects used for health/metadata
+        GeneratorHelpers.AddEmbeddedSource(
+          ctx,
+          "Attributes/LwxWorkerDescriptor.cs",
+          "LwxWorkerDescriptor.g.cs"
+        );
     }
 }
