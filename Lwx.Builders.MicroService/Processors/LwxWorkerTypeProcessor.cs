@@ -8,10 +8,11 @@ using Lwx.Builders.MicroService;
 namespace Lwx.Builders.MicroService.Processors;
 
 internal class LwxWorkerTypeProcessor(
-    FoundAttribute attr,
+    Generator parent,
+    Compilation compilation,
     SourceProductionContext ctx,
-    Compilation _
-)
+    FoundAttribute attr
+    )
 {
     public void Execute()
     {
@@ -228,5 +229,8 @@ internal class LwxWorkerTypeProcessor(
         """;
 
         GeneratorHelpers.AddGeneratedFile(ctx, $"LwxWorker_{name}.g.cs", source);
+
+        // Register worker type with parent list so ServiceConfig can generate Main wiring
+        parent.WorkerNames.Add(GeneratorHelpers.ExtractRelativeTypeName(attr.TargetSymbol, compilation));
     }
 }

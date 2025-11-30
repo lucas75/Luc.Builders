@@ -8,9 +8,10 @@ using Lwx.Builders.MicroService;
 namespace Lwx.Builders.MicroService.Processors;
 
 internal class LwxEndpointTypeProcessor(
-    FoundAttribute attr,
+    Generator parent,
+    Compilation compilation,
     SourceProductionContext ctx,
-    Compilation compilation
+    FoundAttribute attr
 )
 {
     public void Execute()
@@ -33,6 +34,9 @@ internal class LwxEndpointTypeProcessor(
         var (securityProfile, summary, description, publishLiteral) = ExtractAttributeMetadata();
 
         GenerateSourceFiles(name, ns, rootNs, endpointClassName, optionalFirstSegment, uriArg, securityProfile, summary, description, publishLiteral);
+
+        // Register endpoint type on parent so ServiceConfig has the list of endpoints for Main generation
+        parent.EndpointNames.Add(GeneratorHelpers.ExtractRelativeTypeName(attr.TargetSymbol, compilation));
     }
 
     private string? ExtractUriArgument()

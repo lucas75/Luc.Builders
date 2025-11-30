@@ -9,10 +9,10 @@ using Lwx.Builders.MicroService;
 namespace Lwx.Builders.MicroService.Processors;
 
 internal class LwxServiceConfigTypeProcessor(
-    FoundAttribute attr,
-    SourceProductionContext ctx,
+    Generator parent,
     Compilation compilation,
-    Generator parent
+    SourceProductionContext ctx,
+    FoundAttribute attr
 )
 {
     public void Execute()

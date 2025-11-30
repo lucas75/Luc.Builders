@@ -4,9 +4,10 @@ using Lwx.Builders.MicroService;
 namespace Lwx.Builders.MicroService.Processors;
 
 internal class LwxServiceBusConsumerTypeProcessor(
-    FoundAttribute attr,
+    Generator parent,
+    Compilation compilation,
     SourceProductionContext ctx,
-    Compilation _
+    FoundAttribute attr
 )
 {
     public void Execute()

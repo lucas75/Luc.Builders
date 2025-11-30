@@ -8,43 +8,41 @@ namespace Lwx.Builders.MicroService.Processors;
 internal sealed class RootProcessor
 (
   Generator parent, 
-  FoundAttribute foundAttribute, 
+  FoundAttribute attr, 
   SourceProductionContext ctx, 
   Compilation compilation
 )
 {
   public void Execute()
   {    
-    switch (foundAttribute.AttributeName)
+    switch (attr.AttributeName)
     {
       case LwxConstants.LwxEndpoint:
-        new LwxEndpointTypeProcessor(foundAttribute, ctx, compilation).Execute();
-        parent.EndpointNames.Add(GeneratorHelpers.ExtractRelativeTypeName(foundAttribute.TargetSymbol, compilation));
+        new LwxEndpointTypeProcessor(parent, compilation, ctx, attr).Execute();
         break;
 
       case LwxConstants.LwxWorker:
-        new LwxWorkerTypeProcessor(foundAttribute, ctx, compilation).Execute();
-        parent.WorkerNames.Add(GeneratorHelpers.ExtractRelativeTypeName(foundAttribute.TargetSymbol, compilation));
+        new LwxWorkerTypeProcessor(parent, compilation, ctx, attr).Execute();
         break;
 
       case LwxConstants.LwxServiceBusConsumer:
-        new LwxServiceBusConsumerTypeProcessor(foundAttribute, ctx, compilation).Execute();
+        new LwxServiceBusConsumerTypeProcessor(parent, compilation, ctx, attr).Execute();
         break;
 
       case LwxConstants.LwxEventHubConsumer:
-        new LwxEventHubConsumerTypeProcessor(foundAttribute, ctx, compilation).Execute();
+        new LwxEventHubConsumerTypeProcessor(parent, compilation, ctx, attr).Execute();
         break;
 
       case LwxConstants.LwxTimer:
-        new LwxTimerTypeProcessor(foundAttribute, ctx, compilation).Execute();
+        new LwxTimerTypeProcessor(parent, compilation, ctx, attr).Execute();
         break;
 
       case LwxConstants.LwxServiceBusProducer:
-        new LwxServiceBusProducerTypeProcessor(foundAttribute, ctx, compilation).Execute();
+        new LwxServiceBusProducerTypeProcessor(parent, compilation, ctx, attr).Execute();
         break;
 
       case LwxConstants.LwxServiceConfig:
-        new LwxServiceConfigTypeProcessor(foundAttribute, ctx, compilation, parent).Execute();
+        new LwxServiceConfigTypeProcessor(parent, compilation, ctx, attr).Execute();
         break;
 
       default:
