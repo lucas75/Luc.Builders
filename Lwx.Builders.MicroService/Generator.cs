@@ -8,6 +8,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using Lwx.Builders.MicroService.Processors;
+using System.Security.Cryptography;
 
 namespace Lwx.Builders.MicroService;
 
@@ -43,17 +44,13 @@ public class Generator : IIncrementalGenerator
         // First pass: process all attributes except ServiceConfig
         
         var lsPass001Attrs = attrProvider.Where(x => x != null && x.AttributeName != LwxConstants.LwxServiceConfig).Collect();
-        
+                
         context.RegisterSourceOutput
         (
             context.CompilationProvider.Combine(lsPass001Attrs), 
             (spc, tuple) =>
             {
                 var (compilation, attrs) = tuple;            
-
-                // Reset lists for this compilation run
-                EndpointNames.Clear();
-                WorkerNames.Clear();
 
                 foreach (var attr in attrs)
                 {
@@ -131,10 +128,9 @@ public class Generator : IIncrementalGenerator
     private static bool IsPotentialAttribute(SyntaxNode node)
     {
         if (node is not AttributeSyntax attribute) return false;
-        // Name may be IdentifierName or QualifiedName (e.g. Namespace.LwxEndpoint)
         var name = attribute.Name.ToString();
-        var simple = name.Contains('.') ? name.Substring(name.LastIndexOf('.') + 1) : name;
-        if (simple.EndsWith("Attribute")) simple = simple.Substring(0, simple.Length - "Attribute".Length);
+        var simple = name.Contains('.') ? name[(name.LastIndexOf('.') + 1)..] : name;
+        if (simple.EndsWith("Attribute")) simple = simple[..^"Attribute".Length];
         return LwxConstants.AttributeNames.Contains(simple, StringComparer.Ordinal);
     }
 }
