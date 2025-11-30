@@ -7,6 +7,7 @@ using System.Text;
 namespace Lwx.Builders.MicroService.Processors;
 
 internal class LwxEndpointExtensionsPostInitializationProcessor(
+  Generator parent,
   IncrementalGeneratorPostInitializationContext ctx
 )
 {

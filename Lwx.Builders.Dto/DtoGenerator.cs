@@ -17,7 +17,7 @@ public class DtoGenerator : IIncrementalGenerator
         // Emit attribute sources into consumer projects
         context.RegisterPostInitializationOutput(ctx =>
         {
-            new Processors.LwxDtoPostInitializationProcessor(ctx).Execute();
+            new Processors.LwxDtoPostInitializationProcessor(this, ctx).Execute();
         });
 
         var attrProvider = context.SyntaxProvider
@@ -35,7 +35,7 @@ public class DtoGenerator : IIncrementalGenerator
                 if (f == null) continue;
                 if (f.AttributeName == Processors.LwxConstants.LwxDto)
                 {
-                    new Processors.LwxDtoTypeProcessor(f, spc, compilation).Execute();
+                    new Processors.LwxDtoTypeProcessor(this, compilation, spc, f).Execute();
                 }
             }
         });

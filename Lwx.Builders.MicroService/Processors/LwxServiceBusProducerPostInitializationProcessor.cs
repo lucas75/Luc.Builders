@@ -9,6 +9,7 @@ using System.Linq;
 namespace Lwx.Builders.MicroService.Processors;
 
 internal class LwxServiceBusProducerPostInitializationProcessor(
+  Generator parent,
   IncrementalGeneratorPostInitializationContext ctx
 )
 {

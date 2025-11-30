@@ -9,6 +9,7 @@ using System.Linq;
 namespace Lwx.Builders.MicroService.Processors;
 
 internal class LwxTimerPostInitializationProcessor(
+  Generator parent,
   IncrementalGeneratorPostInitializationContext ctx
 )
 {

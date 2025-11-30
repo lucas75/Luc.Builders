@@ -22,9 +22,11 @@ namespace Lwx.Builders.Dto.Processors
         private FoundAttribute attr;
         private SourceProductionContext ctx;
         private Compilation compilation;
+        private DtoGenerator parent;
 
-        public LwxDtoTypeProcessor(FoundAttribute attr, SourceProductionContext ctx, Compilation compilation)
+        public LwxDtoTypeProcessor(DtoGenerator parent, Compilation compilation, SourceProductionContext ctx, FoundAttribute attr)
         {
+            this.parent = parent;
             this.attr = attr;
             this.ctx = ctx;
             this.compilation = compilation;

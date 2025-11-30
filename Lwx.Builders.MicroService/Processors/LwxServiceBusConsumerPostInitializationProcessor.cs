@@ -9,6 +9,7 @@ using Lwx.Builders.MicroService;
 namespace Lwx.Builders.MicroService.Processors;
 
 internal class LwxServiceBusConsumerPostInitializationProcessor(
+  Generator parent,
   IncrementalGeneratorPostInitializationContext ctx
 )
 {

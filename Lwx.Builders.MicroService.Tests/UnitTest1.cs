@@ -204,6 +204,70 @@ public class UnitTest1
     }
 
     [Fact]
+    public void ServiceConfig_GenerateMain_IncludesEndpointConfigureCalls()
+    {
+        using var dir = new TempProject();
+
+            // ensure generated sources are written to disk
+            var csprojPath = Path.Combine(dir.Path, "TestProj.csproj");
+            var csprojText = File.ReadAllText(csprojPath);
+            if (!csprojText.Contains("<EmitCompilerGeneratedFiles>"))
+            {
+                csprojText = csprojText.Replace("</PropertyGroup>",
+                    "  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>\n  <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>\n</PropertyGroup>");
+                File.WriteAllText(csprojPath, csprojText);
+            }
+
+        // Remove Program.cs so the generator is allowed to produce the main method
+        var prog = Path.Combine(dir.Path, "Program.cs");
+        if (File.Exists(prog)) File.Delete(prog);
+
+        var nsDir = Path.Combine(dir.Path, "TempProject");
+        Directory.CreateDirectory(nsDir);
+
+        // Create an endpoint in TempProject.Endpoints.EndpointTest matching "GET /test"
+        var endpointsDir = Path.Combine(nsDir, "Endpoints");
+        Directory.CreateDirectory(endpointsDir);
+        File.WriteAllText(Path.Combine(endpointsDir, "EndpointTest.cs"),
+            """
+            namespace TempProject.Endpoints;
+            using Lwx.Builders.MicroService.Atributes;
+
+            [LwxEndpoint("GET /test")]
+            public static partial class EndpointTest
+            {
+            }
+            """);
+
+        // Add ServiceConfig that requests GenerateMain
+        File.WriteAllText(Path.Combine(nsDir, "ServiceConfig.cs"),
+            """
+            namespace TempProject;
+            using Lwx.Builders.MicroService.Atributes;
+            using Microsoft.AspNetCore.Builder;
+
+            [LwxServiceConfig(GenerateMain = true)]
+            public static partial class ServiceConfig
+            {
+                public static void Configure(WebApplicationBuilder b) { }
+                public static void Configure(WebApplication a) { }
+            }
+            """);
+
+        var (exit, output) = dir.Build();
+
+        Assert.True(exit == 0, output);
+
+        var genRoot = Directory.EnumerateFiles(dir.Path, "ServiceConfig.Main.g.cs", SearchOption.AllDirectories).FirstOrDefault();
+        Assert.False(string.IsNullOrEmpty(genRoot), "ServiceConfig.Main.g.cs should be emitted to disk");
+
+        var generatedContent = File.ReadAllText(genRoot);
+
+        // Ensure generated main includes endpoint registration call for the generated endpoint configure method
+        Assert.Contains("TempProject.Endpoints.EndpointTest.Configure(app);", generatedContent);
+    }
+
+    [Fact]
     public void Worker_Generate_POCOS_And_ConfigBinding()
     {
         using var dir = new TempProject();

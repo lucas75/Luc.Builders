@@ -9,6 +9,7 @@ using System.Text;
 namespace Lwx.Builders.MicroService.Processors;
 
 internal class LwxEventHubConsumerPostInitializationProcessor(
+  Generator parent,
   IncrementalGeneratorPostInitializationContext ctx
 )
 {

@@ -8,6 +8,7 @@ using System.Text;
 namespace Lwx.Builders.MicroService.Processors;
 
 internal class LwxServiceConfigPostInitializationProcessor(
+  Generator parent,
   IncrementalGeneratorPostInitializationContext ctx
 )
 {

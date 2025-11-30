@@ -24,15 +24,15 @@ public class Generator : IIncrementalGenerator
         // Pass 0: Generate static files
         context.RegisterPostInitializationOutput(ctx =>
         {
-            new Processors.LwxEndpointPostInitializationProcessor(ctx).Execute();
-            new Processors.LwxWorkerPostInitializationProcessor(ctx).Execute();
-            new Processors.LwxServiceBusConsumerPostInitializationProcessor(ctx).Execute();
-            new Processors.LwxEventHubConsumerPostInitializationProcessor(ctx).Execute();
-            new Processors.LwxTimerPostInitializationProcessor(ctx).Execute();
-            new Processors.LwxServiceBusProducerPostInitializationProcessor(ctx).Execute();
-            new Processors.LwxEndpointMetadataPostInitializationProcessor(ctx).Execute();
-            new Processors.LwxEndpointExtensionsPostInitializationProcessor(ctx).Execute();
-            new Processors.LwxServiceConfigPostInitializationProcessor(ctx).Execute();
+            new Processors.LwxEndpointPostInitializationProcessor(this, ctx).Execute();
+            new Processors.LwxWorkerPostInitializationProcessor(this, ctx).Execute();
+            new Processors.LwxServiceBusConsumerPostInitializationProcessor(this, ctx).Execute();
+            new Processors.LwxEventHubConsumerPostInitializationProcessor(this, ctx).Execute();
+            new Processors.LwxTimerPostInitializationProcessor(this, ctx).Execute();
+            new Processors.LwxServiceBusProducerPostInitializationProcessor(this, ctx).Execute();
+            new Processors.LwxEndpointMetadataPostInitializationProcessor(this, ctx).Execute();
+            new Processors.LwxEndpointExtensionsPostInitializationProcessor(this, ctx).Execute();
+            new Processors.LwxServiceConfigPostInitializationProcessor(this, ctx).Execute();
         });
         
         var attrProvider = context.SyntaxProvider

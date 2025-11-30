@@ -8,6 +8,7 @@ using Lwx.Builders.Dto.Processors;
 namespace Lwx.Builders.Dto.Processors;
 
 internal class LwxDtoPostInitializationProcessor(
+    DtoGenerator parent,
     IncrementalGeneratorPostInitializationContext ctx
 )
 {
