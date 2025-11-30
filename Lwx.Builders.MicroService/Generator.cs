@@ -62,6 +62,68 @@ public class Generator : IIncrementalGenerator
         );
 
         // Second pass: process ServiceConfig attributes
+
+        // Validate classes under Endpoints and Workers namespaces are properly annotated.
+        context.RegisterSourceOutput(context.CompilationProvider, (spc, compilation) =>
+        {
+            foreach (var st in compilation.SyntaxTrees)
+            {
+                var root = st.GetRoot();
+                var model = compilation.GetSemanticModel(st);
+                var classDecls = root.DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>();
+                foreach (var cd in classDecls)
+                {
+                    var sym = model.GetDeclaredSymbol(cd);
+                    if (sym == null) continue;
+
+                    // Only inspect source symbols
+                    if (!sym.Locations.Any(l => l.IsInSource)) continue;
+
+                    // Skip nested types and private types — rules only apply to top-level public/internal classes
+                    if (sym.ContainingType != null) continue;
+                    if (sym.DeclaredAccessibility == Accessibility.Private) continue;
+
+                    var ns = sym.ContainingNamespace?.ToDisplayString() ?? string.Empty;
+
+                    if (ns.Contains(".Endpoints", StringComparison.Ordinal))
+                    {
+                        // Must have LwxEndpoint attribute
+                        var has = sym.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxEndpointAttribute");
+                        if (!has)
+                        {
+                            var descriptor = new DiagnosticDescriptor(
+                                "LWX018",
+                                "Class in Endpoints namespace must be annotated",
+                                "Classes declared in namespaces containing '.Endpoints' must be annotated with [LwxEndpoint]. Found: '{0}'",
+                                "Usage",
+                                DiagnosticSeverity.Error,
+                                isEnabledByDefault: true);
+
+                            var loc = cd.Identifier.GetLocation();
+                            spc.ReportDiagnostic(Diagnostic.Create(descriptor, loc, sym.ToDisplayString()));
+                        }
+                    }
+
+                    if (ns.Contains(".Workers", StringComparison.Ordinal))
+                    {
+                        var has = sym.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxWorkerAttribute");
+                        if (!has)
+                        {
+                            var descriptor = new DiagnosticDescriptor(
+                                "LWX019",
+                                "Class in Workers namespace must be annotated",
+                                "Classes declared in namespaces containing '.Workers' must be annotated with [LwxWorker]. Found: '{0}'",
+                                "Usage",
+                                DiagnosticSeverity.Error,
+                                isEnabledByDefault: true);
+
+                            var loc = cd.Identifier.GetLocation();
+                            spc.ReportDiagnostic(Diagnostic.Create(descriptor, loc, sym.ToDisplayString()));
+                        }
+                    }
+                }
+            }
+        });
         
         var lsPass002Attrs = attrProvider.Where(x => x != null && x.AttributeName == LwxConstants.LwxServiceConfig).Collect();
 

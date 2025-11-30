@@ -268,6 +268,176 @@ public class UnitTest1
     }
 
     [Fact]
+    public void EndpointNamespace_ClassWithoutAttribute_EmitsLWX018()
+    {
+        using var dir = new TempProject();
+
+        // Create a class inside Endpoints namespace without [LwxEndpoint]
+        var nsDir = Path.Combine(dir.Path, "TempProject");
+        Directory.CreateDirectory(nsDir);
+
+        // Provide a ServiceConfig so generator doesn't emit missing ServiceConfig diagnostics
+        File.WriteAllText(Path.Combine(nsDir, "ServiceConfig.cs"),
+            """
+            namespace TempProject;
+            using Lwx.Builders.MicroService.Atributes;
+            using Microsoft.AspNetCore.Builder;
+
+            [LwxServiceConfig(GenerateMain = false)]
+            public static partial class ServiceConfig
+            {
+                public static void Configure(WebApplicationBuilder b) { }
+                public static void Configure(WebApplication a) { }
+            }
+            """);
+
+        var endpointsDir = Path.Combine(nsDir, "Endpoints");
+        Directory.CreateDirectory(endpointsDir);
+        File.WriteAllText(Path.Combine(endpointsDir, "BadEndpoint.cs"),
+            """
+            namespace TempProject.Endpoints;
+
+            public class BadEndpoint
+            {
+            }
+            """);
+
+        var (exit, output) = dir.Build();
+
+        Assert.NotEqual(0, exit);
+        Assert.Contains("LWX018", output);
+    }
+
+    [Fact]
+    public void WorkerNamespace_ClassWithoutAttribute_EmitsLWX019()
+    {
+        using var dir = new TempProject();
+
+        var nsDir = Path.Combine(dir.Path, "TempProject");
+        Directory.CreateDirectory(nsDir);
+
+        File.WriteAllText(Path.Combine(nsDir, "ServiceConfig.cs"),
+            """
+            namespace TempProject;
+            using Lwx.Builders.MicroService.Atributes;
+            using Microsoft.AspNetCore.Builder;
+
+            [LwxServiceConfig(GenerateMain = false)]
+            public static partial class ServiceConfig
+            {
+                public static void Configure(WebApplicationBuilder b) { }
+                public static void Configure(WebApplication a) { }
+            }
+            """);
+
+        var workerDir = Path.Combine(nsDir, "Workers");
+        Directory.CreateDirectory(workerDir);
+        File.WriteAllText(Path.Combine(workerDir, "BadWorker.cs"),
+            """
+            namespace TempProject.Workers;
+
+            public class BadWorker
+            {
+            }
+            """);
+
+        var (exit, output) = dir.Build();
+
+        Assert.NotEqual(0, exit);
+        Assert.Contains("LWX019", output);
+    }
+
+    [Fact]
+    public void EndpointNamespace_NestedClass_NoDiagnostic()
+    {
+        using var dir = new TempProject();
+
+        var nsDir = Path.Combine(dir.Path, "TempProject");
+        Directory.CreateDirectory(nsDir);
+
+        File.WriteAllText(Path.Combine(nsDir, "ServiceConfig.cs"),
+            """
+            namespace TempProject;
+            using Lwx.Builders.MicroService.Atributes;
+
+            [LwxServiceConfig(GenerateMain = false)]
+            public static partial class ServiceConfig
+            {
+                public static void Configure(WebApplicationBuilder b) { }
+                public static void Configure(WebApplication a) { }
+            }
+            """);
+
+        var endpointsDir = Path.Combine(nsDir, "Endpoints");
+        Directory.CreateDirectory(endpointsDir);
+        File.WriteAllText(Path.Combine(endpointsDir, "EndpointTest.cs"),
+            """
+            namespace TempProject.Endpoints;
+            using Lwx.Builders.MicroService.Atributes;
+
+            [LwxEndpoint("GET /test")]
+            public static partial class EndpointTest
+            {
+                private class Inner { }
+            }
+            """);
+
+        var (exit, output) = dir.Build();
+
+        // Should still succeed and not emit LWX018 for the nested private class
+        Assert.True(exit == 0, output);
+        Assert.DoesNotContain("LWX018", output);
+    }
+
+    [Fact]
+    public void WorkerNamespace_NestedPrivateClass_NoDiagnostic()
+    {
+        using var dir = new TempProject();
+
+        var nsDir = Path.Combine(dir.Path, "TempProject");
+        Directory.CreateDirectory(nsDir);
+
+        File.WriteAllText(Path.Combine(nsDir, "ServiceConfig.cs"),
+            """
+            namespace TempProject;
+            using Lwx.Builders.MicroService.Atributes;
+
+            [LwxServiceConfig(GenerateMain = false)]
+            public static partial class ServiceConfig
+            {
+                public static void Configure(WebApplicationBuilder b) { }
+                public static void Configure(WebApplication a) { }
+            }
+            """);
+
+        var workersDir = Path.Combine(nsDir, "Workers");
+        Directory.CreateDirectory(workersDir);
+        File.WriteAllText(Path.Combine(workersDir, "TheWorker.cs"),
+            """
+            namespace TempProject.Workers;
+            using Lwx.Builders.MicroService.Atributes;
+            using Microsoft.Extensions.Hosting;
+
+            [LwxWorker(Stage = LwxStage.Development)]
+            public partial class TheWorker : BackgroundService
+            {
+                private class Inner { }
+
+                protected override async System.Threading.Tasks.Task ExecuteAsync(System.Threading.CancellationToken stoppingToken)
+                {
+                    await System.Threading.Tasks.Task.Delay(0, stoppingToken);
+                }
+            }
+            """);
+
+        var (exit, output) = dir.Build();
+
+        // Should still succeed and not emit LWX019 for the nested private class
+        Assert.True(exit == 0, output);
+        Assert.DoesNotContain("LWX019", output);
+    }
+
+    [Fact]
     public void Worker_Generate_POCOS_And_ConfigBinding()
     {
         using var dir = new TempProject();
