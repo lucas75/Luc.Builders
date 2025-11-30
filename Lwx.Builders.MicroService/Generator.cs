@@ -27,7 +27,7 @@ public class Generator : IIncrementalGenerator
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        // Generate static files
+        // Pass 0: Generate static files
         context.RegisterPostInitializationOutput(ctx =>
         {
             new Processors.LwxEndpointPostInitializationProcessor(ctx).Execute();
@@ -46,12 +46,14 @@ public class Generator : IIncrementalGenerator
                 predicate: static (node, ct) => IsPotentialAttribute(node),
                 transform: static (ctx, ct) => Transform(ctx))
             .Where(x => x is not null);
-       
-        var allAttributes = context.CompilationProvider.Combine(attrProvider.Collect());
-
+               
         // First pass: process all attributes except ServiceConfig
-        context.RegisterSourceOutput(
-            allAttributes, 
+        
+        var lsPass001Attrs = attrProvider.Where(x => x != null && x.AttributeName != LwxConstants.LwxServiceConfig).Collect();
+        
+        context.RegisterSourceOutput
+        (
+            context.CompilationProvider.Combine(lsPass001Attrs), 
             (spc, tuple) =>
             {
                 var (compilation, attrs) = tuple;            
@@ -63,7 +65,6 @@ public class Generator : IIncrementalGenerator
                 foreach (var attr in attrs)
                 {
                     if (attr == null) continue;
-                    if (attr.AttributeName == LwxConstants.LwxServiceConfig) continue;
                     var rp = new RootProcessor(this, attr, spc, compilation);
                     rp.Execute();
                 }
@@ -71,8 +72,12 @@ public class Generator : IIncrementalGenerator
         );
 
         // Second pass: process ServiceConfig attributes
-        context.RegisterSourceOutput(
-            allAttributes, 
+        
+        var lsPass002Attrs = attrProvider.Where(x => x != null && x.AttributeName == LwxConstants.LwxServiceConfig).Collect();
+
+        context.RegisterSourceOutput
+        (
+            context.CompilationProvider.Combine(lsPass002Attrs), 
             (spc, tuple) =>
             {
                 var (compilation, attrs) = tuple; 
@@ -85,7 +90,6 @@ public class Generator : IIncrementalGenerator
                 foreach (var attr in attrs)
                 {
                     if (attr == null) continue;
-                    if (attr.AttributeName != LwxConstants.LwxServiceConfig) continue;
                     var rp = new RootProcessor(this, attr, spc, compilation);
                     rp.Execute();
                 }
@@ -105,10 +109,6 @@ public class Generator : IIncrementalGenerator
                 }
             }
         );
-
-
-        // No global validation pass needed — validation occurs in LwxServiceConfigTypeProcessor.Execute when
-        // an actual [LwxServiceConfig] attribute is present on the type.
     }
 
     private static FoundAttribute? Transform(GeneratorSyntaxContext ctx)
