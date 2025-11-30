@@ -1,7 +1,5 @@
-#nullable enable
 using System;
 using System.Collections.Generic;
-#nullable enable
 using System.Linq;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
@@ -11,23 +9,29 @@ namespace Lwx.Builders.MicroService.Processors;
 
 internal static class LwxConstants
 {
-    public const string LwxEndpointAttribute = nameof(Atributes.LwxEndpointAttribute);
-    public const string LwxWorkerAttribute = nameof(Atributes.LwxWorkerAttribute);
-    public const string LwxServiceBusConsumerAttribute = nameof(Atributes.LwxServiceBusConsumerAttribute);
-    public const string LwxEventHubConsumerAttribute = nameof(Atributes.LwxEventHubConsumerAttribute);
-    public const string LwxTimerAttribute = nameof(Atributes.LwxTimerAttribute);
-    public const string LwxServiceBusProducerAttribute = nameof(Atributes.LwxServiceBusProducerAttribute);
-    public const string LwxServiceConfigAttribute = nameof(Atributes.LwxServiceConfigAttribute);
+    public const string LwxEndpoint = "LwxEndpoint";
+    public const string LwxEndpointAttribute = "LwxEndpointAttribute";
 
-    public static readonly string LwxEndpoint = LwxEndpointAttribute.Replace("Attribute", "");
-    public static readonly string LwxWorker = LwxWorkerAttribute.Replace("Attribute", "");
-    public static readonly string LwxServiceBusConsumer = LwxServiceBusConsumerAttribute.Replace("Attribute", "");
-    public static readonly string LwxEventHubConsumer = LwxEventHubConsumerAttribute.Replace("Attribute", "");
-    public static readonly string LwxTimer = LwxTimerAttribute.Replace("Attribute", "");
-    public static readonly string LwxServiceBusProducer = LwxServiceBusProducerAttribute.Replace("Attribute", "");
-    public static readonly string LwxServiceConfig = LwxServiceConfigAttribute.Replace("Attribute", "");
+    public const string LwxWorker = "LwxWorker";
+    public const string LwxWorkerAttribute = "LwxWorkerAttribute";
 
-    public static readonly string[] AttributeNames = new[] {
+    public const string LwxServiceBusConsumer = "LwxServiceBusConsumer";
+    public const string LwxServiceBusConsumerAttribute = "LwxServiceBusConsumerAttribute";
+
+    public const string LwxEventHubConsumer = "LwxEventHubConsumer";    
+    public const string LwxEventHubConsumerAttribute = "LwxEventHubConsumerAttribute";
+    
+    public const string LwxTimer = "LwxTimer";
+    public const string LwxTimerAttribute = "LwxTimerAttribute";
+    
+    public const string LwxServiceBusProducer = "LwxServiceBusProducer";
+    public const string LwxServiceBusProducerAttribute = "LwxServiceBusProducerAttribute";
+    
+    public const string LwxServiceConfig = "LwxServiceConfig";
+    public const string LwxServiceConfigAttribute = "LwxServiceConfigAttribute";
+    
+
+    public static readonly string[] AttributeNames = [
         LwxEndpoint,
         LwxWorker,
         LwxServiceBusConsumer,
@@ -35,7 +39,7 @@ internal static class LwxConstants
         LwxTimer,
         LwxServiceBusProducer,
         LwxServiceConfig
-    };
+    ];
 }
 
 internal sealed class FoundAttribute(
@@ -167,5 +171,20 @@ internal static class GeneratorHelpers
 
             ctx.ReportDiagnostic(Diagnostic.Create(descriptor, loc, symbol.Name, fullNs, expectedRelative));
         }
+    }
+
+    /// <summary>
+    /// Extract a type reference suitable for use in generated call-sites. This returns the
+    /// fully-qualified type name (namespace + '.' + type name) for a symbol that has a
+    /// source namespace. If the symbol has no containing namespace, the simple type name
+    /// is returned.
+    /// </summary>
+    internal static string ExtractRelativeTypeName(ISymbol symbol, Compilation compilation)
+    {
+        if (symbol == null) return string.Empty;
+        var ns = symbol.ContainingNamespace?.ToDisplayString() ?? string.Empty;
+        var name = symbol.Name;
+        if (string.IsNullOrEmpty(ns)) return name;
+        return ns + "." + name;
     }
 }

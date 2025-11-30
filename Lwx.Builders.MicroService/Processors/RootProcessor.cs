@@ -15,65 +15,40 @@ internal sealed class RootProcessor
 {
   public void Execute()
   {    
-    if (foundAttribute.AttributeName == LwxConstants.LwxEndpoint)
+    switch (foundAttribute.AttributeName)
     {
-      new LwxEndpointTypeProcessor(foundAttribute, ctx, compilation).Execute();
-      var fullName = foundAttribute.TargetSymbol.ToDisplayString();
-      var asmName = compilation.AssemblyName ?? string.Empty;
-      if (!string.IsNullOrEmpty(asmName) && fullName.StartsWith(asmName + ".", System.StringComparison.Ordinal))
-      {
-        fullName = fullName.Substring(asmName.Length + 1);
-      }
-      parent.EndpointNames.Add(fullName);
-      return;
-    }
+      case LwxConstants.LwxEndpoint:
+        new LwxEndpointTypeProcessor(foundAttribute, ctx, compilation).Execute();
+        parent.EndpointNames.Add(GeneratorHelpers.ExtractRelativeTypeName(foundAttribute.TargetSymbol, compilation));
+        break;
 
-    if (foundAttribute.AttributeName == LwxConstants.LwxWorker)
-    {
-      new LwxWorkerTypeProcessor(foundAttribute, ctx, compilation).Execute();
-      var fullName = foundAttribute.TargetSymbol.ToDisplayString();
-      var asmName = compilation.AssemblyName ?? string.Empty;
-      if (!string.IsNullOrEmpty(asmName) && fullName.StartsWith(asmName + ".", System.StringComparison.Ordinal))
-      {
-        fullName = fullName.Substring(asmName.Length + 1);
-      }
-      parent.WorkerNames.Add(fullName);
-      return;
-    }
+      case LwxConstants.LwxWorker:
+        new LwxWorkerTypeProcessor(foundAttribute, ctx, compilation).Execute();
+        parent.WorkerNames.Add(GeneratorHelpers.ExtractRelativeTypeName(foundAttribute.TargetSymbol, compilation));
+        break;
 
-    if (foundAttribute.AttributeName == LwxConstants.LwxServiceBusConsumer)
-    {
-      new LwxServiceBusConsumerTypeProcessor(foundAttribute, ctx, compilation).Execute();
-      return;
-    }
+      case LwxConstants.LwxServiceBusConsumer:
+        new LwxServiceBusConsumerTypeProcessor(foundAttribute, ctx, compilation).Execute();
+        break;
 
-    if (foundAttribute.AttributeName == LwxConstants.LwxEventHubConsumer)
-    {
-      new LwxEventHubConsumerTypeProcessor(foundAttribute, ctx, compilation).Execute();
-      return;
-    }
+      case LwxConstants.LwxEventHubConsumer:
+        new LwxEventHubConsumerTypeProcessor(foundAttribute, ctx, compilation).Execute();
+        break;
 
-    if (foundAttribute.AttributeName == LwxConstants.LwxTimer)
-    {
-      new LwxTimerTypeProcessor(foundAttribute, ctx, compilation).Execute();
-      return;
-    }
+      case LwxConstants.LwxTimer:
+        new LwxTimerTypeProcessor(foundAttribute, ctx, compilation).Execute();
+        break;
 
-    if (foundAttribute.AttributeName == LwxConstants.LwxServiceBusProducer)
-    {
-      new LwxServiceBusProducerTypeProcessor(foundAttribute, ctx, compilation).Execute();
-      return;
-    }
+      case LwxConstants.LwxServiceBusProducer:
+        new LwxServiceBusProducerTypeProcessor(foundAttribute, ctx, compilation).Execute();
+        break;
 
-    if (foundAttribute.AttributeName == LwxConstants.LwxServiceConfig)
-    {
-      // Pass already-collected endpoint and worker names so the ServiceConfig processor
-      // can generate the LwxEndpointExtensions and optionally the Program Main file.
-      new LwxServiceConfigTypeProcessor(foundAttribute, ctx, compilation).Execute(parent);
+      case LwxConstants.LwxServiceConfig:
+        new LwxServiceConfigTypeProcessor(foundAttribute, ctx, compilation).Execute(parent);
+        break;
 
-      var attrData = foundAttribute.AttributeData;
-
-      return;
+      default:
+        break;
     }
   }
 }
