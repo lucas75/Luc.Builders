@@ -67,38 +67,11 @@ internal sealed class RootProcessor
 
     if (foundAttribute.AttributeName == LwxConstants.LwxServiceConfig)
     {
-      // If we've already processed a ServiceConfig attribute for this compilation, report an error and skip
-      if (parent.ServiceConfigLocation != Location.None)
-      {
-        var existingFile = parent.ServiceConfigLocation.SourceTree?.FilePath ?? "(unknown)";
-        var descriptor = new DiagnosticDescriptor(
-          "LWX017",
-          "Multiple ServiceConfig declarations",
-          "Only one [LwxServiceConfig] declaration is allowed; another was already found at '{0}'",
-          "Configuration",
-          DiagnosticSeverity.Error,
-          isEnabledByDefault: true);
-
-        ctx.ReportDiagnostic(Diagnostic.Create(descriptor, foundAttribute.Location, existingFile));
-        return;
-      }
       // Pass already-collected endpoint and worker names so the ServiceConfig processor
       // can generate the LwxEndpointExtensions and optionally the Program Main file.
       new LwxServiceConfigTypeProcessor(foundAttribute, ctx, compilation).Execute(parent);
 
-      parent.ServiceConfigLocation = foundAttribute.Location;
-      parent.ServiceConfigSymbol = foundAttribute.TargetSymbol as INamedTypeSymbol;
-
       var attrData = foundAttribute.AttributeData;
-      parent.LwxServiceConfigAttributeData = attrData;
-      if (attrData != null)
-      {
-        var named = attrData.ToNamedArgumentMap();
-        if (named.TryGetValue("GenerateMain", out var gm) && gm.Value is bool b)
-        {
-          parent.GenerateMainFlag = b;
-        }
-      }
 
       return;
     }

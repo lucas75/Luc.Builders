@@ -366,6 +366,38 @@ internal class LwxServiceConfigTypeProcessor(
     }
 
     /// <summary>
+    /// Report that no ServiceConfig attribute was found in the compilation.
+    /// </summary>
+    public static void ReportMissingServiceConfig(SourceProductionContext spc)
+    {
+        spc.ReportDiagnostic(Diagnostic.Create(
+            new DiagnosticDescriptor(
+                "LWX011",
+                "Missing ServiceConfig",
+                "Projects using Lwx generator must declare a [LwxServiceConfig] class (ServiceConfig.cs) with service metadata.",
+                "Configuration",
+                DiagnosticSeverity.Error,
+                isEnabledByDefault: true),
+            Location.None));
+    }
+
+    /// <summary>
+    /// Report a duplicate ServiceConfig attribute occurrence.
+    /// </summary>
+    public static void ReportMultipleServiceConfig(SourceProductionContext spc, Location location)
+    {
+        spc.ReportDiagnostic(Diagnostic.Create(
+            new DiagnosticDescriptor(
+                "LWX017",
+                "Multiple ServiceConfig declarations",
+                "Multiple [LwxServiceConfig] declarations found. Only one [LwxServiceConfig] is allowed per project.",
+                "Configuration",
+                DiagnosticSeverity.Error,
+                isEnabledByDefault: true),
+            location));
+    }
+
+    /// <summary>
     /// Generate Main (ServiceConfig.Main.g.cs) source that maps endpoints and calls worker configuration.
     /// </summary>
     public static string? GenerateMain(SourceProductionContext spc, string ns, List<string> endpointNames, List<string> workerNames, Compilation compilation, Location serviceConfigLocation)

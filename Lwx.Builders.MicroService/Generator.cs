@@ -11,19 +11,12 @@ using Lwx.Builders.MicroService.Processors;
 
 namespace Lwx.Builders.MicroService;
 
-// FoundAttribute and LwxConstants moved into the Processors namespace so
-// processors and helper classes can reference them from `Lwx.Builders.MicroService.Processors`.
-
 [Generator(LanguageNames.CSharp)]
 public class Generator : IIncrementalGenerator
 {
 
-    internal readonly List<string> EndpointNames = new();
-    internal readonly List<string> WorkerNames = new();
-    internal Location ServiceConfigLocation = Location.None;
-    internal INamedTypeSymbol? ServiceConfigSymbol = null;
-    internal bool GenerateMainFlag = false;
-    internal AttributeData? LwxServiceConfigAttributeData = null;
+    internal readonly List<string> EndpointNames = [];
+    internal readonly List<string> WorkerNames = [];
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -82,30 +75,22 @@ public class Generator : IIncrementalGenerator
             {
                 var (compilation, attrs) = tuple; 
 
-                ServiceConfigLocation = Location.None;
-                ServiceConfigSymbol = null;
-                GenerateMainFlag = false;
-                LwxServiceConfigAttributeData = null;
-
-                foreach (var attr in attrs)
+                var scList = attrs.ToArray();
+                if (scList.Length == 0)
                 {
-                    if (attr == null) continue;
-                    var rp = new RootProcessor(this, attr, spc, compilation);
-                    rp.Execute();
+                    Processors.LwxServiceConfigTypeProcessor.ReportMissingServiceConfig(spc);
                 }
-
-                // After processing service config attributes, ensure at least one exists
-                if (LwxServiceConfigAttributeData == null)
+                else if (scList.Length > 1)
                 {
-                    spc.ReportDiagnostic(Diagnostic.Create(
-                        new DiagnosticDescriptor(
-                            "LWX011",
-                            "Missing ServiceConfig",
-                            "Projects using Lwx generator must declare a [LwxServiceConfig] class (ServiceConfig.cs) with service metadata.",
-                            "Configuration",
-                            DiagnosticSeverity.Error,
-                            isEnabledByDefault: true),
-                        Location.None));
+                    foreach (var sc in scList)
+                    {
+                        Processors.LwxServiceConfigTypeProcessor.ReportMultipleServiceConfig(spc, sc!.Location);
+                    }
+                }
+                else
+                {
+                    var rp = new RootProcessor(this, scList[0]!, spc, compilation);
+                    rp.Execute();
                 }
             }
         );
@@ -151,61 +136,6 @@ public class Generator : IIncrementalGenerator
         var simple = name.Contains('.') ? name.Substring(name.LastIndexOf('.') + 1) : name;
         if (simple.EndsWith("Attribute")) simple = simple.Substring(0, simple.Length - "Attribute".Length);
         return LwxConstants.AttributeNames.Contains(simple, StringComparer.Ordinal);
-    }
-
-    private static void ValidateServiceConfigConfigureMethods(INamedTypeSymbol typeSymbol, SourceProductionContext spc, Compilation compilation)
-    {
-        // Resolve expected parameter types
-        var webAppBuilderType = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Builder.WebApplicationBuilder");
-        var webAppType = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Builder.WebApplication");
-
-        foreach (var member in typeSymbol.GetMembers().OfType<IMethodSymbol>())
-        {
-            if (member.IsImplicitlyDeclared) continue;
-            // Only inspect ordinary methods (skip constructors, accessors, etc.)
-            if (member.MethodKind != MethodKind.Ordinary) continue;
-
-            // Only consider declared public methods
-            if (member.DeclaredAccessibility == Accessibility.Public)
-            {
-                // Allowed public methods are:
-                // public static void Configure(WebApplicationBuilder)
-                // public static void Configure(WebApplication)
-                if (member.Name == "Configure")
-                {
-                    var valid = member.IsStatic && member.Parameters.Length == 1 && member.ReturnsVoid;
-                    var param = member.Parameters.Length == 1 ? member.Parameters[0].Type : null;
-                    var paramMatches = param != null && (SymbolEqualityComparer.Default.Equals(param, webAppBuilderType) || SymbolEqualityComparer.Default.Equals(param, webAppType));
-                    if (!valid || !paramMatches)
-                    {
-                        var descriptor = new DiagnosticDescriptor(
-                            "LWX014",
-                            "Invalid ServiceConfig.Configure signature",
-                            "ServiceConfig.Configure must be declared as a public static void Configure(WebApplicationBuilder) or public static void Configure(WebApplication). Found: '{0}'",
-                            "Configuration",
-                            DiagnosticSeverity.Error,
-                            isEnabledByDefault: true);
-
-                        var locMember = member.Locations.FirstOrDefault() ?? Location.None;
-                        spc.ReportDiagnostic(Diagnostic.Create(descriptor, locMember, member.ToDisplayString()));
-                    }
-                }
-                else
-                {
-                    // Any other public method is disallowed
-                    var descriptor = new DiagnosticDescriptor(
-                        "LWX015",
-                        "Unexpected public method in ServiceConfig",
-                        "Public method '{0}' is not allowed in ServiceConfig. Only public static Configure(WebApplicationBuilder) and Configure(WebApplication) are permitted for customization when using the generator.",
-                        "Configuration",
-                        DiagnosticSeverity.Error,
-                        isEnabledByDefault: true);
-
-                    var locMember = member.Locations.FirstOrDefault() ?? Location.None;
-                    spc.ReportDiagnostic(Diagnostic.Create(descriptor, locMember, member.Name));
-                }
-            }
-        }
     }
 }
 
