@@ -44,7 +44,7 @@ internal sealed class RootProcessor
         break;
 
       case LwxConstants.LwxServiceConfig:
-        new LwxServiceConfigTypeProcessor(foundAttribute, ctx, compilation).Execute(parent);
+        new LwxServiceConfigTypeProcessor(foundAttribute, ctx, compilation, parent).Execute();
         break;
 
       default:
