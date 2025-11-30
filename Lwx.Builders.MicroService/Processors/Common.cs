@@ -38,7 +38,12 @@ internal static class LwxConstants
     };
 }
 
-internal sealed class FoundAttribute(string attributeName, ISymbol targetSymbol, Location location, AttributeData? attributeData)
+internal sealed class FoundAttribute(
+    string attributeName, 
+    ISymbol targetSymbol, 
+    Location location, 
+    AttributeData? attributeData
+)
 {
     public string AttributeName { get; } = attributeName;
     public ISymbol TargetSymbol { get; } = targetSymbol;

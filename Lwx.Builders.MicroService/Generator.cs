@@ -18,16 +18,18 @@ namespace Lwx.Builders.MicroService;
 public class Generator : IIncrementalGenerator
 {
 
-        // LwxConstants and FoundAttribute types have been moved into
-        // the `Lwx.Builders.MicroService.Processors` namespace (see Processors/Common.cs)
-        // so this generator now relies on that shared implementation.
+    internal readonly List<string> EndpointNames = new();
+    internal readonly List<string> WorkerNames = new();
+    internal Location ServiceConfigLocation = Location.None;
+    internal INamedTypeSymbol? ServiceConfigSymbol = null;
+    internal bool GenerateMainFlag = false;
+    internal AttributeData? LwxServiceConfigAttributeData = null;
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        // Generate attribute definitions so consumer projects don't need to declare them.
+        // Generate static files
         context.RegisterPostInitializationOutput(ctx =>
         {
-            // Use each processor's GenerateAttribute method
             new Processors.LwxEndpointPostInitializationProcessor(ctx).Execute();
             new Processors.LwxWorkerPostInitializationProcessor(ctx).Execute();
             new Processors.LwxServiceBusConsumerPostInitializationProcessor(ctx).Execute();
@@ -38,395 +40,75 @@ public class Generator : IIncrementalGenerator
             new Processors.LwxEndpointExtensionsPostInitializationProcessor(ctx).Execute();
             new Processors.LwxServiceConfigPostInitializationProcessor(ctx).Execute();
         });
-
-        // Find attributes whose simple name matches one of the attribute names in our list
+        
         var attrProvider = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: static (node, ct) => IsPotentialAttribute(node),
                 transform: static (ctx, ct) => Transform(ctx))
             .Where(x => x is not null);
+       
+        var allAttributes = context.CompilationProvider.Combine(attrProvider.Collect());
 
-        // Find classes named ServiceConfig
-        var serviceConfigProvider = context.SyntaxProvider
-            .CreateSyntaxProvider(
-                predicate: static (node, ct) => node is ClassDeclarationSyntax cds && cds.Identifier.Text == "ServiceConfig",
-                transform: static (ctx, ct) => ctx.SemanticModel.GetDeclaredSymbol((ClassDeclarationSyntax)ctx.Node) as INamedTypeSymbol)
-            .Where(x => x is not null);
-
-        // Collect all found attributes and process them together
-        context.RegisterSourceOutput(context.CompilationProvider.Combine(attrProvider.Collect()), (spc, tuple) =>
-        {
-            var compilation = tuple.Left;
-            var found = tuple.Right;
-            var generateMain = false;
-            var serviceConfigLocation = Location.None;
-            INamedTypeSymbol? serviceConfigSymbol = null;
-            var endpointNames = new List<string>();
-            var workerNames = new List<string>();
-            foreach (var f in found)
+        // First pass: process all attributes except ServiceConfig
+        context.RegisterSourceOutput(
+            allAttributes, 
+            (spc, tuple) =>
             {
-                if (f == null) continue;
-                if (f.AttributeName == LwxConstants.LwxEndpoint)
+                var (compilation, attrs) = tuple;            
+
+                // Reset lists for this compilation run
+                EndpointNames.Clear();
+                WorkerNames.Clear();
+
+                foreach (var attr in attrs)
                 {
-                    new Processors.LwxEndpointTypeProcessor(f, spc, compilation).Execute();
-                    var fullName = f.TargetSymbol.ToDisplayString();
-                    var asmName = compilation.AssemblyName ?? string.Empty;
-                    if (!string.IsNullOrEmpty(asmName) && fullName.StartsWith(asmName + ".", StringComparison.Ordinal))
-                    {
-                        fullName = fullName.Substring(asmName.Length + 1);
-                    }
-                    endpointNames.Add(fullName);
-                }
-                else if (f.AttributeName == LwxConstants.LwxWorker)
-                {
-                    new Processors.LwxWorkerTypeProcessor(f, spc, compilation).Execute();
-                    var fullName = f.TargetSymbol.ToDisplayString();
-                    var asmName = compilation.AssemblyName ?? string.Empty;
-                    if (!string.IsNullOrEmpty(asmName) && fullName.StartsWith(asmName + ".", StringComparison.Ordinal))
-                    {
-                        fullName = fullName.Substring(asmName.Length + 1);
-                    }
-                    workerNames.Add(fullName);
-                }
-                else if (f.AttributeName == LwxConstants.LwxServiceBusConsumer)
-                {
-                    new Processors.LwxServiceBusConsumerTypeProcessor(f, spc, compilation).Execute();
-                }
-                else if (f.AttributeName == LwxConstants.LwxEventHubConsumer)
-                {
-                    new Processors.LwxEventHubConsumerTypeProcessor(f, spc, compilation).Execute();
-                }
-                else if (f.AttributeName == LwxConstants.LwxTimer)
-                {
-                    new Processors.LwxTimerTypeProcessor(f, spc, compilation).Execute();
-                }
-                else if (f.AttributeName == LwxConstants.LwxServiceBusProducer)
-                {
-                    new Processors.LwxServiceBusProducerTypeProcessor(f, spc, compilation).Execute();
-                }
-                else if (f.AttributeName == LwxConstants.LwxServiceConfig)
-                {
-                    new Processors.LwxServiceConfigTypeProcessor(f, spc, compilation).Execute();
-                    serviceConfigLocation = f.Location;
-                    // capture the class symbol for the ServiceConfig so we can generate Main in the same namespace
-                    serviceConfigSymbol = f.TargetSymbol as INamedTypeSymbol;
-                    var attrData = f.AttributeData;
-                    if (attrData != null)
-                    {
-                        var named = attrData.ToNamedArgumentMap();
-                        if (named.TryGetValue("GenerateMain", out var gm) && gm.Value is bool b)
-                        {
-                            generateMain = b;
-                        }
-                    }
+                    if (attr == null) continue;
+                    if (attr.AttributeName == LwxConstants.LwxServiceConfig) continue;
+                    var rp = new RootProcessor(this, attr, spc, compilation);
+                    rp.Execute();
                 }
             }
+        );
 
-            var swaggerAttr = found.FirstOrDefault(f => f != null && f.AttributeName == LwxConstants.LwxServiceConfig)?.AttributeData;
-            if (swaggerAttr == null)
+        // Second pass: process ServiceConfig attributes
+        context.RegisterSourceOutput(
+            allAttributes, 
+            (spc, tuple) =>
             {
-                // If no ServiceConfig attribute is present, emit an error diagnostic requiring it.
-                spc.ReportDiagnostic(Diagnostic.Create(
-                    new DiagnosticDescriptor(
-                        "LWX011",
-                        "Missing ServiceConfig",
-                        "Projects using Lwx generator must declare a [LwxServiceConfig] class (ServiceConfig.cs) with service metadata.",
-                        "Configuration",
-                        DiagnosticSeverity.Error,
-                        isEnabledByDefault: true),
-                    Location.None));
-            }
-            var fullNs = found.FirstOrDefault()?.TargetSymbol?.ContainingNamespace?.ToDisplayString() ?? "Generated";
-            var ns = fullNs.Contains('.') ? fullNs.Substring(0, fullNs.LastIndexOf('.')) : fullNs;
-            GenerateLwxConfigure(spc, swaggerAttr, ns);
+                var (compilation, attrs) = tuple; 
 
-            if (generateMain)
-            {
-                // Check if user has their own Program.cs
-                var hasProgramCs = compilation.SyntaxTrees.Any(st =>
-                    string.Equals(System.IO.Path.GetFileName(st.FilePath), "Program.cs", StringComparison.OrdinalIgnoreCase));
-                if (hasProgramCs)
+                ServiceConfigLocation = Location.None;
+                ServiceConfigSymbol = null;
+                GenerateMainFlag = false;
+                LwxServiceConfigAttributeData = null;
+
+                foreach (var attr in attrs)
+                {
+                    if (attr == null) continue;
+                    if (attr.AttributeName != LwxConstants.LwxServiceConfig) continue;
+                    var rp = new RootProcessor(this, attr, spc, compilation);
+                    rp.Execute();
+                }
+
+                // After processing service config attributes, ensure at least one exists
+                if (LwxServiceConfigAttributeData == null)
                 {
                     spc.ReportDiagnostic(Diagnostic.Create(
                         new DiagnosticDescriptor(
-                            "LWX013",
-                            "Program.cs not allowed when GenerateMain is true",
-                            "When [LwxServiceConfig(GenerateMain = true)] is set, you must not have a custom Program.cs file. The Program.cs is auto-generated with standard ASP.NET Core setup including LwxConfigure calls and endpoint mapping. Use ServiceConfig.Configure(WebApplicationBuilder) and ServiceConfig.Configure(WebApplication) for additional customizations.",
+                            "LWX011",
+                            "Missing ServiceConfig",
+                            "Projects using Lwx generator must declare a [LwxServiceConfig] class (ServiceConfig.cs) with service metadata.",
                             "Configuration",
                             DiagnosticSeverity.Error,
                             isEnabledByDefault: true),
-                        serviceConfigLocation));
-                }
-                else
-                {
-                    // prefer to place Main inside the ServiceConfig's namespace when available
-                    var svcNs = serviceConfigSymbol?.ContainingNamespace?.ToDisplayString() ?? fullNs;
-                    var generatedSource = GenerateProgramCs(spc, svcNs, endpointNames, workerNames);
-
-                    // Emit an informational diagnostic anchored to the attribute location
-                    // to help users jump to or inspect the generated ServiceConfig.Main.g.cs
-                    var generatedName = "ServiceConfig.Main.g.cs";
-                    // attach the whole generated Main method/source in the diagnostic message so IDEs show it as hover text
-                    var methodPreview = generatedSource;
-                    spc.ReportDiagnostic(Diagnostic.Create(
-                        new DiagnosticDescriptor(
-                            "LWX016",
-                            "Generated ServiceConfig partial",
-                            "Generator produced '{0}' in namespace '{1}'. Generated source:\n{2}",
-                            "Generation",
-                            DiagnosticSeverity.Info,
-                            isEnabledByDefault: true),
-                        serviceConfigLocation, generatedName, svcNs, methodPreview));
+                        Location.None));
                 }
             }
-        });
+        );
 
-        // Validate Configure methods in all ServiceConfig classes
-        context.RegisterSourceOutput(context.CompilationProvider.Combine(serviceConfigProvider.Collect()), (spc, tuple) =>
-        {
-            var compilation = tuple.Left;
-            var serviceConfigs = tuple.Right;
-            foreach (var sc in serviceConfigs)
-            {
-                if (sc == null) continue;
-                ValidateServiceConfigConfigureMethods(sc, spc, compilation);
-            }
-        });
-    }
 
-    private static void GenerateLwxConfigure(SourceProductionContext spc, AttributeData? swaggerAttr, string ns)
-    {
-        string title = "API";
-        string description = "API Description";
-        string version = "v1";
-        string publishLiteral = "Lwx.Builders.MicroService.Atributes.LwxStage.None";
-
-        if (swaggerAttr != null)
-        {
-            var named = swaggerAttr.ToNamedArgumentMap();
-            if (named.TryGetValue("Title", out var t) && t.Value is string s1)
-            {
-                title = s1;
-            }
-
-            if (named.TryGetValue("Description", out var d) && d.Value is string s2)
-            {
-                description = s2;
-            }
-
-            if (named.TryGetValue("Version", out var v) && v.Value is string s3)
-            {
-                version = s3;
-            }
-
-            if (named.TryGetValue("PublishSwagger", out var p) && p.Value != null)
-            {
-                var raw = p.Value;
-                if (raw is int iv)
-                {
-                    publishLiteral = iv switch
-                    {
-                        1 => "Lwx.Builders.MicroService.Atributes.LwxStage.Development",
-                        2 => "Lwx.Builders.MicroService.Atributes.LwxStage.Production",
-                        _ => "Lwx.Builders.MicroService.Atributes.LwxStage.None"
-                    };
-                }
-                else
-                {
-                    var tmp = raw.ToString() ?? "Lwx.Builders.MicroService.Atributes.LwxStage.None";
-                    publishLiteral = tmp.Contains('.') ? tmp : ("Lwx.Builders.MicroService.Atributes.LwxStage." + tmp);
-                }
-            }
-        }
-
-        var hasSwagger = swaggerAttr != null && publishLiteral != "Lwx.Builders.MicroService.Atributes.LwxStage.None";
-
-        string swaggerServicesCode;
-
-        var srcEnvContition = 
-            publishLiteral.EndsWith(".Development", StringComparison.Ordinal)
-                ? "IsDevelopment()"
-                : "IsDevelopment() || IsProduction()";
-
-        if (!hasSwagger)
-        {
-            swaggerServicesCode = string.Empty;
-        }
-        else
-        {
-            // Use a single raw template; we only vary the condition expression when embedding.
-            swaggerServicesCode = $$"""
-                if (builder.Environment.{{srcEnvContition}})
-                {
-                    builder.Services.AddSwaggerGen(options =>
-                    {
-                        options.SwaggerDoc("{{Util.EscapeForCSharp(version)}}", new Microsoft.OpenApi.Models.OpenApiInfo
-                        { 
-                            Title = "{{Util.EscapeForCSharp(title)}}",
-                            Description = "{{Util.EscapeForCSharp(description)}}",
-                            Version = "{{Util.EscapeForCSharp(version)}}"
-                        });
-                    });
-                }
-                """;
-        }
-            
-        string swaggerAppCode;
-        if (!hasSwagger)
-        {
-            swaggerAppCode = string.Empty;
-        }
-        else
-        {
-            // Reuse the same envCondition but with the `app.Environment` prefix
-            swaggerAppCode = $$"""
-                if (app.Environment.{{srcEnvContition}})
-                {
-                    app.UseSwagger();
-                    app.UseSwaggerUI(options =>
-                    {
-                        options.DocumentTitle = "{{Util.EscapeForCSharp(title)}}";
-                    });
-                }
-                """;
-        }
-
-        var source = $$"""
-            // <auto-generated/>
-            using System;
-            using System.Linq;
-            using Microsoft.AspNetCore.Builder;
-            using Microsoft.AspNetCore.Routing;
-            using Microsoft.Extensions.DependencyInjection;
-            using Microsoft.Extensions.Hosting;
-            using Lwx.Builders.MicroService.Atributes;
-
-            namespace Lwx.Builders.MicroService.Atributes
-            {
-                /// <summary>
-                /// Provides extension methods for configuring Lwx in ASP.NET Core applications.
-                /// </summary>
-                public static class LwxEndpointExtensions
-                {
-                    /// <summary>
-                    /// Configures Lwx services, including Swagger if enabled.
-                    /// </summary>
-                    /// <param name="builder">The web application builder.</param>
-                    public static void LwxConfigure(this WebApplicationBuilder builder)
-                    {
-                        {{swaggerServicesCode.FixIndent(3,indentFirstLine: false)}}
-                    }
-
-                    /// <summary>
-                    /// Configures Lwx app and registers validation to ensure all registered endpoints are mapped through the Lwx mechanism.
-                    /// </summary>
-                    /// <param name="app">The web application instance.</param>
-                    public static void LwxConfigure(this WebApplication app)
-                    {
-                        {{swaggerAppCode.FixIndent(3,indentFirstLine: false)}}
-
-                        var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
-                        lifetime.ApplicationStarted.Register(() =>
-                        {
-                            ValidateLwxEndpoints(app);
-                        });
-                    }
-
-                    private static void ValidateLwxEndpoints(WebApplication app)
-                    {
-                        var exceptions = new[] { "health", "ready", "swagger" };
-                        var endpointDataSources = app.Services.GetServices<EndpointDataSource>();
-                        foreach (var dataSource in endpointDataSources)
-                        {
-                            foreach (var endpoint in dataSource.Endpoints)
-                            {
-                                if (endpoint.Metadata.GetMetadata<LwxEndpointMetadata>() == null)
-                                {
-                                    var name = endpoint.DisplayName ?? endpoint.ToString();
-                                    if (!exceptions.Any(e => name.Contains(e, StringComparison.OrdinalIgnoreCase)))
-                                    {
-                                        throw new InvalidOperationException($"Endpoint {name} is not mapped by Lwx mechanism");
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            """;
-
-        spc.AddSource("LwxEndpointExtensions.g.cs", SourceText.From(source, Encoding.UTF8));
-    }
-
-    private static string GenerateProgramCs(SourceProductionContext spc, string ns, List<string> endpointNames, List<string> workerNames)
-    {
-        var srcEndpointCalls = new StringBuilder();
-        if (endpointNames != null)
-        {
-            foreach (var endpointName in endpointNames)
-            {
-                srcEndpointCalls.Append($$"""
-                    {{endpointName}}.Configure(app);
-
-                    """);
-            }
-        }
-
-        var srcWorkerCalls = new StringBuilder();
-        if (workerNames != null)
-        {
-            foreach (var workerName in workerNames)
-            {
-                srcWorkerCalls.Append($$"""
-                    {{workerName}}.Configure(builder);
-
-                    """);
-            }
-        }
-
-        var source = $$"""
-            // <auto-generated/>
-            using Microsoft.AspNetCore.Builder;
-            using Microsoft.Extensions.Hosting;
-            using Lwx.Builders.MicroService.Atributes;
-
-            namespace {{ns}};
-
-            public static partial class ServiceConfig
-            {
-                    public static void Main(string[] args)
-                    {
-                        var builder = WebApplication.CreateBuilder(args);
-
-                        // Configure Lwx services, including Swagger if enabled
-                        builder.LwxConfigure();
-
-                        // Register workers generated by Lwx (each worker may decide whether to run based on stage)
-                        {{srcWorkerCalls.FixIndent(2, indentFirstLine: false)}}
-
-                        // Allow additional configuration in user ServiceConfig.Configure(WebApplicationBuilder)
-                        Configure(builder);
-
-                        var app = builder.Build();
-
-                        // Configure Lwx app, including Swagger UI if enabled
-                        app.LwxConfigure();
-
-                        // Allow additional configuration in user ServiceConfig.Configure(WebApplication)
-                        Configure(app);
-
-                        // Map all endpoints generated by Lwx source generator
-                        {{srcEndpointCalls.FixIndent(2, indentFirstLine: false)}}
-
-                        app.Run();
-                    }
-                }
-            """;
-
-        spc.AddSource("ServiceConfig.Main.g.cs", SourceText.From(source, Encoding.UTF8));
-
-        // return the generated source so callers may reference it (for diagnostics, tests, etc.)
-        return source;
+        // No global validation pass needed — validation occurs in LwxServiceConfigTypeProcessor.Execute when
+        // an actual [LwxServiceConfig] attribute is present on the type.
     }
 
     private static FoundAttribute? Transform(GeneratorSyntaxContext ctx)
