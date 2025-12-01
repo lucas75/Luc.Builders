@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace Lwx.Builders.Dto.Processors;
 
-internal static class GeneratorHelpers
+internal static class ProcessorUtils
 {
     private static readonly Regex _sanitizer = new("[^a-zA-Z0-9_]+", RegexOptions.Compiled);
 
@@ -36,7 +36,7 @@ internal static class GeneratorHelpers
     internal static void AddEmbeddedSource(IncrementalGeneratorPostInitializationContext ctx, string fileName, string generatedName)
     {
         var asm = typeof(object).Assembly; // placeholder to get assembly is not used; we'll obtain our assembly below
-        var ourAsm = typeof(GeneratorHelpers).Assembly;
+        var ourAsm = typeof(ProcessorUtils).Assembly;
         var expectedName = "Lwx.Builders.Dto." + fileName.Replace('/', '.').Replace('\\', '.');
         var rname = ourAsm.GetManifestResourceNames()
             .FirstOrDefault(n => n == expectedName);
@@ -126,12 +126,4 @@ internal static class LwxConstants
     public static readonly string LwxDtoIgnore = LwxDtoIgnoreAttribute.Replace("Attribute", "");
 
     public static readonly string[] AttributeNames = new[] { LwxDto, LwxDtoProperty, LwxDtoIgnore };
-}
-
-internal sealed class FoundAttribute(string attributeName, ISymbol targetSymbol, Location location, AttributeData? attributeData)
-{
-    public string AttributeName { get; } = attributeName;
-    public ISymbol TargetSymbol { get; } = targetSymbol;
-    public Location Location { get; } = location;
-    public AttributeData? AttributeData { get; } = attributeData;
 }

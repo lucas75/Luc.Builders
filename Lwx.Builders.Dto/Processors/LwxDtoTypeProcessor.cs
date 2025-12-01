@@ -8,6 +8,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Lwx.Builders.Dto.Processors;
+using Lwx.Builders.Dto;
 
 internal enum DtoType
 {
@@ -34,7 +35,7 @@ namespace Lwx.Builders.Dto.Processors
 
         public void Execute()
         {
-            GeneratorHelpers.ValidateFilePathMatchesNamespace(attr.TargetSymbol, ctx);
+            ProcessorUtils.ValidateFilePathMatchesNamespace(attr.TargetSymbol, ctx);
 
             if (attr.TargetSymbol is not INamedTypeSymbol classSymbol)
             {
@@ -43,7 +44,7 @@ namespace Lwx.Builders.Dto.Processors
 
             var dtoType = GetDtoType(attr.AttributeData);
             var ns = classSymbol.ContainingNamespace?.ToDisplayString() ?? "Generated";
-            var className = GeneratorHelpers.SafeIdentifier(classSymbol.Name);
+            var className = ProcessorUtils.SafeIdentifier(classSymbol.Name);
 
             var members = GetMembersToProcess(classSymbol, ctx);
             var properties = members.OfType<IPropertySymbol>().ToList();
@@ -81,7 +82,7 @@ namespace Lwx.Builders.Dto.Processors
                 }
                 """;
 
-            GeneratorHelpers.AddGeneratedFile(ctx, $"LwxDto_{className}.g.cs", source);
+            ProcessorUtils.AddGeneratedFile(ctx, $"LwxDto_{className}.g.cs", source);
         }
 
         private DtoType GetDtoType(AttributeData? attrData)

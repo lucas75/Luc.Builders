@@ -1,9 +1,29 @@
+#nullable enable
+using System;
 using System.Text;
+using System.Linq;
+using System.Threading;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Lwx.Builders.Dto.Processors;
 #nullable enable
 
 namespace Lwx.Builders.Dto;
 
-internal static class Util
+/// <summary>
+/// Represents an attribute found by the Dto generator syntax analysis.
+/// This lives at the generator root namespace so processors can consume the
+/// lightweight model without depending on generator internals.
+/// </summary>
+internal sealed class FoundAttribute(string attributeName, ISymbol targetSymbol, Location location, AttributeData? attributeData)
+{
+    public string AttributeName { get; } = attributeName;
+    public ISymbol TargetSymbol { get; } = targetSymbol;
+    public Location Location { get; } = location;
+    public AttributeData? AttributeData { get; } = attributeData;
+}
+
+internal static class GeneratorUtils
 {
     /// <summary>
     /// Escape a string so it is safe to embed in a C# double-quoted string literal.
@@ -28,6 +48,52 @@ internal static class Util
         }
 
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Resolve a FoundAttribute from the <see cref="GeneratorSyntaxContext"/>, or null
+    /// if the node does not represent one of the Lwx DTO attributes.
+    /// </summary>
+    internal static FoundAttribute? ResolveFoundAttribute(GeneratorSyntaxContext ctx)
+    {
+        var attributeSyntax = (AttributeSyntax)ctx.Node;
+
+        var info = ctx.SemanticModel.GetSymbolInfo(attributeSyntax, CancellationToken.None);
+        var attrType = info.Symbol switch
+        {
+            IMethodSymbol ms => ms.ContainingType,
+            INamedTypeSymbol nts => nts,
+            _ => null
+        };
+
+        if (attrType == null) return default(FoundAttribute);
+
+        var attrName = attrType.Name;
+        if (attrName.EndsWith("Attribute")) attrName = attrName.Substring(0, attrName.Length - "Attribute".Length);
+        if (!LwxConstants.AttributeNames.Contains(attrName, StringComparer.Ordinal)) return default(FoundAttribute);
+
+        var parent = attributeSyntax.Parent?.Parent;
+        if (parent == null) return default(FoundAttribute);
+
+        var declaredSymbol = ctx.SemanticModel.GetDeclaredSymbol(parent, CancellationToken.None);
+        if (declaredSymbol == null) return default(FoundAttribute);
+
+        var attrData = declaredSymbol.GetAttributes()
+            .FirstOrDefault(ad => ad.AttributeClass != null && ad.AttributeClass.ToDisplayString() == attrType.ToDisplayString());
+
+        return new FoundAttribute(attrName, declaredSymbol, parent.GetLocation(), attrData);
+    }
+
+    /// <summary>
+    /// A cheap syntactic filter used by the incremental generator to reduce semantic work.
+    /// </summary>
+    internal static bool IsPotentialAttribute(SyntaxNode node)
+    {
+        if (node is not AttributeSyntax attribute) return false;
+        var name = attribute.Name.ToString();
+        var simple = name.Contains('.') ? name[(name.LastIndexOf('.') + 1)..] : name;
+        if (simple.EndsWith("Attribute")) simple = simple[..^"Attribute".Length];
+        return LwxConstants.AttributeNames.Contains(simple, StringComparer.Ordinal);
     }
 }
 

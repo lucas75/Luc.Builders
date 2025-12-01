@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using System.Text;
 using Lwx.Builders.Dto.Processors;
+using Lwx.Builders.Dto;
 
 namespace Lwx.Builders.Dto.Processors;
 
@@ -14,22 +15,22 @@ internal class LwxDtoPostInitializationProcessor(
 {
     public void Execute()
     {
-        GeneratorHelpers.AddEmbeddedSource(
+        ProcessorUtils.AddEmbeddedSource(
             ctx,
             "Attributes/LwxDtoAttribute.cs",
             "LwxDtoAttribute.g.cs"
         );
-        GeneratorHelpers.AddEmbeddedSource(
+        ProcessorUtils.AddEmbeddedSource(
             ctx,
             "Attributes/DtoType.cs",
             "DtoType.g.cs"
         );
-        GeneratorHelpers.AddEmbeddedSource(
+        ProcessorUtils.AddEmbeddedSource(
             ctx,
             "Attributes/LwxDtoPropertyAttribute.cs",
             "LwxDtoPropertyAttribute.g.cs"
         );
-        GeneratorHelpers.AddEmbeddedSource(
+        ProcessorUtils.AddEmbeddedSource(
             ctx,
             "Attributes/LwxDtoIgnoreAttribute.cs",
             "LwxDtoIgnoreAttribute.g.cs"
