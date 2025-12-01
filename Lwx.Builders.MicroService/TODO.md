@@ -3,6 +3,7 @@
 This TODO collects short-term work items and follow-ups for the Lwx source generator and the sample consumer app.
 
 ## Completed / Implemented
+- Moved attribute parsing helper out of `Generator.cs` into `GeneratorUtils.cs` as `Util.ResolveAttributeInstance(GeneratorSyntaxContext)` to make the logic reusable and clearer.
 - Enforce endpoint naming variants derived from URI (full segment style and optional HTTP-verb suffix).
 - Path parameter naming uses "Param" prefix (e.g., EndpointAbcParamCdeEfg).
 - Allow nested endpoint folders/namespaces under `*.Endpoints` (e.g., `Endpoints`, `Endpoints.Abc`, `Endpoints.Abc.Cde`).

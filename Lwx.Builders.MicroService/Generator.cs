@@ -1,14 +1,7 @@
 using System;
-#nullable enable
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Text;
-using Lwx.Builders.MicroService.Processors;
-using System.Security.Cryptography;
 
 namespace Lwx.Builders.MicroService;
 
@@ -37,13 +30,14 @@ public class Generator : IIncrementalGenerator
         
         var attrProvider = context.SyntaxProvider
             .CreateSyntaxProvider(
-                predicate: static (node, ct) => IsPotentialAttribute(node),
-                transform: static (ctx, ct) => Transform(ctx))
-            .Where(x => x is not null);
+                predicate: static (node, ct) => GeneratorUtils.IsPotentialAttribute(node),
+                transform: static (ctx, ct) => GeneratorUtils.ResolveAttributeInstance(ctx))
+            .Where(x => x is not null)
+            .Select(static (x, ct) => x!);
                
         // First pass: process all attributes except ServiceConfig
         
-        var lsPass001Attrs = attrProvider.Where(x => x != null && x.AttributeName != LwxConstants.LwxServiceConfig).Collect();
+        var lsPass001Attrs = attrProvider.Where(x => x.AttributeName != Processors.LwxConstants.LwxServiceConfig).Collect();
                 
         context.RegisterSourceOutput
         (
@@ -55,7 +49,7 @@ public class Generator : IIncrementalGenerator
                 foreach (var attr in attrs)
                 {
                     if (attr == null) continue;
-                    var rp = new RootProcessor(this, attr, spc, compilation);
+                    var rp = new Processors.RootProcessor(this, attr, spc, compilation);
                     rp.Execute();
                 }
             }
@@ -125,7 +119,7 @@ public class Generator : IIncrementalGenerator
             }
         });
         
-        var lsPass002Attrs = attrProvider.Where(x => x != null && x.AttributeName == LwxConstants.LwxServiceConfig).Collect();
+        var lsPass002Attrs = attrProvider.Where(x => x.AttributeName == Processors.LwxConstants.LwxServiceConfig).Collect();
 
         context.RegisterSourceOutput
         (
@@ -148,52 +142,11 @@ public class Generator : IIncrementalGenerator
                 }
                 else
                 {
-                    var rp = new RootProcessor(this, scList[0]!, spc, compilation);
+                    var rp = new Processors.RootProcessor(this, scList[0]!, spc, compilation);
                     rp.Execute();
                 }
             }
         );
-    }
-
-    private static FoundAttribute? Transform(GeneratorSyntaxContext ctx)
-    {
-        var attributeSyntax = (AttributeSyntax)ctx.Node;
-
-        // Use the semantic model to determine the attribute type correctly
-        var info = ctx.SemanticModel.GetSymbolInfo(attributeSyntax, CancellationToken.None);
-        var attrType = info.Symbol switch
-        {
-            IMethodSymbol ms => ms.ContainingType,
-            INamedTypeSymbol nts => nts,
-            _ => null
-        };
-
-        if (attrType == null) return default(FoundAttribute);
-
-        var attrName = attrType.Name;
-        if (attrName.EndsWith("Attribute")) attrName = attrName.Substring(0, attrName.Length - "Attribute".Length);
-        if (!LwxConstants.AttributeNames.Contains(attrName, StringComparer.Ordinal)) return default(FoundAttribute);
-
-        var parent = attributeSyntax.Parent?.Parent;
-        if (parent == null) return default(FoundAttribute);
-
-        var declaredSymbol = ctx.SemanticModel.GetDeclaredSymbol(parent, CancellationToken.None);
-        if (declaredSymbol == null) return default(FoundAttribute);
-
-        // Find the corresponding AttributeData for the declared symbol (if any)
-        var attrData = declaredSymbol.GetAttributes()
-            .FirstOrDefault(ad => ad.AttributeClass != null && ad.AttributeClass.ToDisplayString() == attrType.ToDisplayString());
-
-        return new FoundAttribute(attrName, declaredSymbol, parent.GetLocation(), attrData);
-    }
-
-    private static bool IsPotentialAttribute(SyntaxNode node)
-    {
-        if (node is not AttributeSyntax attribute) return false;
-        var name = attribute.Name.ToString();
-        var simple = name.Contains('.') ? name[(name.LastIndexOf('.') + 1)..] : name;
-        if (simple.EndsWith("Attribute")) simple = simple[..^"Attribute".Length];
-        return LwxConstants.AttributeNames.Contains(simple, StringComparer.Ordinal);
     }
 }
 

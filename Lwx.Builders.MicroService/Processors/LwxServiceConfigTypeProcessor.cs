@@ -12,13 +12,13 @@ internal class LwxServiceConfigTypeProcessor(
     Generator parent,
     Compilation compilation,
     SourceProductionContext ctx,
-    FoundAttribute attr
+    AttributeInstance attr
 )
 {
     public void Execute()
     {
         // enforce file path and namespace matching for service config marker classes
-        GeneratorHelpers.ValidateFilePathMatchesNamespace(attr.TargetSymbol, ctx);
+        ProcessorUtils.ValidateFilePathMatchesNamespace(attr.TargetSymbol, ctx);
         // Ensure the service config attribute is only used in a file explicitly named ServiceConfig.cs
         var loc = attr.TargetSymbol.Locations.FirstOrDefault(l => l.IsInSource);
         if (loc != null)
@@ -43,7 +43,7 @@ internal class LwxServiceConfigTypeProcessor(
             }
         }
 
-        var name = GeneratorHelpers.SafeIdentifier(attr.TargetSymbol.Name);
+        var name = ProcessorUtils.SafeIdentifier(attr.TargetSymbol.Name);
         var ns = attr.TargetSymbol.ContainingNamespace?.ToDisplayString() ?? "Generated";
 
         string? title = null;
@@ -251,11 +251,11 @@ internal class LwxServiceConfigTypeProcessor(
                 {
                     builder.Services.AddSwaggerGen(options =>
                     {
-                        options.SwaggerDoc("{{Util.EscapeForCSharp(version)}}", new Microsoft.OpenApi.Models.OpenApiInfo
+                        options.SwaggerDoc("{{GeneratorUtils.EscapeForCSharp(version)}}", new Microsoft.OpenApi.Models.OpenApiInfo
                         { 
-                            Title = "{{Util.EscapeForCSharp(title)}}",
-                            Description = "{{Util.EscapeForCSharp(description)}}",
-                            Version = "{{Util.EscapeForCSharp(version)}}"
+                            Title = "{{GeneratorUtils.EscapeForCSharp(title)}}",
+                            Description = "{{GeneratorUtils.EscapeForCSharp(description)}}",
+                            Version = "{{GeneratorUtils.EscapeForCSharp(version)}}"
                         });
                     });
                 }
@@ -275,7 +275,7 @@ internal class LwxServiceConfigTypeProcessor(
                     app.UseSwagger();
                     app.UseSwaggerUI(options =>
                     {
-                        options.DocumentTitle = "{{Util.EscapeForCSharp(title)}}";
+                        options.DocumentTitle = "{{GeneratorUtils.EscapeForCSharp(title)}}";
                     });
                 }
                 """;

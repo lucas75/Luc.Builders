@@ -11,14 +11,14 @@ internal class LwxWorkerTypeProcessor(
     Generator parent,
     Compilation compilation,
     SourceProductionContext ctx,
-    FoundAttribute attr
+    AttributeInstance attr
     )
 {
     public void Execute()
     {
         // enforce file path and namespace matching for classes marked with Lwx attributes
-        GeneratorHelpers.ValidateFilePathMatchesNamespace(attr.TargetSymbol, ctx);
-        var name = GeneratorHelpers.SafeIdentifier(attr.TargetSymbol.Name);
+        ProcessorUtils.ValidateFilePathMatchesNamespace(attr.TargetSymbol, ctx);
+        var name = ProcessorUtils.SafeIdentifier(attr.TargetSymbol.Name);
         var ns = attr.TargetSymbol.ContainingNamespace?.ToDisplayString() ?? "Generated";
         // Extract named arguments (if any) from attribute data
         string? workerName = null;
@@ -98,7 +98,7 @@ internal class LwxWorkerTypeProcessor(
                     string nameInAttr = string.Empty;
                     if (fc.ConstructorArguments.Length > 0 && fc.ConstructorArguments[0].Value is string v) nameInAttr = v;
                     if (string.IsNullOrEmpty(nameInAttr)) nameInAttr = p.Name ?? p.ToDisplayString();
-                    var propName = GeneratorHelpers.PascalSafe(nameInAttr);
+                    var propName = ProcessorUtils.PascalSafe(nameInAttr);
                     configParams.Add((p, nameInAttr, propName));
                 }
             }
@@ -110,7 +110,7 @@ internal class LwxWorkerTypeProcessor(
         var factoryRegistration = string.Empty;
         if (configParams.Count > 0)
         {
-            var configClassName = GeneratorHelpers.SafeIdentifier(attr.TargetSymbol.Name + "Config");
+            var configClassName = ProcessorUtils.SafeIdentifier(attr.TargetSymbol.Name + "Config");
             var sbProps = new System.Text.StringBuilder();
             foreach (var (param, key, propName) in configParams)
             {
@@ -151,11 +151,11 @@ internal class LwxWorkerTypeProcessor(
                 }
             }
 
-            var configClassName2 = GeneratorHelpers.SafeIdentifier(attr.TargetSymbol.Name + "Config");
+            var configClassName2 = ProcessorUtils.SafeIdentifier(attr.TargetSymbol.Name + "Config");
 
             var bindSnippet = $$"""
                 // bind configuration section for this worker
-                builder.Services.Configure<{{configClassName2}}>(builder.Configuration.GetSection("{{Util.EscapeForCSharp(effectiveName)}}"));
+                builder.Services.Configure<{{configClassName2}}>(builder.Configuration.GetSection("{{GeneratorUtils.EscapeForCSharp(effectiveName)}}"));
 
                 """;
 
@@ -196,13 +196,13 @@ internal class LwxWorkerTypeProcessor(
                     // Publish={{shortStage}}
                     if ({{condExpr}})
                     {
-                        // Worker name: {{Util.EscapeForCSharp(effectiveName)}}
-                        // Description: {{Util.EscapeForCSharp(description)}}
+                        // Worker name: {{GeneratorUtils.EscapeForCSharp(effectiveName)}}
+                        // Description: {{GeneratorUtils.EscapeForCSharp(description)}}
                         // Threads: {{threads}}
                         // Policy: {{policyLiteral}}
 
                         // Register a descriptor so runtime infrastructure and health systems can discover worker metadata
-                        builder.Services.AddSingleton(new LwxWorkerDescriptor { Name = "{{Util.EscapeForCSharp(effectiveName)}}", Description = "{{Util.EscapeForCSharp(description)}}", Threads = {{threads}}, Policy = {{policyLiteral}} });
+                        builder.Services.AddSingleton(new LwxWorkerDescriptor { Name = "{{GeneratorUtils.EscapeForCSharp(effectiveName)}}", Description = "{{GeneratorUtils.EscapeForCSharp(description)}}", Threads = {{threads}}, Policy = {{policyLiteral}} });
 
                         // Register the worker as a hosted service. The worker will be activated according to the application's DI lifecycle.
                         {{(configParams.Count > 0 ? factoryRegistration : $"for (int i = 0; i < {threads}; i++) {{ builder.Services.AddHostedService<{attr.TargetSymbol.Name}>(); }}")}}
@@ -228,9 +228,9 @@ internal class LwxWorkerTypeProcessor(
         {{configClassSource}}
         """;
 
-        GeneratorHelpers.AddGeneratedFile(ctx, $"LwxWorker_{name}.g.cs", source);
+        ProcessorUtils.AddGeneratedFile(ctx, $"LwxWorker_{name}.g.cs", source);
 
         // Register worker type with parent list so ServiceConfig can generate Main wiring
-        parent.WorkerNames.Add(GeneratorHelpers.ExtractRelativeTypeName(attr.TargetSymbol, compilation));
+        parent.WorkerNames.Add(ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation));
     }
 }

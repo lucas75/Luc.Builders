@@ -15,7 +15,7 @@ internal class LwxTimerPostInitializationProcessor(
 {
     public void Execute()
     {
-        GeneratorHelpers.AddEmbeddedSource(
+        ProcessorUtils.AddEmbeddedSource(
           ctx,
           "Attributes/LwxTimerAttribute.cs",
           "LwxTimerAttribute.g.cs"

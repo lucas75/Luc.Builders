@@ -14,7 +14,7 @@ internal class LwxServiceConfigPostInitializationProcessor(
 {
     public void Execute()
     {
-        GeneratorHelpers.AddEmbeddedSource(
+        ProcessorUtils.AddEmbeddedSource(
           ctx,
           "Attributes/LwxServiceConfigAttribute.cs",
           "LwxServiceConfigAttribute.g.cs"

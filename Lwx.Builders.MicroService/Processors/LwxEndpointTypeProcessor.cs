@@ -11,15 +11,15 @@ internal class LwxEndpointTypeProcessor(
     Generator parent,
     Compilation compilation,
     SourceProductionContext ctx,
-    FoundAttribute attr
+    AttributeInstance attr
 )
 {
     public void Execute()
     {
         // enforce file path and namespace matching for classes marked with Lwx attributes
-        GeneratorHelpers.ValidateFilePathMatchesNamespace(attr.TargetSymbol, ctx);
+        ProcessorUtils.ValidateFilePathMatchesNamespace(attr.TargetSymbol, ctx);
 
-        var name = GeneratorHelpers.SafeIdentifier(attr.TargetSymbol.Name);
+        var name = ProcessorUtils.SafeIdentifier(attr.TargetSymbol.Name);
         var ns = attr.TargetSymbol.ContainingNamespace?.ToDisplayString() ?? "Generated";
 
         var uriArg = ExtractUriArgument();
@@ -36,7 +36,7 @@ internal class LwxEndpointTypeProcessor(
         GenerateSourceFiles(name, ns, rootNs, endpointClassName, optionalFirstSegment, uriArg, securityProfile, summary, description, publishLiteral);
 
         // Register endpoint type on parent so ServiceConfig has the list of endpoints for Main generation
-        parent.EndpointNames.Add(GeneratorHelpers.ExtractRelativeTypeName(attr.TargetSymbol, compilation));
+        parent.EndpointNames.Add(ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation));
     }
 
     private string? ExtractUriArgument()
@@ -77,11 +77,11 @@ internal class LwxEndpointTypeProcessor(
             if (seg.StartsWith("{") && seg.EndsWith("}"))
             {
                 var pname = seg.Substring(1, seg.Length - 2);
-                nameParts.Add("Param" + GeneratorHelpers.PascalSafe(pname));
+                nameParts.Add("Param" + ProcessorUtils.PascalSafe(pname));
             }
             else
             {
-                nameParts.Add(GeneratorHelpers.PascalSafe(seg));
+                nameParts.Add(ProcessorUtils.PascalSafe(seg));
             }
         }
 
@@ -101,7 +101,7 @@ internal class LwxEndpointTypeProcessor(
             "PUT" => "Put",
             "DELETE" => "Delete",
             "PATCH" => "Patch",
-            _ => GeneratorHelpers.PascalSafe(v.ToLowerInvariant())
+            _ => ProcessorUtils.PascalSafe(v.ToLowerInvariant())
         };
 
         var suffix = HttpSuffix(actualVerb);
@@ -211,7 +211,7 @@ internal class LwxEndpointTypeProcessor(
             var sb = new System.Text.StringBuilder("Endpoint");
             if (segs.Length > 0)
             {
-                optionalFirstSegment = GeneratorHelpers.PascalSafe(segs[0]);
+                optionalFirstSegment = ProcessorUtils.PascalSafe(segs[0]);
             }
             foreach (var seg in segs)
             {
@@ -219,18 +219,18 @@ internal class LwxEndpointTypeProcessor(
                 {
                     var pname = seg.Substring(1, seg.Length - 2);
                     sb.Append("Param");
-                    sb.Append(GeneratorHelpers.PascalSafe(pname));
+                    sb.Append(ProcessorUtils.PascalSafe(pname));
                 }
                 else
                 {
                     var s2 = seg;
-                    sb.Append(GeneratorHelpers.PascalSafe(s2));
+                    sb.Append(ProcessorUtils.PascalSafe(s2));
                 }
             }
             endpointClassName = sb.ToString();
         }
 
-        endpointClassName ??= $"Endpoint{GeneratorHelpers.SafeIdentifier(attr.TargetSymbol.Name)}";
+        endpointClassName ??= $"Endpoint{ProcessorUtils.SafeIdentifier(attr.TargetSymbol.Name)}";
 
         return (rootNs, endpointClassName, optionalFirstSegment);
     }
@@ -402,6 +402,6 @@ internal class LwxEndpointTypeProcessor(
             ? $"{ns}.{name}.g.cs"
             : $"{name}.g.cs";
 
-        GeneratorHelpers.AddGeneratedFile(ctx, generatedFileName, source);
+        ProcessorUtils.AddGeneratedFile(ctx, generatedFileName, source);
     }
 }

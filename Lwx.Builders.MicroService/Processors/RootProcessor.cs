@@ -8,7 +8,7 @@ namespace Lwx.Builders.MicroService.Processors;
 internal sealed class RootProcessor
 (
   Generator parent, 
-  FoundAttribute attr, 
+  AttributeInstance attr, 
   SourceProductionContext ctx, 
   Compilation compilation
 )

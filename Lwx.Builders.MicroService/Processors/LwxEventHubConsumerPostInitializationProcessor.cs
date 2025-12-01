@@ -15,7 +15,7 @@ internal class LwxEventHubConsumerPostInitializationProcessor(
 {
     public void Execute()
     {
-        GeneratorHelpers.AddEmbeddedSource(
+        ProcessorUtils.AddEmbeddedSource(
           ctx,
           "Attributes/LwxEventHubConsumerAttribute.cs",
           "LwxEventHubConsumerAttribute.g.cs"

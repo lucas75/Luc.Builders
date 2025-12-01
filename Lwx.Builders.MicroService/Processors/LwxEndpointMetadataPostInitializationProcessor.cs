@@ -13,7 +13,7 @@ internal class LwxEndpointMetadataPostInitializationProcessor(
 {
     public void Execute()
     {
-        GeneratorHelpers.AddEmbeddedSource(
+        ProcessorUtils.AddEmbeddedSource(
           ctx,
           "Attributes/LwxEndpointMetadata.cs",
           "LwxEndpointMetadata.g.cs"

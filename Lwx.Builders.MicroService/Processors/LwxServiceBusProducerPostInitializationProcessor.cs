@@ -15,7 +15,7 @@ internal class LwxServiceBusProducerPostInitializationProcessor(
 {
     public void Execute()
     {
-        GeneratorHelpers.AddEmbeddedSource(
+        ProcessorUtils.AddEmbeddedSource(
           ctx,
           "Attributes/LwxServiceBusProducerAttribute.cs",
           "LwxServiceBusProducerAttribute.g.cs"

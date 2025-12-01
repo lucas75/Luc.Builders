@@ -24,6 +24,7 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
 - Centralized attribute name constants in `LwxConstants.cs` with `const string` for full names and `static readonly string` for short names using `Replace("Attribute", "")`
  - Moved small shared helper types to `Processors/Common.cs` (including the lightweight `FoundAttribute` helper and centralized `LwxConstants`) to make processors more self-contained and avoid leaking generator internals.
 - Refactored `Generator.cs` to use constants from the nested `LwxConstants` in switch statements and attribute detection
+ - Moved attribute parsing helper out of `Generator.cs` into `GeneratorUtils.cs` as `Util.ResolveAttributeInstance(GeneratorSyntaxContext)` to make the logic reusable and clearer.
 - Moved `AttributeNames` array from generator to `LwxConstants` for better maintainability
  - Encapsulated Swagger configuration in dynamically generated `LwxConfigure` extension methods, using `[LwxServiceConfig]` metadata to conditionally include Swagger setup code
  - Upgraded Swagger generation to respect `PublishSwagger` property with environment-based activation (Development/Production stages), and set OpenAPI info (Title, Description, Version) and Swagger UI DocumentTitle from attribute properties

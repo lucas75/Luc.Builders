@@ -42,20 +42,9 @@ internal static class LwxConstants
     ];
 }
 
-internal sealed class FoundAttribute(
-    string attributeName, 
-    ISymbol targetSymbol, 
-    Location location, 
-    AttributeData? attributeData
-)
-{
-    public string AttributeName { get; } = attributeName;
-    public ISymbol TargetSymbol { get; } = targetSymbol;
-    public Location Location { get; } = location;
-    public AttributeData? AttributeData { get; } = attributeData;
-}
 
-internal static class GeneratorHelpers
+
+internal static class ProcessorUtils
 {
     private static readonly Regex _sanitizer = new("[^a-zA-Z0-9_]+", RegexOptions.Compiled);
 
@@ -65,12 +54,12 @@ internal static class GeneratorHelpers
     internal static string PascalSafe(string value)
     {
         var id = SafeIdentifier(value);
-        var parts = id.Split(new[] { '_' }, StringSplitOptions.RemoveEmptyEntries);
+        var parts = id.Split(['_'], StringSplitOptions.RemoveEmptyEntries);
         var sb = new System.Text.StringBuilder();
         foreach (var p in parts)
         {
             sb.Append(char.ToUpperInvariant(p[0]));
-            if (p.Length > 1) sb.Append(p.Substring(1));
+            if (p.Length > 1) sb.Append(p[1..]);
         }
         return sb.Length == 0 ? "_" : sb.ToString();
     }
@@ -135,7 +124,7 @@ internal static class GeneratorHelpers
         }
         if (string.IsNullOrEmpty(remaining)) return;
 
-        var segments = remaining.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
+        var segments = remaining.Split(['.'], StringSplitOptions.RemoveEmptyEntries);
         if (segments.Length == 0) return;
 
         // Expected relative path: If the last namespace segment equals the type name then the file path

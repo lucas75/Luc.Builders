@@ -1,8 +1,33 @@
+using System;
 using System.Text;
+using System.Linq;
+using System.Threading;
+using Microsoft.CodeAnalysis;
+using Lwx.Builders.MicroService.Processors;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Lwx.Builders.MicroService;
 
-internal static class Util
+/// <summary>
+/// Lightweight representation of an attribute instance discovered during syntax analysis.
+/// This type is shared between the generator and processors and therefore lives at the
+/// generator/root namespace so processors can reference it before their own type-level
+/// abstractions are applied.
+/// </summary>
+internal sealed class AttributeInstance(
+    string attributeName,
+    ISymbol targetSymbol,
+    Location location,
+    AttributeData? attributeData
+)
+{
+    public string AttributeName { get; } = attributeName;
+    public ISymbol TargetSymbol { get; } = targetSymbol;
+    public Location Location { get; } = location;
+    public AttributeData? AttributeData { get; } = attributeData;
+}
+
+internal static class GeneratorUtils
 {
     /// <summary>
     /// Escape a string so it is safe to embed in a C# double-quoted string literal.
@@ -28,10 +53,60 @@ internal static class Util
 
         return sb.ToString();
     }
+
+    /// <summary>
+    /// Resolve an AttributeInstance from a <see cref="GeneratorSyntaxContext"/> if the node
+    /// represents one of the known LWX attributes. Returns null when not applicable.
+    /// </summary>
+    internal static AttributeInstance? ResolveAttributeInstance(GeneratorSyntaxContext ctx)
+    {
+        var attributeSyntax = (AttributeSyntax)ctx.Node;
+
+        // Use the semantic model to determine the attribute type correctly
+        var info = ctx.SemanticModel.GetSymbolInfo(attributeSyntax, CancellationToken.None);
+        var attrType = info.Symbol switch
+        {
+            IMethodSymbol ms => ms.ContainingType,
+            INamedTypeSymbol nts => nts,
+            _ => null
+        };
+
+        if (attrType == null) return default(AttributeInstance);
+
+        var attrName = attrType.Name;
+        if (attrName.EndsWith("Attribute")) attrName = attrName.Substring(0, attrName.Length - "Attribute".Length);
+        if (!Processors.LwxConstants.AttributeNames.Contains(attrName, StringComparer.Ordinal)) return default(AttributeInstance);
+
+        var parent = attributeSyntax.Parent?.Parent;
+        if (parent == null) return default(AttributeInstance);
+
+        var declaredSymbol = ctx.SemanticModel.GetDeclaredSymbol(parent, CancellationToken.None);
+        if (declaredSymbol == null) return default(AttributeInstance);
+
+        // Find the corresponding AttributeData for the declared symbol (if any)
+        var attrData = declaredSymbol.GetAttributes()
+            .FirstOrDefault(ad => ad.AttributeClass != null && ad.AttributeClass.ToDisplayString() == attrType.ToDisplayString());
+
+        return new AttributeInstance(attrName, declaredSymbol, parent.GetLocation(), attrData);
+    }
+
+    /// <summary>
+    /// Check whether a syntax node looks like an Lwx attribute; this is a cheap syntactic
+    /// filter used by the incremental generator to limit semantic work.
+    /// </summary>
+    internal static bool IsPotentialAttribute(SyntaxNode node)
+    {
+        if (node is not AttributeSyntax attribute) return false;
+        var name = attribute.Name.ToString();
+        var simple = name.Contains('.') ? name[(name.LastIndexOf('.') + 1)..] : name;
+        if (simple.EndsWith("Attribute")) simple = simple[..^"Attribute".Length];
+        return LwxConstants.AttributeNames.Contains(simple, StringComparer.Ordinal);
+    }
+
 }
 
 // Helper extension to fix indentation when embedding generated multi-line text
-internal static class LwxGeneratedStringExtensions
+internal static class LwxExtensionFunctions
 {
     public static string FixIndent(this StringBuilder source, int indentLevels, bool indentFirstLine = true)
     {

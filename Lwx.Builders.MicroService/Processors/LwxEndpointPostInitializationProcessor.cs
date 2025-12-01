@@ -13,12 +13,12 @@ internal class LwxEndpointPostInitializationProcessor(
 {
     public void Execute()
     {
-        GeneratorHelpers.AddEmbeddedSource(
+        ProcessorUtils.AddEmbeddedSource(
           ctx,
           "Attributes/LwxEndpointAttribute.cs",
           "LwxEndpointAttribute.g.cs"
         );
-        GeneratorHelpers.AddEmbeddedSource(
+        ProcessorUtils.AddEmbeddedSource(
           ctx,
           "Attributes/LwxStage.cs",
           "LwxStage.g.cs"
