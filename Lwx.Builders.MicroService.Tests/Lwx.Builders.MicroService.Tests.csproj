@@ -16,9 +16,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Tests should not compile sample project sources as part of the test assembly.
-         Temporary sample projects created by tests will reference the generator directly. -->
-    <Compile Remove="SampleProjects\**\*.cs" />
+      <!-- Tests should not compile sample project sources as part of the test assembly.
+        Temporary sample projects created by tests will reference the generator directly. -->
+      <Compile Remove="SampleProjects\**\*.cs" />
+      <Compile Remove="Projects\**\*.cs" />
   </ItemGroup>
 
 </Project>
