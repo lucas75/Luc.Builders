@@ -22,9 +22,9 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
  - DTO processing and attributes have been moved to a dedicated project `Lwx.Builders.Dto`. That project now contains the DTO attributes (`Attributes/`), processors (`Processors/`), and its own incremental generator (`DtoGenerator.cs`). Consumers add it as an analyzer (ProjectReference with ReferenceOutputAssembly="false") to get DTO attribute embedding and generation.
 - Added `[LwxDtoIgnoreAttribute]` for excluding properties from generation while satisfying validation rules
 - Centralized attribute name constants in `LwxConstants.cs` with `const string` for full names and `static readonly string` for short names using `Replace("Attribute", "")`
- - Moved small shared helper types to `Processors/Common.cs` (including the lightweight `FoundAttribute` helper and centralized `LwxConstants`) to make processors more self-contained and avoid leaking generator internals.
+ - Moved small shared helper types into `Processors/ProcessorUtils.cs` and centralized `LwxConstants` to make processors more self-contained. The lightweight attribute model (`AttributeInstance`) now lives at the generator root in `GeneratorUtils.cs` so both the generator and processors share the same representation.
 - Refactored `Generator.cs` to use constants from the nested `LwxConstants` in switch statements and attribute detection
- - Moved attribute parsing helper out of `Generator.cs` into `GeneratorUtils.cs` as `Util.ResolveAttributeInstance(GeneratorSyntaxContext)` to make the logic reusable and clearer.
+ - Moved attribute parsing helper out of `Generator.cs` into `GeneratorUtils.cs` as `GeneratorUtils.ResolveAttributeInstance(GeneratorSyntaxContext)` to make the logic reusable and clearer.
 - Moved `AttributeNames` array from generator to `LwxConstants` for better maintainability
  - Encapsulated Swagger configuration in dynamically generated `LwxConfigure` extension methods, using `[LwxServiceConfig]` metadata to conditionally include Swagger setup code
  - Upgraded Swagger generation to respect `PublishSwagger` property with environment-based activation (Development/Production stages), and set OpenAPI info (Title, Description, Version) and Swagger UI DocumentTitle from attribute properties
@@ -103,8 +103,7 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
 
 ## Current Working State
 
-- All processors use primary constructors with `(FoundAttribute attr, SourceProductionContext ctx, Compilation _)`
- - All processors use primary constructors with `(FoundAttribute attr, SourceProductionContext ctx, Compilation _)`. Note: `FoundAttribute` is now defined in `Processors/Common.cs` and used by processors inside each generator project.
+ - All processors use primary constructors with `(AttributeInstance attr, SourceProductionContext ctx, Compilation _)` (microservice generator). The lightweight attribute model is defined at the generator root so processors can use it without duplicating types.
 - Large methods have been refactored into maintainable private methods
 - DTO processor generates partial property implementations with backing fields or dictionary storage
 - Build passes cleanly with no errors (warnings for nullable in generated code)

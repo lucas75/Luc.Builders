@@ -42,7 +42,4 @@ public class DtoGenerator : IIncrementalGenerator
         });
     }
 
-    // Transform logic moved to GeneratorUtils.ResolveFoundAttribute
-
-    // IsPotentialAttribute moved to GeneratorUtils.IsPotentialAttribute
 }

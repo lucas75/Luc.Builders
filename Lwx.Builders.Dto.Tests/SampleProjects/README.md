@@ -14,7 +14,7 @@ Each sample project lives under a subfolder matching the project name (e.g. `Err
 The canonical "good" DTO fixtures (NormalDto, DictDto, IgnoreDto) are compiled directly into the test project under `Lwx.Builders.Dto.Tests/Dto` (namespace `Lwx.Builders.Dto.Tests.Dto`) so runtime tests can instantiate and exercise them.
 - DTO types live under `Dto/` within the project and use the namespace <ProjectName>.Dto. The repo now prefers two canonical fixtures:
 	- `ErrorDto` — a merged fixture intentionally containing failing/edge-case DTO types to exercise generator diagnostics.
-- Supporting types (converters/utilities) live in `Dto/Util.cs` when present.
+ - Supporting types (converters/utilities) live under `Dto/` (e.g. helper/source files such as "Util.cs") when present.
 - Each project contains a minimal `Program.cs` to make the project runnable for validation.
 
 How tests use them
