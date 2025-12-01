@@ -249,6 +249,8 @@ internal class LwxServiceConfigTypeProcessor(
             swaggerServicesCode = $$"""
                 if (builder.Environment.{{srcEnvContition}})
                 {
+                    // Ensure API explorer is available for minimal APIs so Swagger has the API descriptions
+                    builder.Services.AddEndpointsApiExplorer();
                     builder.Services.AddSwaggerGen(options =>
                     {
                         options.SwaggerDoc("{{GeneratorUtils.EscapeForCSharp(version)}}", new Microsoft.OpenApi.Models.OpenApiInfo
