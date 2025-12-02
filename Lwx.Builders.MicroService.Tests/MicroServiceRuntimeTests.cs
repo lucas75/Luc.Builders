@@ -147,7 +147,7 @@ public class MicroServiceRuntimeTests
 
         // Confirm basic HTTP activity happened (health endpoint + other endpoints tested by the service)
         Assert.Contains("Now listening on", combined);
-        Assert.Contains("LwxEndpoints", combined);
+        Assert.Contains("Endpoint:", combined);
 
         // Workers should log heartbeats
         Assert.Contains("WorkerDev heartbeat", combined);
@@ -194,7 +194,7 @@ public class MicroServiceRuntimeTests
 
         // Confirm basic HTTP activity happened
         Assert.Contains("Now listening on", combined);
-        Assert.Contains("LwxEndpoints", combined);
+        Assert.Contains("Endpoint:", combined);
 
         // Worker heartbeats should include production worker
         Assert.Contains("WorkerPrd heartbeat", combined);

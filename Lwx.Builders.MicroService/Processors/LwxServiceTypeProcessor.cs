@@ -205,30 +205,38 @@ internal class LwxServiceTypeProcessor(
 
         // Build console listing snippets for endpoints and workers
         var srcList = new System.Text.StringBuilder();
-        srcList.Append("System.Console.WriteLine(\"LwxEndpoints:\");\n");
+        var assemblyRoot = compilation.AssemblyName ?? string.Empty;
         foreach (var e in parent.EndpointInfos)
         {
-            var escType = GeneratorUtils.EscapeForCSharp(e.TypeName);
+            var displayType = e.TypeName ?? string.Empty;
+            if (!string.IsNullOrEmpty(assemblyRoot) && displayType.StartsWith(assemblyRoot + ".", StringComparison.Ordinal))
+            {
+                displayType = displayType.Substring(assemblyRoot.Length + 1);
+            }
+            // If the type lives under Endpoints or Workers in the same assembly, strip that segment as well
+            if (displayType.StartsWith("Endpoints.", StringComparison.Ordinal)) displayType = displayType.Substring("Endpoints.".Length);
+            if (displayType.StartsWith("Workers.", StringComparison.Ordinal)) displayType = displayType.Substring("Workers.".Length);
+            var escDisplay = GeneratorUtils.EscapeForCSharp(displayType);
             var escPath = GeneratorUtils.EscapeForCSharp(e.Path ?? string.Empty);
             var escMethod = GeneratorUtils.EscapeForCSharp(e.HttpMethod ?? "GET");
-            srcList.Append($"System.Console.WriteLine(\"  {escMethod} {escPath} -> {escType}\");\n");
+            srcList.Append($"System.Console.WriteLine(\"Endpoint: {escMethod} {escPath} -> {escDisplay}\");\n");
         }
 
-        srcList.Append("System.Console.WriteLine(\"LwxWorkers:\");\n");
         foreach (var w in parent.WorkerInfos)
         {
-            var escType = GeneratorUtils.EscapeForCSharp(w.TypeName);
-            srcList.Append($"System.Console.WriteLine(\"  {escType} nThreads={w.Threads}\");\n");
+            var displayType = w.TypeName ?? string.Empty;
+            if (!string.IsNullOrEmpty(assemblyRoot) && displayType.StartsWith(assemblyRoot + ".", StringComparison.Ordinal))
+            {
+                displayType = displayType.Substring(assemblyRoot.Length + 1);
+            }
+            if (displayType.StartsWith("Endpoints.", StringComparison.Ordinal)) displayType = displayType.Substring("Endpoints.".Length);
+            if (displayType.StartsWith("Workers.", StringComparison.Ordinal)) displayType = displayType.Substring("Workers.".Length);
+            var escDisplay = GeneratorUtils.EscapeForCSharp(displayType);
+            srcList.Append($"System.Console.WriteLine(\"Worker: {escDisplay} nThreads={w.Threads}\");\n");
         }
-
-
-        // Resolve the fully-qualified Service type name so we can call user-provided Configure overloads.
         var serviceTypeName = ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation);
-
-        // Detect whether user Service declared Configure(WebApplicationBuilder) and/or Configure(WebApplication)
         var webAppBuilderType = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Builder.WebApplicationBuilder");
         var webAppType = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Builder.WebApplication");
-
         bool hasBuilderConfigure = false;
         bool hasAppConfigure = false;
         if (attr.TargetSymbol is INamedTypeSymbol tSym)

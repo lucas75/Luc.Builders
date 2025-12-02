@@ -17,10 +17,19 @@ public static partial class Service
         WorkerCounters.Reset();
 
         var workerEntries = builder.Services.Where(sd => sd.ServiceType?.FullName?.EndsWith("LwxWorkerDescriptor") == true)
-            .Select(sd => sd.ImplementationInstance?.GetType().GetProperty("Name")?.GetValue(sd.ImplementationInstance)?.ToString() ?? sd.ServiceType?.Name ?? "Unknown")
+            .Select(sd => sd.ImplementationInstance)
+            .OfType<object>()
+            .Select(impl => new
+            {
+                Name = impl?.GetType().GetProperty("Name")?.GetValue(impl)?.ToString() ?? "Unknown",
+                Threads = impl?.GetType().GetProperty("Threads")?.GetValue(impl)
+            })
             .ToArray();
 
-        Console.WriteLine($"LwxWorkerDescriptors: {string.Join(", ", workerEntries)}");
+        foreach (var w in workerEntries)
+        {
+            Console.WriteLine($"Worker: {w.Name} nThreads={w.Threads}");
+        }
 
         // NOTE: The fallback shutdown has been moved to a background worker (StopWorker)
     }
@@ -31,16 +40,19 @@ public static partial class Service
         {
             try
             {
-                var epNames = ((IEndpointRouteBuilder)app).DataSources
+                var endpoints = ((IEndpointRouteBuilder)app).DataSources
                     .SelectMany(ds => ds.Endpoints)
-                    .Where(e => e.Metadata.GetMetadata<LwxEndpointMetadata>() != null)
-                    .Select(e => e.DisplayName ?? e.Metadata.GetMetadata<object>()?.GetType().Name ?? "Unnamed")
-                    .ToArray();
-                Console.WriteLine($"LwxEndpoints: {string.Join(", ", epNames)}");
+                    .Where(e => e.Metadata.GetMetadata<LwxEndpointMetadata>() != null);
+
+                foreach (var e in endpoints)
+                {
+                    var displayName = e.DisplayName ?? e.Metadata.GetMetadata<object>()?.GetType().Name ?? "Unnamed";
+                    Console.WriteLine($"Endpoint: {displayName}");
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"LwxEndpoints: inspection failed: {ex.Message}");
+                Console.WriteLine($"Endpoint: inspection failed: {ex.Message}");
             }
         });
     }
