@@ -7,46 +7,46 @@ namespace Lwx.Builders.MicroService.Processors;
 
 internal sealed class RootProcessor
 (
-  Generator parent, 
-  AttributeInstance attr, 
-  SourceProductionContext ctx, 
+  Generator parent,
+  AttributeInstance attr,
+  SourceProductionContext ctx,
   Compilation compilation
 )
 {
-  public void Execute()
-  {    
-    switch (attr.AttributeName)
+    public void Execute()
     {
-      case LwxConstants.LwxEndpoint:
-        new LwxEndpointTypeProcessor(parent, compilation, ctx, attr).Execute();
-        break;
+        switch (attr.AttributeName)
+        {
+            case LwxConstants.LwxEndpoint:
+                new LwxEndpointTypeProcessor(parent, compilation, ctx, attr).Execute();
+                break;
 
-      case LwxConstants.LwxWorker:
-        new LwxWorkerTypeProcessor(parent, compilation, ctx, attr).Execute();
-        break;
+            case LwxConstants.LwxWorker:
+                new LwxWorkerTypeProcessor(parent, compilation, ctx, attr).Execute();
+                break;
 
-      case LwxConstants.LwxServiceBusConsumer:
-        new LwxServiceBusConsumerTypeProcessor(parent, compilation, ctx, attr).Execute();
-        break;
+            case LwxConstants.LwxServiceBusConsumer:
+                new LwxServiceBusConsumerTypeProcessor(parent, compilation, ctx, attr).Execute();
+                break;
 
-      case LwxConstants.LwxEventHubConsumer:
-        new LwxEventHubConsumerTypeProcessor(parent, compilation, ctx, attr).Execute();
-        break;
+            case LwxConstants.LwxEventHubConsumer:
+                new LwxEventHubConsumerTypeProcessor(parent, compilation, ctx, attr).Execute();
+                break;
 
-      case LwxConstants.LwxTimer:
-        new LwxTimerTypeProcessor(parent, compilation, ctx, attr).Execute();
-        break;
+            case LwxConstants.LwxTimer:
+                new LwxTimerTypeProcessor(parent, compilation, ctx, attr).Execute();
+                break;
 
-      case LwxConstants.LwxServiceBusProducer:
-        new LwxServiceBusProducerTypeProcessor(parent, compilation, ctx, attr).Execute();
-        break;
+            case LwxConstants.LwxServiceBusProducer:
+                new LwxServiceBusProducerTypeProcessor(parent, compilation, ctx, attr).Execute();
+                break;
 
-      case LwxConstants.LwxService:
-        new LwxServiceTypeProcessor(parent, compilation, ctx, attr).Execute();
-        break;
+            case LwxConstants.LwxService:
+                new LwxServiceTypeProcessor(parent, compilation, ctx, attr).Execute();
+                break;
 
-      default:
-        break;
+            default:
+                break;
+        }
     }
-  }
 }

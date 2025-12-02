@@ -1,6 +1,6 @@
 using System;
 #nullable enable
- 
+
 namespace Lwx.Builders.Dto.Atributes
 {
     public class LwxDtoPropertyAttribute : Attribute

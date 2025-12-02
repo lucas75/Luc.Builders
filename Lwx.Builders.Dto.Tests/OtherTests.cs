@@ -1,9 +1,9 @@
 using System;
 
-// OtherTests: placeholder for leftover or miscellaneous tests that don't fit
-// Positive/Structural/Negative categories. Keep small, focused tests here.
+// OtherTests: Miscellaneous focus tests for odd/edge cases or small regressions that don't belong
+// in other test categories (Positive/Structural/Negative). Keep small, focused tests here.
 
 public class OtherTests
 {
-    // No leftovers at the moment — this file exists to collect misc tests in the future.
+    // No active miscellaneous tests at the moment — this file is a reserved home for small tests.
 }

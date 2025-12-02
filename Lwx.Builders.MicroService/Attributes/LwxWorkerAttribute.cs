@@ -53,7 +53,7 @@ namespace Lwx.Builders.MicroService.Atributes
         public LwxWorkerPolicy Policy { get; set; } = LwxWorkerPolicy.AlwaysHealthy;
 
         /// <summary>
-        /// The stage in which this worker should run (Development/Production/None).
+        /// The stage in which this worker should run (DevelopmentOnly/All/None).
         /// Defaults to None (disabled) so projects must explicitly opt-in.
         /// </summary>
         public LwxStage Stage { get; set; } = LwxStage.None;

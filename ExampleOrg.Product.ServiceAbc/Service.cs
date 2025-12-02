@@ -11,5 +11,5 @@ namespace ExampleOrg.Product.ServiceAbc;
 )]
 public static partial class Service
 {
-    
+
 }

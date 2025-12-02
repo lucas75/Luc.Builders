@@ -32,8 +32,8 @@ namespace ExampleOrg.Product.Service.Workers;
   // A detailed description of the endpoint (optional)
   Description = "It will say hello to the world",
   // The stage in which the endpoint will be published (required)  
-  // - Development
-  // - Production
+  // - DevelopmentOnly
+  // - All
   // - None
   Publish = LwxStage.DevelopmentOnly
 )]

@@ -127,7 +127,7 @@ Endpoints
     - For each valid endpoint the generator MUST emit a consumer-side mapping helper file containing a method `Configure(WebApplication app)` in a generated file named to match the endpoint type. By default the generator emits `Endpoint<TypeName>.g.cs` files (for example `EndpointAbcCde.g.cs`). If a `NamingExceptionJustification` is present the generator will include the full namespace in the filename to avoid collisions (for example `ExampleOrg.Product.ServiceAbc.Endpoints.EndpointOldStart.g.cs`).
 
         - Chooses the correct `Map*` method based on the HTTP verb present in the `Uri` (GET→MapGet, POST→MapPost, PUT→MapPut, DELETE→MapDelete, PATCH→MapMethods).
-        - Applies stage gating using `Publish` (e.g., Development/Production/None) so endpoints only map in allowed runtime environments.
+        - Applies stage gating using `Publish` (e.g., DevelopmentOnly/All/None) so endpoints only map in allowed runtime environments.
         - Applies `RequireAuthorization` when `SecurityProfile` is set.
         - Applies `WithDisplayName` when `Summary` is supplied.
         - Adds a `LwxEndpointMetadata` instance so runtime code can identify generated endpoints.

@@ -13,6 +13,7 @@
 - Do NOT use @" strings.
 - Changes in doc (.md files) doesn't require compile and test.
 - When you find something difficult, ask the operator for clarification.
+- Avoid composite comands so I can preauthorize them.
 
 Source generation style guidelines (required)
 -----------------------------------
@@ -64,8 +65,5 @@ AI agent verification checklist
    - Ensure `dotnet --list-sdks` includes .NET 9.0 or above.
    - Abort if no supported SDK is detected.
 
-2. Build & test
-   - Run `dotnet build && dotnet test` and fail if there are build/test errors.
-
-3. Sanitization & security
+2. Sanitization & security
    - Do not interpolate untrusted input into generated source. Always sanitize or validate input.

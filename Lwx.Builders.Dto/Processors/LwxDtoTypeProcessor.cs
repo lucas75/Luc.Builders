@@ -256,7 +256,7 @@ namespace Lwx.Builders.Dto.Processors
 
             if (jsonName != null)
             {
-                attributes.Add($"[JsonPropertyName(\"{jsonName}\")] " );
+                attributes.Add($"[JsonPropertyName(\"{jsonName}\")] ");
             }
 
             if (isNullable)

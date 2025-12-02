@@ -27,24 +27,24 @@ public class Generator : IIncrementalGenerator
             new Processors.LwxEndpointExtensionsPostInitializationProcessor(this, ctx).Execute();
             new Processors.LwxServicePostInitializationProcessor(this, ctx).Execute();
         });
-        
+
         var attrProvider = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: static (node, ct) => GeneratorUtils.IsPotentialAttribute(node),
                 transform: static (ctx, ct) => GeneratorUtils.ResolveAttributeInstance(ctx))
             .Where(x => x is not null)
             .Select(static (x, ct) => x!);
-               
+
         // First pass: process all attributes except Service
-        
+
         var lsPass001Attrs = attrProvider.Where(x => x.AttributeName != Processors.LwxConstants.LwxService).Collect();
-                
+
         context.RegisterSourceOutput
         (
-            context.CompilationProvider.Combine(lsPass001Attrs), 
+            context.CompilationProvider.Combine(lsPass001Attrs),
             (spc, tuple) =>
             {
-                var (compilation, attrs) = tuple;            
+                var (compilation, attrs) = tuple;
 
                 foreach (var attr in attrs)
                 {
@@ -118,15 +118,15 @@ public class Generator : IIncrementalGenerator
                 }
             }
         });
-        
+
         var lsPass002Attrs = attrProvider.Where(x => x.AttributeName == Processors.LwxConstants.LwxService).Collect();
 
         context.RegisterSourceOutput
         (
-            context.CompilationProvider.Combine(lsPass002Attrs), 
+            context.CompilationProvider.Combine(lsPass002Attrs),
             (spc, tuple) =>
             {
-                var (compilation, attrs) = tuple; 
+                var (compilation, attrs) = tuple;
 
                 var scList = attrs.ToArray();
                 if (scList.Length == 0)

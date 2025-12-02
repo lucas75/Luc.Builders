@@ -52,7 +52,7 @@ internal class LwxEndpointTypeProcessor(
             return s;
         }
 
-            
+
         if (attr.AttributeData.ConstructorArguments.Length > 0 && attr.AttributeData.ConstructorArguments[0].Value is string cs)
         {
             return cs;
@@ -242,43 +242,43 @@ internal class LwxEndpointTypeProcessor(
         string? description = null;
         string publishLiteral = "Lwx.Builders.MicroService.Atributes.LwxStage.None";
 
-            if (attr.AttributeData != null)
+        if (attr.AttributeData != null)
+        {
+            var named = attr.AttributeData.ToNamedArgumentMap();
+            if (named.TryGetValue("SecurityProfile", out var sp) && sp.Value is string s)
             {
-                var named = attr.AttributeData.ToNamedArgumentMap();
-                if (named.TryGetValue("SecurityProfile", out var sp) && sp.Value is string s)
-                {
-                    securityProfile = s;
-                }
+                securityProfile = s;
+            }
 
-                if (named.TryGetValue("Summary", out var sum) && sum.Value is string s2)
-                {
-                    summary = s2;
-                }
+            if (named.TryGetValue("Summary", out var sum) && sum.Value is string s2)
+            {
+                summary = s2;
+            }
 
-                if (named.TryGetValue("Description", out var d) && d.Value is string s3)
-                {
-                    description = s3;
-                }
+            if (named.TryGetValue("Description", out var d) && d.Value is string s3)
+            {
+                description = s3;
+            }
 
-                if (named.TryGetValue("Publish", out var p) && p.Value != null)
+            if (named.TryGetValue("Publish", out var p) && p.Value != null)
+            {
+                var raw = p.Value;
+                if (raw is int iv)
                 {
-                    var raw = p.Value;
-                    if (raw is int iv)
+                    publishLiteral = iv switch
                     {
-                        publishLiteral = iv switch
-                        {
-                            1 => "Lwx.Builders.MicroService.Atributes.LwxStage.DevelopmentOnly",
-                            2 => "Lwx.Builders.MicroService.Atributes.LwxStage.All",
-                            _ => "Lwx.Builders.MicroService.Atributes.LwxStage.None"
-                        };
-                    }
-                    else
-                    {
-                        var tmp = p.Value.ToString() ?? "Lwx.Builders.MicroService.Atributes.LwxStage.None";
-                        publishLiteral = tmp.Contains('.') ? tmp : ("Lwx.Builders.MicroService." + tmp);
-                    }
+                        1 => "Lwx.Builders.MicroService.Atributes.LwxStage.DevelopmentOnly",
+                        2 => "Lwx.Builders.MicroService.Atributes.LwxStage.All",
+                        _ => "Lwx.Builders.MicroService.Atributes.LwxStage.None"
+                    };
+                }
+                else
+                {
+                    var tmp = p.Value.ToString() ?? "Lwx.Builders.MicroService.Atributes.LwxStage.None";
+                    publishLiteral = tmp.Contains('.') ? tmp : ("Lwx.Builders.MicroService." + tmp);
                 }
             }
+        }
 
         return (securityProfile, summary, description, publishLiteral);
     }

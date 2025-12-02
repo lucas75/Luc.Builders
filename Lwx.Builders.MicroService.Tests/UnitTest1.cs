@@ -19,12 +19,12 @@ public class UnitTest1
 
         // Create a Service with invalid Configure signature
         var nsDir = System.IO.Path.Combine(dir.Path, "TempProject");
-        
+
         Directory.CreateDirectory(nsDir);
 
         // keep the default Program.cs (generator no longer emits Main)
-            File.WriteAllText(Path.Combine(nsDir, "Service.cs"),
-            """
+        File.WriteAllText(Path.Combine(nsDir, "Service.cs"),
+        """
             namespace TempProject;
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
@@ -36,7 +36,7 @@ public class UnitTest1
                 public static void Configure(string s) { }
             }
             """
-        );
+    );
 
         var (exit, output) = dir.Build();
 
@@ -51,8 +51,8 @@ public class UnitTest1
 
         var nsDir2 = System.IO.Path.Combine(dir.Path, "TempProject");
         Directory.CreateDirectory(nsDir2);
-            File.WriteAllText(Path.Combine(nsDir2, "Service.cs"),
-            """
+        File.WriteAllText(Path.Combine(nsDir2, "Service.cs"),
+        """
             namespace TempProject;
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
@@ -65,9 +65,9 @@ public class UnitTest1
                 public static void Foo() { }
             }
             """
-        );
+    );
 
-        
+
 
         var (exit, output) = dir.Build();
 
@@ -315,7 +315,7 @@ public class UnitTest1
             File.WriteAllText(csprojPath, csprojText);
         }
 
-        
+
 
         var nsDir = System.IO.Path.Combine(dir.Path, "TempProject");
         // keep the default Program.cs (generator no longer emits Main)
@@ -373,15 +373,15 @@ public class UnitTest1
     {
         using var dir = new TempProject();
 
-            // ensure generated sources are written to disk
-            var csprojPath = Path.Combine(dir.Path, "TestProj.csproj");
-            var csprojText = File.ReadAllText(csprojPath);
-            if (!csprojText.Contains("<EmitCompilerGeneratedFiles>"))
-            {
-                csprojText = csprojText.Replace("</PropertyGroup>",
-                    "  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>\n  <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>\n</PropertyGroup>");
-                File.WriteAllText(csprojPath, csprojText);
-            }
+        // ensure generated sources are written to disk
+        var csprojPath = Path.Combine(dir.Path, "TestProj.csproj");
+        var csprojText = File.ReadAllText(csprojPath);
+        if (!csprojText.Contains("<EmitCompilerGeneratedFiles>"))
+        {
+            csprojText = csprojText.Replace("</PropertyGroup>",
+                "  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>\n  <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>\n</PropertyGroup>");
+            File.WriteAllText(csprojPath, csprojText);
+        }
 
         // keep the default Program.cs (generator no longer emits Main)
 
@@ -615,7 +615,7 @@ public class UnitTest1
             File.WriteAllText(csprojPath, csprojText);
         }
 
-        
+
 
         var nsDir = System.IO.Path.Combine(dir.Path, "TempProject");
         Directory.CreateDirectory(nsDir);

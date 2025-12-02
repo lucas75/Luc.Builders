@@ -18,18 +18,18 @@ internal static class LwxConstants
     public const string LwxServiceBusConsumer = "LwxServiceBusConsumer";
     public const string LwxServiceBusConsumerAttribute = "LwxServiceBusConsumerAttribute";
 
-    public const string LwxEventHubConsumer = "LwxEventHubConsumer";    
+    public const string LwxEventHubConsumer = "LwxEventHubConsumer";
     public const string LwxEventHubConsumerAttribute = "LwxEventHubConsumerAttribute";
-    
+
     public const string LwxTimer = "LwxTimer";
     public const string LwxTimerAttribute = "LwxTimerAttribute";
-    
+
     public const string LwxServiceBusProducer = "LwxServiceBusProducer";
     public const string LwxServiceBusProducerAttribute = "LwxServiceBusProducerAttribute";
-    
+
     public const string LwxService = "LwxService";
     public const string LwxServiceAttribute = "LwxServiceAttribute";
-    
+
 
     public static readonly string[] AttributeNames = [
         LwxEndpoint,
@@ -75,9 +75,9 @@ internal static class ProcessorUtils
         var expectedName = "Lwx.Builders.MicroService." + fileName.Replace('/', '.').Replace('\\', '.');
         var rname = asm.GetManifestResourceNames()
             .FirstOrDefault(n => n == expectedName);
-            if (rname != null)
-            {
-                using var s = asm.GetManifestResourceStream(rname)!;
+        if (rname != null)
+        {
+            using var s = asm.GetManifestResourceStream(rname)!;
             using var sr = new System.IO.StreamReader(s);
             var src = sr.ReadToEnd();
             ctx.AddSource(generatedName, SourceText.From(src, System.Text.Encoding.UTF8));

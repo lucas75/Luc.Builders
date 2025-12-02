@@ -63,8 +63,8 @@ public class StructuralTests
         Assert.Equal(typeof(System.TimeOnly?), t.GetProperty("Time")?.PropertyType);
 
         var instance = new IgnoreDto
-            {
-                Id = 9,
+        {
+            Id = 9,
             Offset = System.DateTimeOffset.Now,
             Date = System.DateOnly.FromDateTime(DateTime.Today),
             Time = System.TimeOnly.FromDateTime(DateTime.Now)

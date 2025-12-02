@@ -1,47 +1,5 @@
-# TODO — Lwx.Builders
+# TODO
 
-This TODO collects short-term work items and follow-ups for the Lwx source generator and the sample consumer app.
-
-## Completed / Implemented
- - Moved attribute parsing helper out of `Generator.cs` into `GeneratorUtils.cs` as `GeneratorUtils.ResolveAttributeInstance(GeneratorSyntaxContext)` to make the logic reusable and clearer.
-- Enforce endpoint naming variants derived from URI (full segment style and optional HTTP-verb suffix).
-- Path parameter naming uses "Param" prefix (e.g., EndpointAbcParamCdeEfg).
-- Allow nested endpoint folders/namespaces under `*.Endpoints` (e.g., `Endpoints`, `Endpoints.Abc`, `Endpoints.Abc.Cde`).
-- Enforce that classes with `Lwx...` attributes must have file path matching their namespace (diagnostic LWX007).
-- Added validation across processors (DTOs, endpoints, workers, timers, service bus/event hub)
- - Removed legacy `LwxEndpoint_Generated_{name}` marker classes from emitted outputs; endpoint generation is consolidated into a single generated file containing the endpoint partial with `Configure`.
-  - File naming rules: by default the generator emits `Endpoint{TypeName}.g.cs` (e.g. `EndpointAbcCde.g.cs`). If an attribute includes `NamingExceptionJustification` the generator will include the full namespace in the file name to avoid collisions (e.g. `ExampleOrg.Product.ServiceAbc.Endpoints.EndpointOldStart.g.cs`).
- - Added support for naming exceptions via `[LwxEndpoint(NamingExceptionJustification = "...")]` and informational diagnostic LWX008 when used
-- Enhanced incremental source generator to detect Service classes by name and validate their Configure methods for correct signatures (public static void Configure(WebApplicationBuilder) or Configure(WebApplication)).
-
-## Short-term (next)
-- Add unit tests / integration tests for the naming rules and diagnostics (LWX001, LWX007).
- - Add unit tests / integration tests for the naming rules and diagnostics (LWX001, LWX007).
- - Add unit tests / integration tests for the naming rules and diagnostics (LWX001, LWX007, LWX008).
-
-- Add support for a dedicated microservice descriptor attribute `LwxService` (Service.cs).
-- Update generator to prefer `LwxService` and use it for swagger/service configuration generation.
-
- - Ensure all generators in the workspace adopt the canonical raw-template style (use $$""" templates with no embedded indentation and apply `.FixIndent(levels)` at inclusion). Add `FixIndent` helpers in generator projects where missing and update AGENTS.md/TODO.md to match the global policy.
-- Add support for a dedicated microservice descriptor `LwxService` (Service.cs).
-- Update generator to prefer `LwxService` and use it for swagger/service configuration generation.
-
-## DTO & Generator Split — Follow-ups
-
-- `LwxDto` processing has been extracted into a dedicated project `Lwx.Builders.Dto` (attributes, processors, and `DtoGenerator.cs`). Follow-up tasks:
-	- Add focused Roslyn-driver unit tests under `Lwx.Builders.Dto.Tests` to validate diagnostics and generated sources for DTO scenarios (faster feedback than full solution tests).
-	- Add tests for DTO edge cases: dictionary-style DTOs, backing-field vs dictionary storage, JsonConverter scenarios, enum handling, property validation errors.
-	- Add CI job step to validate `Lwx.Builders.Dto` analyzer against sample consumer projects (ensures API compatibility and correct embedding as analyzer/referenceOutputAssembly=false).
-	- Consider publishing `Lwx.Builders.Dto` as independent package or release artifact; update README and changelog accordingly.
-
-### Examples
-
-1. Standard: GET /abc/cde/efg => class should be `EndpointAbcCdeEfg` under `*.Endpoints` or nested namespace
-2. Exception: if legacy class name must remain, annotate with: `[LwxEndpoint("GET /mismatch/start", NamingExceptionJustification = "Legacy naming preserved for backward compatibility")]` and generator will accept it and emit LWX008.
-
-## Medium-term
-- Add tests for edge-cases (generic endpoints, overloaded verb forms, exotic characters in segments).
-
-## Long-term
-- Add project templates and sample apps demonstrating best practice of file/namespace layout.
-- Add CI checks that fail builds for LWX007 in "strict" mode if enabled.
+1. Remove warning LWX008.
+2. Move Lwx.Builder.MicroService.Tests/Projects/MicroService Endpoints and Workers to Lwx.Builder.MicroService.Tests and update the disabled tests to use it.
+3. Locate and remove older ocurrences of ServiceConfig (it was renamed to Service).

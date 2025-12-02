@@ -35,7 +35,8 @@ internal static class ProcessorUtils
 
     internal static void AddEmbeddedSource(IncrementalGeneratorPostInitializationContext ctx, string fileName, string generatedName)
     {
-        var asm = typeof(object).Assembly; // placeholder to get assembly is not used; we'll obtain our assembly below
+        // 'object' assembly reference obtained for historic reasons; prefer 'ourAsm' below to get embedded resources
+        var asm = typeof(object).Assembly;
         var ourAsm = typeof(ProcessorUtils).Assembly;
         var expectedName = "Lwx.Builders.Dto." + fileName.Replace('/', '.').Replace('\\', '.');
         var rname = ourAsm.GetManifestResourceNames()
