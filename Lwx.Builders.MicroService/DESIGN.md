@@ -108,7 +108,7 @@ Endpoints
 
     - If the declared class name does not match one of the acceptable variants and the attribute does not include `NamingExceptionJustification`, the generator MUST emit `LWX001` and skip generating mapping glue for that type.
 
-    - If `NamingExceptionJustification` is provided then the generator emits `LWX008` (informational) and accepts the non-standard name.
+    - If `NamingExceptionJustification` is provided then the generator accepts the non-standard name without emitting a diagnostic.
 
 4.  Handler contract
 
@@ -142,7 +142,7 @@ Attribute Reference (Endpoints)
 - `Summary` (string): optional, used as human-friendly display name in mapping.
 - `Description` (string): optional, free text for future use.
 - `Publish` (LwxStage enum): optional, controls stage gating for mapping.
-- `NamingExceptionJustification` (string): optional, when present permits non-standard type names and causes `LWX008` to be emitted.
+- `NamingExceptionJustification` (string): optional, when present permits non-standard type names; the generator accepts the type name silently and emits the mapping.
 
 Other Lwx Types (DTOs, Workers, Timers, ServiceBus handlers)
 -----------------------------------------------------------
@@ -159,7 +159,7 @@ The generator uses a concise set of diagnostic codes to report rule violations a
 - LWX001 — Error: Invalid endpoint class name (declared name doesn't match expected name derived from URI).
 - LWX002 — Error: Invalid endpoint namespace (namespace does not contain `.Endpoints`).
 - LWX007 — Error: File path does not match the declared namespace for a type annotated with an Lwx attribute.
-- LWX008 — Info: Endpoint naming exception accepted (when `NamingExceptionJustification` is provided).
+ - LWX008 — removed: the generator no longer emits an informational diagnostic for naming exceptions.
 - LWX011 — Error: Service missing in root namespace.
 - LWX012 — Error: [LwxService] attribute used in a non-Service file.
 - LWX014 — Error: Invalid Service.Configure signature.

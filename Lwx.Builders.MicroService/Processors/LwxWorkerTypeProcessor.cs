@@ -233,5 +233,7 @@ internal class LwxWorkerTypeProcessor(
 
         // Register worker type with parent list so Service can generate wiring
         parent.WorkerNames.Add(ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation));
+        // Also register worker metadata like thread count so service helper can print it
+        parent.WorkerInfos.Add((ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation), threads));
     }
 }

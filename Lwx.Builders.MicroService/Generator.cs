@@ -9,8 +9,11 @@ namespace Lwx.Builders.MicroService;
 public class Generator : IIncrementalGenerator
 {
 
-    internal readonly List<string> EndpointNames = [];
-    internal readonly List<string> WorkerNames = [];
+    internal readonly List<string> EndpointNames = new();
+    internal readonly List<string> WorkerNames = new();
+    // Detailed info used for runtime wiring and debug listing
+    internal readonly List<(string TypeName, string HttpMethod, string? Path)> EndpointInfos = new();
+    internal readonly List<(string TypeName, int Threads)> WorkerInfos = new();
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {

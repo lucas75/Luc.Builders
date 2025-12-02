@@ -128,21 +128,7 @@ internal class LwxEndpointTypeProcessor(
 
             if (!string.IsNullOrEmpty(namingException))
             {
-                // Informational diagnostic: the generator will accept the non-standard name because developer provided a justification
-                ctx.ReportDiagnostic(Diagnostic.Create(
-                    new DiagnosticDescriptor(
-                        "LWX008",
-                        "Endpoint naming exception accepted",
-                        "Endpoint class '{0}' does not follow naming rules for URI '{2}', but a naming exception was provided: {1}",
-                        "Naming",
-                        DiagnosticSeverity.Info,
-                        isEnabledByDefault: true),
-                    attr.Location,
-                    attr.TargetSymbol.Name,
-                    namingException,
-                    uriArg));
-
-                // Accept as valid because an exception was supplied
+                // Accept as valid because an exception was supplied (no informational diagnostic emitted).
                 return true;
             }
 
@@ -403,5 +389,8 @@ internal class LwxEndpointTypeProcessor(
             : $"{name}.g.cs";
 
         ProcessorUtils.AddGeneratedFile(ctx, generatedFileName, source);
+
+        // Register endpoint metadata on the parent generator for listing and diagnostics
+        parent.EndpointInfos.Add((ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation), httpVerb, pathPart));
     }
 }

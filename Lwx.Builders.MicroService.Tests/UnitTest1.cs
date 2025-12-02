@@ -466,7 +466,7 @@ public class UnitTest1
     }
 
     [Fact]
-    public void Endpoint_NamingException_EmitsLWX008_And_GeneratesMapping()
+    public void Endpoint_NamingException_GeneratesMapping()
     {
         using var dir = new TempProject();
         var nsDir = Path.Combine(dir.Path, "TempProject");
@@ -507,7 +507,7 @@ public class UnitTest1
 
         var (exit, output) = dir.Build();
 
-        // Build should succeed; LWX008 is informational and might not appear in CLI output.
+        // Build should succeed; for naming exceptions we emit mapping (no informational diagnostic).
         Assert.Equal(0, exit);
         // Ensure no LWX001 error was emitted (it should be suppressed by NamingExceptionJustification)
         Assert.DoesNotContain("LWX001", output);
@@ -520,11 +520,8 @@ public class UnitTest1
             generatedContent = File.ReadAllText(genRoot);
         }
 
-        // If no generated content found, at least ensure the informational diagnostic LWX008 was emitted
-        if (string.IsNullOrEmpty(generatedContent))
-        {
-            Assert.Contains("LWX008", output);
-        }
+        // Generated mapping should exist for a naming exception — validate the g.cs file was created
+        Assert.False(string.IsNullOrEmpty(generatedContent), "Expected endpoint mapping file to be generated for a naming exception.");
     }
 
     [Fact]

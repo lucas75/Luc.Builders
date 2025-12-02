@@ -42,7 +42,7 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
 - Generator now supports placing generated endpoint classes in nested folders/namespaces (e.g. .Endpoints, .Endpoints.Abc, .Endpoints.Abc.Cde) and will generate mapping helpers accordingly
 - Added strict filename/namespace matching validation for classes with Lwx attributes (diagnostic LWX007). The rule enforces that types are declared in files that match the namespace -> path layout. Example: type MyCompany.MyProject.Abc.Cde should be located at Abc/Cde.cs relative to the project root namespace
 - Applied the namespace/path validation across processors (endpoints, DTOs, workers, bus consumers/producers, timers, swagger) so any Lwx-decorated type is validated at compile time
- - Added support for explicit naming exceptions via the attribute property `NamingExceptionJustification` on `[LwxEndpoint]`. When provided the generator will accept a non-standard class name and emit an informational diagnostic (LWX008) that includes the justification.
+ - Added support for explicit naming exceptions via the attribute property `NamingExceptionJustification` on `[LwxEndpoint]`. When provided the generator will accept a non-standard class name without emitting a diagnostic (behavior is silent — mapping is still generated).
 
 ### Completed DTO Processor Implementation (Previous)
 - Implemented `LwxDtoTypeProcessor` to generate partial property implementations for DTO classes
