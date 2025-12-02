@@ -7,4 +7,4 @@ using System.Text;
 
 namespace Lwx.Builders.MicroService.Processors;
 
-// LwxSwaggerPostInitializationProcessor removed. LwxServiceConfig is embedded by LwxServiceConfigPostInitializationProcessor.
+// LwxSwaggerPostInitializationProcessor removed. LwxService is embedded by LwxServicePostInitializationProcessor.

@@ -2,7 +2,9 @@ using Lwx.Builders.MicroService.Atributes;
 
 namespace ExampleOrg.Product.ServiceAbc.Endpoints.ExampleProc;
 
-[LwxEndpoint("GET /example-proc/start")]
+[LwxEndpoint(
+    Uri = "GET /example-proc/start"
+)]
 public partial class EndpointExampleProcStart
 {
     public static async Task Execute(HttpContext context)

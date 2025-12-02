@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace MicroService;
 
-[LwxServiceConfig(PublishSwagger = LwxStage.None)]
+[LwxService(PublishSwagger = LwxStage.None)]
 public static partial class Service
 {
 

@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Lwx.Builders.MicroService.Processors;
 
-internal class LwxServiceConfigPostInitializationProcessor(
+internal class LwxServicePostInitializationProcessor(
   Generator parent,
   IncrementalGeneratorPostInitializationContext ctx
 )
@@ -16,8 +16,8 @@ internal class LwxServiceConfigPostInitializationProcessor(
     {
         ProcessorUtils.AddEmbeddedSource(
           ctx,
-          "Attributes/LwxServiceConfigAttribute.cs",
-          "LwxServiceConfigAttribute.g.cs"
+          "Attributes/LwxServiceAttribute.cs",
+          "LwxServiceAttribute.g.cs"
         );
     }
 }

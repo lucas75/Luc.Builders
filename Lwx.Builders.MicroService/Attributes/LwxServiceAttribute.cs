@@ -9,7 +9,7 @@ namespace Lwx.Builders.MicroService.Atributes
     /// by the generator to produce runtime wiring for swagger/openapi and related features.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
-    public class LwxServiceConfigAttribute : Attribute
+    public class LwxServiceAttribute : Attribute
     {
         public string Title { get; set; }
         public string Description { get; set; }
@@ -17,6 +17,6 @@ namespace Lwx.Builders.MicroService.Atributes
         public LwxStage PublishSwagger { get; set; } = LwxStage.None;
         // GenerateMain flag removed — generator no longer emits a Main method.
 
-        public LwxServiceConfigAttribute() { }
+        public LwxServiceAttribute() { }
     }
 }

@@ -25,7 +25,7 @@ public class Generator : IIncrementalGenerator
             new Processors.LwxServiceBusProducerPostInitializationProcessor(this, ctx).Execute();
             new Processors.LwxEndpointMetadataPostInitializationProcessor(this, ctx).Execute();
             new Processors.LwxEndpointExtensionsPostInitializationProcessor(this, ctx).Execute();
-            new Processors.LwxServiceConfigPostInitializationProcessor(this, ctx).Execute();
+            new Processors.LwxServicePostInitializationProcessor(this, ctx).Execute();
         });
         
         var attrProvider = context.SyntaxProvider
@@ -35,9 +35,9 @@ public class Generator : IIncrementalGenerator
             .Where(x => x is not null)
             .Select(static (x, ct) => x!);
                
-        // First pass: process all attributes except ServiceConfig
+        // First pass: process all attributes except Service
         
-        var lsPass001Attrs = attrProvider.Where(x => x.AttributeName != Processors.LwxConstants.LwxServiceConfig).Collect();
+        var lsPass001Attrs = attrProvider.Where(x => x.AttributeName != Processors.LwxConstants.LwxService).Collect();
                 
         context.RegisterSourceOutput
         (
@@ -55,7 +55,7 @@ public class Generator : IIncrementalGenerator
             }
         );
 
-        // Second pass: process ServiceConfig attributes
+        // Second pass: process Service attributes
 
         // Validate classes under Endpoints and Workers namespaces are properly annotated.
         context.RegisterSourceOutput(context.CompilationProvider, (spc, compilation) =>
@@ -119,7 +119,7 @@ public class Generator : IIncrementalGenerator
             }
         });
         
-        var lsPass002Attrs = attrProvider.Where(x => x.AttributeName == Processors.LwxConstants.LwxServiceConfig).Collect();
+        var lsPass002Attrs = attrProvider.Where(x => x.AttributeName == Processors.LwxConstants.LwxService).Collect();
 
         context.RegisterSourceOutput
         (
@@ -131,13 +131,13 @@ public class Generator : IIncrementalGenerator
                 var scList = attrs.ToArray();
                 if (scList.Length == 0)
                 {
-                    Processors.LwxServiceConfigTypeProcessor.ReportMissingServiceConfig(spc);
+                    Processors.LwxServiceTypeProcessor.ReportMissingService(spc);
                 }
                 else if (scList.Length > 1)
                 {
                     foreach (var sc in scList)
                     {
-                        Processors.LwxServiceConfigTypeProcessor.ReportMultipleServiceConfig(spc, sc!.Location);
+                        Processors.LwxServiceTypeProcessor.ReportMultipleService(spc, sc!.Location);
                     }
                 }
                 else

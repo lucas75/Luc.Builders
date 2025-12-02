@@ -8,7 +8,7 @@ namespace ExampleOrg.Product.ServiceAbc.Endpoints;
     SecurityProfile = "public",
     Summary = "abc",
     Description = "Blah Blah",
-    Publish = LwxStage.Development
+    Publish = LwxStage.DevelopmentOnly
 )]
 public static partial class EndpointAbcCde
 {

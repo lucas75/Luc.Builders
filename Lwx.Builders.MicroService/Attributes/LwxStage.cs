@@ -15,11 +15,11 @@ namespace Lwx.Builders.MicroService.Atributes
         /// <summary>
         /// The endpoint or service is active only in development environments.
         /// </summary>
-        Development = 1,
+        DevelopmentOnly = 1,
 
         /// <summary>
-        /// The endpoint or service is active in production environments.
+        /// The endpoint or service is active in all deployment environments.
         /// </summary>
-        Production = 2
+        All = 2
     }
 }

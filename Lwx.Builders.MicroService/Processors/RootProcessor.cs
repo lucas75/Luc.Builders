@@ -41,8 +41,8 @@ internal sealed class RootProcessor
         new LwxServiceBusProducerTypeProcessor(parent, compilation, ctx, attr).Execute();
         break;
 
-      case LwxConstants.LwxServiceConfig:
-        new LwxServiceConfigTypeProcessor(parent, compilation, ctx, attr).Execute();
+      case LwxConstants.LwxService:
+        new LwxServiceTypeProcessor(parent, compilation, ctx, attr).Execute();
         break;
 
       default:

@@ -12,7 +12,7 @@ namespace ExampleOrg.Product.ServiceAbc.Workers;
     Description = "Example background worker for the sample application",
     Threads = 2,
     Policy = LwxWorkerPolicy.AlwaysHealthy,
-    Stage = LwxStage.Development
+    Stage = LwxStage.DevelopmentOnly
 )]
 public partial class TheWorker(ILogger<TheWorker> logger, [FromConfig("Abc")] string abc) : BackgroundService
 {

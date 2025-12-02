@@ -8,7 +8,7 @@ namespace MicroService.Endpoints;
 [LwxEndpoint(
     Uri = "GET /worker-status", 
     Summary = "worker-status", 
-    Publish = LwxStage.Production
+    Publish = LwxStage.All
 )]
 public static partial class EndpointWorkerStatus
 {

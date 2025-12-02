@@ -40,8 +40,8 @@ internal class LwxWorkerTypeProcessor(
                 {
                     stageLiteral = iv switch
                     {
-                        1 => "Lwx.Builders.MicroService.Atributes.LwxStage.Development",
-                        2 => "Lwx.Builders.MicroService.Atributes.LwxStage.Production",
+                        1 => "Lwx.Builders.MicroService.Atributes.LwxStage.DevelopmentOnly",
+                        2 => "Lwx.Builders.MicroService.Atributes.LwxStage.All",
                         _ => "Lwx.Builders.MicroService.Atributes.LwxStage.None"
                     };
                 }
@@ -186,7 +186,7 @@ internal class LwxWorkerTypeProcessor(
         }
         else
         {
-            var condExpr = stageLiteral != null && stageLiteral.EndsWith(".Development", System.StringComparison.Ordinal)
+            var condExpr = stageLiteral != null && stageLiteral.EndsWith(".DevelopmentOnly", System.StringComparison.Ordinal)
                 ? "builder.Environment.IsDevelopment()"
                 : "builder.Environment.IsDevelopment() || builder.Environment.IsProduction()";
 
@@ -230,7 +230,7 @@ internal class LwxWorkerTypeProcessor(
 
         ProcessorUtils.AddGeneratedFile(ctx, $"LwxWorker_{name}.g.cs", source);
 
-        // Register worker type with parent list so ServiceConfig can generate Main wiring
+        // Register worker type with parent list so Service can generate wiring
         parent.WorkerNames.Add(ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation));
     }
 }

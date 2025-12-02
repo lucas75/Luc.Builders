@@ -50,7 +50,7 @@ Requirements for Consuming Projects
 General
 ------
 
-- A consuming project that uses the Lwx generator MUST ensure that every class annotated with any Lwx attribute (e.g., `[LwxEndpoint]`, `[LwxServiceConfig]`) has a file path that mirrors its namespace relative to the project's root namespace. Example: `ExampleOrg.Product.ServiceAbc.Abc.Cde` MUST be declared in `Abc/Cde.cs`.
+- A consuming project that uses the Lwx generator MUST ensure that every class annotated with any Lwx attribute (e.g., `[LwxEndpoint]`, `[LwxService]`) has a file path that mirrors its namespace relative to the project's root namespace. Example: `ExampleOrg.Product.ServiceAbc.Abc.Cde` MUST be declared in `Abc/Cde.cs`.
 
 - The generator uses this convention to produce canonical placeholder types and mapping helpers. The generator reports diagnostic `LWX007` when this rule is violated.
 
@@ -59,9 +59,9 @@ Service (root-level application configuration)
 
 1.  The consuming project MUST declare a type named `Service` in the root namespace and placed in `Service.cs` at the project root. The generator will report `LWX011` if no such type exists.
 
-2.  The `Service` type MUST be annotated with the `[LwxServiceConfig]` attribute. If the attribute appears on any other file or type the generator MUST report a diagnostic `LWX012`.
+2.  The `Service` type MUST be annotated with the `[LwxService]` attribute. If the attribute appears on any other file or type the generator MUST report a diagnostic `LWX012`.
 
-3.  Required attribute properties on `[LwxServiceConfig]` are:
+3.  Required attribute properties on `[LwxService]` are:
 
     - Title (string) — MUST be present.
     - Description (string) — MUST be present.
@@ -161,7 +161,7 @@ The generator uses a concise set of diagnostic codes to report rule violations a
 - LWX007 — Error: File path does not match the declared namespace for a type annotated with an Lwx attribute.
 - LWX008 — Info: Endpoint naming exception accepted (when `NamingExceptionJustification` is provided).
 - LWX011 — Error: Service missing in root namespace.
-- LWX012 — Error: [LwxServiceConfig] attribute used in a non-Service file.
+- LWX012 — Error: [LwxService] attribute used in a non-Service file.
 - LWX014 — Error: Invalid Service.Configure signature.
 - LWX015 — Error: Unexpected public methods found on Service (only Configure overloads are permitted).
 - LWX016 — Info: Generator emitted LwxServices helper source; diagnostic may include generated source (informational).
@@ -208,11 +208,11 @@ Service example (normative)
 ```csharp
 namespace ExampleOrg.Product.ServiceAbc;
 
-[LwxServiceConfig(
+[LwxService(
     Title = "MyUnit Worker 001 API",
     Description = "API for MyUnit Worker 001",
     Version = "v1.0.0",
-    PublishSwagger = LwxStage.Development
+    PublishSwagger = LwxStage.DevelopmentOnly
 )]
 public partial class Service
 {
@@ -234,7 +234,7 @@ namespace ExampleOrg.Product.ServiceAbc.Endpoints;
 [LwxEndpoint("GET /abc/{id}",
     SecurityProfile = "MyAuth",
     Summary = "Read ABC by id",
-    Publish = LwxStage.Development)]
+    Publish = LwxStage.DevelopmentOnly)]
 public static class EndpointAbcParamId
 {
     // Required handler. Examples of acceptable signatures follow.

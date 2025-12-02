@@ -17,7 +17,7 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
  - Enhanced incremental source generator to detect Service classes by name and validate their Configure methods for correct signatures (public static void Configure(WebApplicationBuilder) or Configure(WebApplication)), reporting diagnostics LWX014 and LWX015 for invalid signatures or unexpected public methods.
  - Enforced presence of `Service.cs` in projects using the generator (diagnostic LWX011).
  - Enforced presence of `Service.cs` in projects using the generator (diagnostic LWX011).
- - Enforced that `[LwxServiceConfig]` may only appear in a file named `Service.cs` (diagnostic LWX012).
+ - Enforced that `[LwxService]` may only appear in a file named `Service.cs` (diagnostic LWX012).
  - DTO processing and attributes have been moved to a dedicated project `Lwx.Builders.Dto` (see that project for `LwxDto` attributes and processors)
  - DTO processing and attributes have been moved to a dedicated project `Lwx.Builders.Dto`. That project now contains the DTO attributes (`Attributes/`), processors (`Processors/`), and its own incremental generator (`DtoGenerator.cs`). Consumers add it as an analyzer (ProjectReference with ReferenceOutputAssembly="false") to get DTO attribute embedding and generation.
 - Added `[LwxDtoIgnoreAttribute]` for excluding properties from generation while satisfying validation rules
@@ -26,12 +26,12 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
 - Refactored `Generator.cs` to use constants from the nested `LwxConstants` in switch statements and attribute detection
  - Moved attribute parsing helper out of `Generator.cs` into `GeneratorUtils.cs` as `GeneratorUtils.ResolveAttributeInstance(GeneratorSyntaxContext)` to make the logic reusable and clearer.
 - Moved `AttributeNames` array from generator to `LwxConstants` for better maintainability
- - Encapsulated Swagger configuration in dynamically generated `LwxConfigure` extension methods, using `[LwxServiceConfig]` metadata to conditionally include Swagger setup code
+ - Encapsulated Swagger configuration in dynamically generated `LwxConfigure` extension methods, using `[LwxService]` metadata to conditionally include Swagger setup code
  - Upgraded Swagger generation to respect `PublishSwagger` property with environment-based activation (Development/Production stages), and set OpenAPI info (Title, Description, Version) and Swagger UI DocumentTitle from attribute properties
  - Removed embedded `LwxEndpointExtensions.cs` template. Endpoint and swagger wiring is now inlined into the generated `Service` helpers (the `{Assembly}.Service.g.cs` file) so all generator-level wiring is centralized and consumers only need the `Service` helpers.
  - Removed legacy `LwxEndpoint_Generated_{name}` marker classes from generated outputs; endpoint generation is now consolidated into a single generated file matching the endpoint class name (for example `EndpointAbcCde.g.cs`) containing the endpoint partial with `Configure`.
  - Removed embedded `LwxEndpointExtensions.cs` template and csproj embedding — endpoint and swagger wiring is inlined into the `Service` helper emitted by the main generator. This reduces template duplication and keeps generated outputs consistent with attribute metadata.
- - Updated `LwxServiceConfigTypeProcessor` to minimal diagnostic checking, with actual generation moved to main generator
+ - Updated `LwxServiceTypeProcessor` to minimal diagnostic checking, with actual generation moved to main generator
 - Ensured clean builds with no runtime dependencies on generator assembly, maintaining embedded source distribution pattern
 
 ### Endpoint Naming & Namespace/Filepath Validation (Latest)

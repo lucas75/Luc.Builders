@@ -4,15 +4,15 @@ using Xunit;
 
 namespace ExampleOrg.Product.ServiceAbc.Tests;
 
-public class ServiceConfigTests
+public class ServiceTests
 {
     [Fact]
-    public void ServiceConfig_ClassExists_WithAttribute()
+    public void Service_ClassExists_WithAttribute()
     {
         var t = typeof(ExampleOrg.Product.ServiceAbc.Service);
         Assert.NotNull(t);
 
-        var attr = t.GetCustomAttribute<LwxServiceConfigAttribute>();
+        var attr = t.GetCustomAttribute<LwxServiceAttribute>();
         Assert.NotNull(attr);
     }
 
@@ -20,8 +20,8 @@ public class ServiceConfigTests
     public void Service_PublishSwagger_IsDevelopment()
     {
         var t = typeof(ExampleOrg.Product.ServiceAbc.Service);
-        var attr = t.GetCustomAttribute<LwxServiceConfigAttribute>();
+        var attr = t.GetCustomAttribute<LwxServiceAttribute>();
         Assert.NotNull(attr);
-        Assert.Equal(LwxStage.Development, attr.PublishSwagger);
+        Assert.Equal(LwxStage.DevelopmentOnly, attr.PublishSwagger);
     }
 }

@@ -4,4 +4,4 @@ using System.Linq;
 
 namespace Lwx.Builders.MicroService.Processors;
 
-// LwxSwaggerTypeProcessor removed. Use LwxServiceConfigTypeProcessor instead.
+// LwxSwaggerTypeProcessor removed. Use LwxServiceTypeProcessor instead.

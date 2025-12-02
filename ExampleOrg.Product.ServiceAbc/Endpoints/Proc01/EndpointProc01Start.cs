@@ -8,7 +8,7 @@ namespace ExampleOrg.Product.ServiceAbc.Endpoints.Proc01;
     SecurityProfile = "public",
     Summary = "Start proccess 01",
     Description = "Blah Blah",
-    Publish = LwxStage.Development
+    Publish = LwxStage.DevelopmentOnly
 )]
 public static partial class EndpointProc01Start
 {

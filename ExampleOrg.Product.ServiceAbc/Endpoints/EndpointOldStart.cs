@@ -1,9 +1,13 @@
+using System.Diagnostics.CodeAnalysis;
 using Lwx.Builders.MicroService.Atributes;
 using Microsoft.AspNetCore.Http;
 
 namespace ExampleOrg.Product.ServiceAbc.Endpoints;
 
-[LwxEndpoint("GET /mismatch/start", NamingExceptionJustification = "Legacy route - keep this name for backward compatibility")]
+[LwxEndpoint(
+    "GET /mismatch/start", 
+    NamingExceptionJustification = "Legacy route - keep this name for backward compatibility"
+)]
 public static partial class EndpointOldStart
 {
     public static async Task Execute(HttpContext context)

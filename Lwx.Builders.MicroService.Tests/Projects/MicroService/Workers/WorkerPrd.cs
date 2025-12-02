@@ -8,7 +8,7 @@ using Lwx.Builders.MicroService.Atributes;
 namespace MicroService.Workers;
 
 [LwxWorker(
-    Stage = LwxStage.Production, 
+    Stage = LwxStage.All, 
     Threads = 1
 )]
 public partial class WorkerPrd(ILogger<WorkerPrd> logger) : BackgroundService

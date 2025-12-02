@@ -35,7 +35,7 @@ internal class LwxEndpointTypeProcessor(
 
         GenerateSourceFiles(name, ns, rootNs, endpointClassName, optionalFirstSegment, uriArg, securityProfile, summary, description, publishLiteral);
 
-        // Register endpoint type on parent so ServiceConfig has the list of endpoints for Main generation
+        // Register endpoint type on parent so Service has the list of endpoints for generation
         parent.EndpointNames.Add(ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation));
     }
 
@@ -267,8 +267,8 @@ internal class LwxEndpointTypeProcessor(
                     {
                         publishLiteral = iv switch
                         {
-                            1 => "Lwx.Builders.MicroService.Atributes.LwxStage.Development",
-                            2 => "Lwx.Builders.MicroService.Atributes.LwxStage.Production",
+                            1 => "Lwx.Builders.MicroService.Atributes.LwxStage.DevelopmentOnly",
+                            2 => "Lwx.Builders.MicroService.Atributes.LwxStage.All",
                             _ => "Lwx.Builders.MicroService.Atributes.LwxStage.None"
                         };
                     }
@@ -346,7 +346,7 @@ internal class LwxEndpointTypeProcessor(
         }
         else
         {
-            var condExpr = publishLiteral != null && publishLiteral.EndsWith(".Development", StringComparison.Ordinal)
+            var condExpr = publishLiteral != null && publishLiteral.EndsWith(".DevelopmentOnly", StringComparison.Ordinal)
                 ? "app.Environment.IsDevelopment()"
                 : "app.Environment.IsDevelopment() || app.Environment.IsProduction()";
 

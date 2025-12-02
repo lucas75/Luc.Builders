@@ -19,12 +19,12 @@ This TODO collects short-term work items and follow-ups for the Lwx source gener
  - Add unit tests / integration tests for the naming rules and diagnostics (LWX001, LWX007).
  - Add unit tests / integration tests for the naming rules and diagnostics (LWX001, LWX007, LWX008).
 
-- Add support for a dedicated microservice descriptor attribute `LwxServiceConfig` (Service.cs).
- - Update generator to prefer `LwxServiceConfig` and use it for swagger/service configuration generation.
+- Add support for a dedicated microservice descriptor attribute `LwxService` (Service.cs).
+- Update generator to prefer `LwxService` and use it for swagger/service configuration generation.
 
  - Ensure all generators in the workspace adopt the canonical raw-template style (use $$""" templates with no embedded indentation and apply `.FixIndent(levels)` at inclusion). Add `FixIndent` helpers in generator projects where missing and update AGENTS.md/TODO.md to match the global policy.
-- Add support for a dedicated microservice descriptor `LwxServiceConfig` (Service.cs).
- - Update generator to prefer `LwxServiceConfig` and use it for swagger/service configuration generation.
+- Add support for a dedicated microservice descriptor `LwxService` (Service.cs).
+- Update generator to prefer `LwxService` and use it for swagger/service configuration generation.
 
 ## DTO & Generator Split — Follow-ups
 

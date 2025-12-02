@@ -3,11 +3,11 @@ using Microsoft.AspNetCore.Builder;
 
 namespace ExampleOrg.Product.ServiceAbc;
 
-[LwxServiceConfig(
+[LwxService(
     Title = "MyUnit Worker 001 API",
     Description = "API for MyUnit Worker 001",
     Version = "v1.0.0",
-    PublishSwagger = LwxStage.Development
+    PublishSwagger = LwxStage.DevelopmentOnly
 )]
 public static partial class Service
 {

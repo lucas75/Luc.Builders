@@ -17,7 +17,7 @@ public class UnitTest1
     {
         using var dir = new TempProject();
 
-        // Create a ServiceConfig with invalid Configure signature
+        // Create a Service with invalid Configure signature
         var nsDir = System.IO.Path.Combine(dir.Path, "TempProject");
         
         Directory.CreateDirectory(nsDir);
@@ -29,7 +29,7 @@ public class UnitTest1
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
 
-            [LwxServiceConfig]
+            [LwxService]
             public static class Service
             {
                 // wrong parameter type
@@ -57,7 +57,7 @@ public class UnitTest1
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
 
-            [LwxServiceConfig]
+            [LwxService]
             public static class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
@@ -100,7 +100,7 @@ public class UnitTest1
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
 
-            [LwxServiceConfig]
+            [LwxService]
             public static partial class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
@@ -128,6 +128,12 @@ public class UnitTest1
         Assert.Contains("public static partial class Service", generatedContent);
         Assert.Contains("public static void LwxConfigure(WebApplicationBuilder", generatedContent);
         Assert.Contains("public static void LwxConfigure(WebApplication", generatedContent);
+        // Ensure smaller, per-concern helpers are present
+        Assert.Contains("public static void ConfigureSwagger(WebApplicationBuilder", generatedContent);
+        Assert.Contains("public static void ConfigureWorkers(WebApplicationBuilder", generatedContent);
+        Assert.Contains("public static void ConfigureSwagger(WebApplication", generatedContent);
+        Assert.Contains("public static void ConfigureHealthz(WebApplication", generatedContent);
+        Assert.Contains("public static void ConfigureEndpoints(WebApplication", generatedContent);
 
     }
 
@@ -154,7 +160,7 @@ public class UnitTest1
             namespace TempProject;
             using Lwx.Builders.MicroService.Atributes;
 
-            [LwxServiceConfig]
+            [LwxService]
             public static partial class Service
             {
                 // NO consumer-provided Configure methods - generator should emit Configure helpers
@@ -222,6 +228,10 @@ public class UnitTest1
         var generatedContent = File.ReadAllText(genRoot);
         Assert.Contains("public static void Configure(WebApplicationBuilder", generatedContent);
         Assert.Contains("public static void Configure(WebApplication", generatedContent);
+        // Smaller helpers should also be present
+        Assert.Contains("public static void ConfigureSwagger(WebApplicationBuilder", generatedContent);
+        Assert.Contains("public static void ConfigureWorkers(WebApplicationBuilder", generatedContent);
+        Assert.Contains("public static void ConfigureEndpoints(WebApplication", generatedContent);
     }
 
     [Fact]
@@ -247,7 +257,7 @@ public class UnitTest1
             namespace TempProject;
             using Lwx.Builders.MicroService.Atributes;
 
-            [LwxServiceConfig(PublishSwagger = LwxStage.Development)]
+            [LwxService(PublishSwagger = LwxStage.DevelopmentOnly)]
             public static partial class Service
             {
             }
@@ -311,7 +321,7 @@ public class UnitTest1
         // keep the default Program.cs (generator no longer emits Main)
         Directory.CreateDirectory(nsDir);
 
-        // Add a worker type and ServiceConfig which will ask for GenerateMain
+        // Add a worker type and Service which will ask for GenerateMain
         var workerDir = Path.Combine(nsDir, "Workers");
         Directory.CreateDirectory(workerDir);
 
@@ -321,7 +331,7 @@ public class UnitTest1
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.Extensions.Hosting;
 
-            [LwxWorker(Stage = LwxStage.Development)]
+            [LwxWorker(Stage = LwxStage.DevelopmentOnly)]
             public partial class TheWorker : BackgroundService
             {
                 protected override async Task ExecuteAsync(System.Threading.CancellationToken stoppingToken)
@@ -337,7 +347,7 @@ public class UnitTest1
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
 
-            [LwxServiceConfig]
+            [LwxService]
             public static partial class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
@@ -392,14 +402,14 @@ public class UnitTest1
             }
             """);
 
-        // Add ServiceConfig that requests GenerateMain
+        // Add Service that requests GenerateMain
         File.WriteAllText(Path.Combine(nsDir, "Service.cs"),
             """
             namespace TempProject;
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
 
-            [LwxServiceConfig]
+            [LwxService]
             public static partial class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
@@ -429,14 +439,14 @@ public class UnitTest1
         var nsDir = Path.Combine(dir.Path, "TempProject");
         Directory.CreateDirectory(nsDir);
 
-        // Provide a ServiceConfig so generator doesn't emit missing ServiceConfig diagnostics
+        // Provide a Service so generator doesn't emit missing Service diagnostics
         File.WriteAllText(Path.Combine(nsDir, "Service.cs"),
             """
             namespace TempProject;
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
 
-            [LwxServiceConfig]
+            [LwxService]
             public static partial class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
@@ -475,7 +485,7 @@ public class UnitTest1
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
 
-            [LwxServiceConfig]
+            [LwxService]
             public static partial class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
@@ -513,7 +523,7 @@ public class UnitTest1
             namespace TempProject;
             using Lwx.Builders.MicroService.Atributes;
 
-            [LwxServiceConfig]
+            [LwxService]
             public static partial class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
@@ -555,7 +565,7 @@ public class UnitTest1
             namespace TempProject;
             using Lwx.Builders.MicroService.Atributes;
 
-            [LwxServiceConfig]
+            [LwxService]
             public static partial class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
@@ -571,7 +581,7 @@ public class UnitTest1
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.Extensions.Hosting;
 
-            [LwxWorker(Stage = LwxStage.Development)]
+            [LwxWorker(Stage = LwxStage.DevelopmentOnly)]
             public partial class TheWorker : BackgroundService
             {
                 private class Inner { }
@@ -622,7 +632,7 @@ public class UnitTest1
             using System.Threading.Tasks;
             using System.Threading;
 
-            [LwxWorker(Stage = LwxStage.Development)]
+            [LwxWorker(Stage = LwxStage.DevelopmentOnly)]
             public partial class TheWorker : BackgroundService
             {
                 private readonly ILogger<TheWorker> _logger;
@@ -646,7 +656,7 @@ public class UnitTest1
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
 
-            [LwxServiceConfig]
+            [LwxService]
             public static partial class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
@@ -702,7 +712,7 @@ public class UnitTest1
             using System.Threading;
             using System.Threading.Tasks;
 
-            [LwxWorker(Threads = 3, Stage = LwxStage.Development)]
+            [LwxWorker(Threads = 3, Stage = LwxStage.DevelopmentOnly)]
             public partial class TheWorker : BackgroundService
             {
                 protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -718,7 +728,7 @@ public class UnitTest1
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
 
-            [LwxServiceConfig]
+            [LwxService]
             public static partial class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
@@ -764,7 +774,7 @@ public class UnitTest1
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
 
-            [LwxServiceConfig(PublishSwagger = LwxStage.None)]
+            [LwxService(PublishSwagger = LwxStage.None)]
             public static partial class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
@@ -840,7 +850,7 @@ public class UnitTest1
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
 
-            [LwxServiceConfig(PublishSwagger = LwxStage.Development)]
+            [LwxService(PublishSwagger = LwxStage.DevelopmentOnly)]
             public static partial class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }

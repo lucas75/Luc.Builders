@@ -35,7 +35,7 @@ namespace ExampleOrg.Product.Service.Workers;
   // - Development
   // - Production
   // - None
-  Publish = LwxStage.Development
+  Publish = LwxStage.DevelopmentOnly
 )]
 public static partial class EndpointHello
 {
@@ -73,10 +73,10 @@ namespace ExampleOrg.Product.Service.Workers;
   // - AlwaysHealthy  
   Policy=LwxWorkerPolicy.UnhealthyIfExit,
   // Stage - It defines the stage in which the worker will run (required)
-  // - Development
-  // - Production
+  // - DevelopmentOnly
+  // - All
   // - None
-  Stage=LwxStage.Production
+  Stage=LwxStage.All
   )
 ]
 public partial class TheWorker (

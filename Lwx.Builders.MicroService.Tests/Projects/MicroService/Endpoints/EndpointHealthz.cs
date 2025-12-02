@@ -6,7 +6,7 @@ namespace MicroService.Endpoints;
 [LwxEndpoint(
     Uri = "GET /healthz", 
     Summary = "healthz", 
-    Publish = LwxStage.Production
+    Publish = LwxStage.All
 )]
 public static partial class EndpointHealthz
 {
