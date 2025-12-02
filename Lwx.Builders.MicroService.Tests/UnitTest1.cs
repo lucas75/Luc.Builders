@@ -13,7 +13,7 @@ public class UnitTest1
     }
 
     [Fact]
-    public void ServiceConfig_InvalidConfigureSignature_EmitsLWX014()
+    public void Service_InvalidConfigureSignature_EmitsLWX014()
     {
         using var dir = new TempProject();
 
@@ -22,17 +22,15 @@ public class UnitTest1
         
         Directory.CreateDirectory(nsDir);
 
-        // Remove Program.cs so the generator may produce Main
-        var prog = Path.Combine(dir.Path, "Program.cs");
-        if (File.Exists(prog)) File.Delete(prog);
-            File.WriteAllText(Path.Combine(nsDir, "ServiceConfig.cs"),
+        // keep the default Program.cs (generator no longer emits Main)
+            File.WriteAllText(Path.Combine(nsDir, "Service.cs"),
             """
             namespace TempProject;
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
 
-            [LwxServiceConfig(GenerateMain = false)]
-            public static class ServiceConfig
+            [LwxServiceConfig]
+            public static class Service
             {
                 // wrong parameter type
                 public static void Configure(string s) { }
@@ -47,20 +45,20 @@ public class UnitTest1
     }
 
     [Fact]
-    public void ServiceConfig_UnexpectedPublicMethod_EmitsLWX015()
+    public void Service_UnexpectedPublicMethod_EmitsLWX015()
     {
         using var dir = new TempProject();
 
         var nsDir2 = System.IO.Path.Combine(dir.Path, "TempProject");
         Directory.CreateDirectory(nsDir2);
-            File.WriteAllText(Path.Combine(nsDir2, "ServiceConfig.cs"),
+            File.WriteAllText(Path.Combine(nsDir2, "Service.cs"),
             """
             namespace TempProject;
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
 
-            [LwxServiceConfig(GenerateMain = false)]
-            public static class ServiceConfig
+            [LwxServiceConfig]
+            public static class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
 
@@ -78,7 +76,7 @@ public class UnitTest1
     }
 
     [Fact]
-    public void ServiceConfig_GenerateMain_ProducesGeneratedFileAndLWX016()
+    public void Service_GenerateHelpers_ProducesGeneratedFileAndLWX016()
     {
         using var dir = new TempProject();
 
@@ -92,20 +90,18 @@ public class UnitTest1
             File.WriteAllText(csprojPath, csprojText);
         }
 
-        // Remove Program.cs so the generator is allowed to produce the main method
-        var prog = Path.Combine(dir.Path, "Program.cs");
-        if (File.Exists(prog)) File.Delete(prog);
+        // keep the default Program.cs (generator no longer emits Main)
 
         var nsDir1 = System.IO.Path.Combine(dir.Path, "TempProject");
         Directory.CreateDirectory(nsDir1);
-        File.WriteAllText(Path.Combine(nsDir1, "ServiceConfig.cs"),
+        File.WriteAllText(Path.Combine(nsDir1, "Service.cs"),
             """
             namespace TempProject;
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
 
-            [LwxServiceConfig(GenerateMain = true)]
-            public static partial class ServiceConfig
+            [LwxServiceConfig]
+            public static partial class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
                 public static void Configure(WebApplication a) { }
@@ -117,24 +113,185 @@ public class UnitTest1
         // Build should succeed and generated file should be present on disk
         Assert.True(exit == 0, output);
 
-        // Look for generated file under obj/Generated
-        var genRoot = Directory.EnumerateFiles(dir.Path, "ServiceConfig.Main.g.cs", SearchOption.AllDirectories).FirstOrDefault();
-        Assert.False(string.IsNullOrEmpty(genRoot), "ServiceConfig.Main.g.cs should be emitted to disk");
+        // Look for generated Service file under obj/Generated
+        var genRoot = Directory.EnumerateFiles(dir.Path, "*Service.g.cs", SearchOption.AllDirectories).FirstOrDefault();
+        Assert.False(string.IsNullOrEmpty(genRoot), "Service.g.cs should be emitted to disk");
 
         // The generator may report LWX016 as an informational diagnostic in IDEs; dotnet build may not always print info-level diagnostics.
-        // If the diagnostic appears on the build output, check it includes the Main signature.
         if (output.Contains("LWX016"))
         {
-            Assert.Contains("public static void Main(string[] args)", output);
+            Assert.Contains("public static partial class Service", output);
         }
 
-        // Always assert the generated file contains the Main method so behavior is validated regardless of CLI diagnostic output
+        // Always assert the generated file contains the Service helper so behavior is validated regardless of CLI diagnostic output
         var generatedContent = File.ReadAllText(genRoot);
-        Assert.Contains("public static void Main(string[] args)", generatedContent);
+        Assert.Contains("public static partial class Service", generatedContent);
+        Assert.Contains("public static void LwxConfigure(WebApplicationBuilder", generatedContent);
+        Assert.Contains("public static void LwxConfigure(WebApplication", generatedContent);
+
     }
 
     [Fact]
-    public void ServiceConfig_GenerateMain_IncludesWorkerConfigureCalls()
+    public void Service_GenerateHelpers_EmitsConfigureWhenConsumerMissing()
+    {
+        using var dir = new TempProject();
+
+        // ensure generated sources are written to disk
+        var csprojPath = Path.Combine(dir.Path, "TestProj.csproj");
+        var csprojText = File.ReadAllText(csprojPath);
+        if (!csprojText.Contains("<EmitCompilerGeneratedFiles>"))
+        {
+            csprojText = csprojText.Replace("</PropertyGroup>",
+                "  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>\n  <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>\n</PropertyGroup>");
+            File.WriteAllText(csprojPath, csprojText);
+        }
+
+        var nsDir = Path.Combine(dir.Path, "TempProject");
+        Directory.CreateDirectory(nsDir);
+
+        File.WriteAllText(Path.Combine(nsDir, "Service.cs"),
+            """
+            namespace TempProject;
+            using Lwx.Builders.MicroService.Atributes;
+
+            [LwxServiceConfig]
+            public static partial class Service
+            {
+                // NO consumer-provided Configure methods - generator should emit Configure helpers
+            }
+            """);
+
+        // Add stubs so the compile succeeds without a real Swashbuckle reference
+        File.WriteAllText(Path.Combine(nsDir, "SwaggerStubs.cs"),
+            """
+            namespace Microsoft.OpenApi.Models
+            {
+                public class OpenApiInfo { public string Title { get; set; } public string Description { get; set; } public string Version { get; set; } }
+            }
+
+            namespace Microsoft.Extensions.DependencyInjection
+            {
+                public static class SwaggerServiceCollectionExtensions
+                {
+                    public static IServiceCollection AddSwaggerGen(this IServiceCollection svc, object? opts = null) => svc;
+                }
+            }
+
+            namespace Microsoft.AspNetCore.Builder
+            {
+                public static class SwaggerAppExtensions
+                {
+                    public static void UseSwagger(this WebApplication app) { }
+                    public static void UseSwaggerUI(this WebApplication app, object? opts = null) { }
+                }
+            }
+            """);
+
+        // Add stubs so the compile succeeds without a real Swashbuckle reference
+        File.WriteAllText(Path.Combine(nsDir, "SwaggerStubs.cs"),
+            """
+            namespace Microsoft.OpenApi.Models
+            {
+                public class OpenApiInfo { public string Title { get; set; } public string Description { get; set; } public string Version { get; set; } }
+            }
+
+            namespace Microsoft.Extensions.DependencyInjection
+            {
+                public static class SwaggerServiceCollectionExtensions
+                {
+                    public static IServiceCollection AddSwaggerGen(this IServiceCollection svc, object? opts = null) => svc;
+                }
+            }
+
+            namespace Microsoft.AspNetCore.Builder
+            {
+                public static class SwaggerAppExtensions
+                {
+                    public static void UseSwagger(this WebApplication app) { }
+                    public static void UseSwaggerUI(this WebApplication app, object? opts = null) { }
+                }
+            }
+            """);
+
+        var (exit, output) = dir.Build();
+        // build may still emit LWX003 if the generator detects the Swashbuckle package missing in other contexts; ignore exit code here but assert generated content exists
+
+        var genRoot = Directory.EnumerateFiles(dir.Path, "*Service.g.cs", SearchOption.AllDirectories).FirstOrDefault();
+        Assert.False(string.IsNullOrEmpty(genRoot), "Service.g.cs should be emitted to disk");
+
+        var generatedContent = File.ReadAllText(genRoot);
+        Assert.Contains("public static void Configure(WebApplicationBuilder", generatedContent);
+        Assert.Contains("public static void Configure(WebApplication", generatedContent);
+    }
+
+    [Fact]
+    public void Service_GenerateHelpers_IncludesSwaggerWhenPublishStage()
+    {
+        using var dir = new TempProject();
+
+        // ensure generated sources are written to disk
+        var csprojPath = Path.Combine(dir.Path, "TestProj.csproj");
+        var csprojText = File.ReadAllText(csprojPath);
+        if (!csprojText.Contains("<EmitCompilerGeneratedFiles>"))
+        {
+            csprojText = csprojText.Replace("</PropertyGroup>",
+                "  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>\n  <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>\n</PropertyGroup>");
+            File.WriteAllText(csprojPath, csprojText);
+        }
+
+        var nsDir = Path.Combine(dir.Path, "TempProject");
+        Directory.CreateDirectory(nsDir);
+
+        File.WriteAllText(Path.Combine(nsDir, "Service.cs"),
+            """
+            namespace TempProject;
+            using Lwx.Builders.MicroService.Atributes;
+
+            [LwxServiceConfig(PublishSwagger = LwxStage.Development)]
+            public static partial class Service
+            {
+            }
+            """);
+
+        // Add stubs so the compile succeeds without a real Swashbuckle reference
+        File.WriteAllText(Path.Combine(nsDir, "SwaggerStubs.cs"),
+            """
+            namespace Microsoft.OpenApi.Models
+            {
+                public class OpenApiInfo { public string Title { get; set; } public string Description { get; set; } public string Version { get; set; } }
+            }
+
+            namespace Microsoft.Extensions.DependencyInjection
+            {
+                public static class SwaggerServiceCollectionExtensions
+                {
+                    public static IServiceCollection AddSwaggerGen(this IServiceCollection svc, object? opts = null) => svc;
+                }
+            }
+
+            namespace Microsoft.AspNetCore.Builder
+            {
+                public static class SwaggerAppExtensions
+                {
+                    public static void UseSwagger(this WebApplication app) { }
+                    public static void UseSwaggerUI(this WebApplication app, object? opts = null) { }
+                }
+            }
+            """);
+
+        var (exit, output) = dir.Build();
+        Assert.True(exit == 0, output);
+
+        var genRoot = Directory.EnumerateFiles(dir.Path, "*Service.g.cs", SearchOption.AllDirectories).FirstOrDefault();
+        Assert.False(string.IsNullOrEmpty(genRoot), "Service.g.cs should be emitted to disk");
+
+        var generatedContent = File.ReadAllText(genRoot);
+        Assert.Contains("AddSwaggerGen", generatedContent);
+        Assert.Contains("UseSwagger", generatedContent);
+    }
+
+    [Fact]
+    public void Service_GenerateHelpers_IncludesWorkerConfigureCalls()
     {
         using var dir = new TempProject();
 
@@ -151,9 +308,7 @@ public class UnitTest1
         
 
         var nsDir = System.IO.Path.Combine(dir.Path, "TempProject");
-        // Remove Program.cs so the generator may produce Main
-        var prog = Path.Combine(dir.Path, "Program.cs");
-        if (File.Exists(prog)) File.Delete(prog);
+        // keep the default Program.cs (generator no longer emits Main)
         Directory.CreateDirectory(nsDir);
 
         // Add a worker type and ServiceConfig which will ask for GenerateMain
@@ -176,14 +331,14 @@ public class UnitTest1
             }
             """);
 
-        File.WriteAllText(Path.Combine(nsDir, "ServiceConfig.cs"),
+        File.WriteAllText(Path.Combine(nsDir, "Service.cs"),
             """
             namespace TempProject;
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
 
-            [LwxServiceConfig(GenerateMain = true)]
-            public static partial class ServiceConfig
+            [LwxServiceConfig]
+            public static partial class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
                 public static void Configure(WebApplication a) { }
@@ -194,17 +349,17 @@ public class UnitTest1
 
         Assert.True(exit == 0, output);
 
-        var genRoot = Directory.EnumerateFiles(dir.Path, "ServiceConfig.Main.g.cs", SearchOption.AllDirectories).FirstOrDefault();
-        Assert.False(string.IsNullOrEmpty(genRoot), "ServiceConfig.Main.g.cs should be emitted to disk");
+        var genRoot = Directory.EnumerateFiles(dir.Path, "*Service.g.cs", SearchOption.AllDirectories).FirstOrDefault();
+        Assert.False(string.IsNullOrEmpty(genRoot), "Service.g.cs should be emitted to disk");
 
         var generatedContent = File.ReadAllText(genRoot);
 
-        // Ensure generated main includes worker registration call for the generated worker configure method
+        // Ensure generated Service helper includes worker registration call for the generated worker configure method
         Assert.Contains("TempProject.Workers.TheWorker.Configure(builder);", generatedContent);
     }
 
     [Fact]
-    public void ServiceConfig_GenerateMain_IncludesEndpointConfigureCalls()
+    public void Service_GenerateHelpers_IncludesEndpointConfigureCalls()
     {
         using var dir = new TempProject();
 
@@ -218,9 +373,7 @@ public class UnitTest1
                 File.WriteAllText(csprojPath, csprojText);
             }
 
-        // Remove Program.cs so the generator is allowed to produce the main method
-        var prog = Path.Combine(dir.Path, "Program.cs");
-        if (File.Exists(prog)) File.Delete(prog);
+        // keep the default Program.cs (generator no longer emits Main)
 
         var nsDir = Path.Combine(dir.Path, "TempProject");
         Directory.CreateDirectory(nsDir);
@@ -240,14 +393,14 @@ public class UnitTest1
             """);
 
         // Add ServiceConfig that requests GenerateMain
-        File.WriteAllText(Path.Combine(nsDir, "ServiceConfig.cs"),
+        File.WriteAllText(Path.Combine(nsDir, "Service.cs"),
             """
             namespace TempProject;
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
 
-            [LwxServiceConfig(GenerateMain = true)]
-            public static partial class ServiceConfig
+            [LwxServiceConfig]
+            public static partial class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
                 public static void Configure(WebApplication a) { }
@@ -258,12 +411,12 @@ public class UnitTest1
 
         Assert.True(exit == 0, output);
 
-        var genRoot = Directory.EnumerateFiles(dir.Path, "ServiceConfig.Main.g.cs", SearchOption.AllDirectories).FirstOrDefault();
-        Assert.False(string.IsNullOrEmpty(genRoot), "ServiceConfig.Main.g.cs should be emitted to disk");
+        var genRoot = Directory.EnumerateFiles(dir.Path, "*Service.g.cs", SearchOption.AllDirectories).FirstOrDefault();
+        Assert.False(string.IsNullOrEmpty(genRoot), "Service.g.cs should be emitted to disk");
 
         var generatedContent = File.ReadAllText(genRoot);
 
-        // Ensure generated main includes endpoint registration call for the generated endpoint configure method
+        // Ensure generated Service helper includes endpoint registration call for the generated endpoint configure method
         Assert.Contains("TempProject.Endpoints.EndpointTest.Configure(app);", generatedContent);
     }
 
@@ -277,14 +430,14 @@ public class UnitTest1
         Directory.CreateDirectory(nsDir);
 
         // Provide a ServiceConfig so generator doesn't emit missing ServiceConfig diagnostics
-        File.WriteAllText(Path.Combine(nsDir, "ServiceConfig.cs"),
+        File.WriteAllText(Path.Combine(nsDir, "Service.cs"),
             """
             namespace TempProject;
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
 
-            [LwxServiceConfig(GenerateMain = false)]
-            public static partial class ServiceConfig
+            [LwxServiceConfig]
+            public static partial class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
                 public static void Configure(WebApplication a) { }
@@ -316,14 +469,14 @@ public class UnitTest1
         var nsDir = Path.Combine(dir.Path, "TempProject");
         Directory.CreateDirectory(nsDir);
 
-        File.WriteAllText(Path.Combine(nsDir, "ServiceConfig.cs"),
+        File.WriteAllText(Path.Combine(nsDir, "Service.cs"),
             """
             namespace TempProject;
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
 
-            [LwxServiceConfig(GenerateMain = false)]
-            public static partial class ServiceConfig
+            [LwxServiceConfig]
+            public static partial class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
                 public static void Configure(WebApplication a) { }
@@ -355,13 +508,13 @@ public class UnitTest1
         var nsDir = Path.Combine(dir.Path, "TempProject");
         Directory.CreateDirectory(nsDir);
 
-        File.WriteAllText(Path.Combine(nsDir, "ServiceConfig.cs"),
+        File.WriteAllText(Path.Combine(nsDir, "Service.cs"),
             """
             namespace TempProject;
             using Lwx.Builders.MicroService.Atributes;
 
-            [LwxServiceConfig(GenerateMain = false)]
-            public static partial class ServiceConfig
+            [LwxServiceConfig]
+            public static partial class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
                 public static void Configure(WebApplication a) { }
@@ -397,13 +550,13 @@ public class UnitTest1
         var nsDir = Path.Combine(dir.Path, "TempProject");
         Directory.CreateDirectory(nsDir);
 
-        File.WriteAllText(Path.Combine(nsDir, "ServiceConfig.cs"),
+        File.WriteAllText(Path.Combine(nsDir, "Service.cs"),
             """
             namespace TempProject;
             using Lwx.Builders.MicroService.Atributes;
 
-            [LwxServiceConfig(GenerateMain = false)]
-            public static partial class ServiceConfig
+            [LwxServiceConfig]
+            public static partial class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
                 public static void Configure(WebApplication a) { }
@@ -487,14 +640,14 @@ public class UnitTest1
             }
             """);
 
-        File.WriteAllText(Path.Combine(nsDir, "ServiceConfig.cs"),
+        File.WriteAllText(Path.Combine(nsDir, "Service.cs"),
             """
             namespace TempProject;
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
 
-            [LwxServiceConfig(GenerateMain = false)]
-            public static partial class ServiceConfig
+            [LwxServiceConfig]
+            public static partial class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
                 public static void Configure(WebApplication a) { }
@@ -559,14 +712,14 @@ public class UnitTest1
             }
             """);
 
-        File.WriteAllText(Path.Combine(nsDir, "ServiceConfig.cs"),
+        File.WriteAllText(Path.Combine(nsDir, "Service.cs"),
             """
             namespace TempProject;
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
 
-            [LwxServiceConfig(GenerateMain = false)]
-            public static partial class ServiceConfig
+            [LwxServiceConfig]
+            public static partial class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
                 public static void Configure(WebApplication a) { }
@@ -589,7 +742,7 @@ public class UnitTest1
     }
 
     [Fact]
-    public void ServiceConfig_PublishSwagger_None_OmitsSwaggerCodeInEndpointExtensions()
+    public void Service_PublishSwagger_None_OmitsSwaggerCodeInEndpointExtensions()
     {
         using var dir = new TempProject();
 
@@ -605,14 +758,14 @@ public class UnitTest1
 
         var nsDir = System.IO.Path.Combine(dir.Path, "TempProject");
         Directory.CreateDirectory(nsDir);
-        File.WriteAllText(Path.Combine(nsDir, "ServiceConfig.cs"),
+        File.WriteAllText(Path.Combine(nsDir, "Service.cs"),
             """
             namespace TempProject;
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
 
             [LwxServiceConfig(PublishSwagger = LwxStage.None)]
-            public static partial class ServiceConfig
+            public static partial class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
                 public static void Configure(WebApplication a) { }
@@ -655,8 +808,8 @@ public class UnitTest1
         var (exit, output) = dir.Build();
         // build may fail if consumer project is missing full swagger packages; we only need to assert the generated source
 
-        var genRoot = Directory.EnumerateFiles(dir.Path, "LwxEndpointExtensions.g.cs", SearchOption.AllDirectories).FirstOrDefault();
-        Assert.False(string.IsNullOrEmpty(genRoot), "LwxEndpointExtensions.g.cs should be emitted to disk");
+        var genRoot = Directory.EnumerateFiles(dir.Path, "*Service.g.cs", SearchOption.AllDirectories).FirstOrDefault();
+        Assert.False(string.IsNullOrEmpty(genRoot), "Service.g.cs should be emitted to disk");
 
         var generatedContent = File.ReadAllText(genRoot);
 
@@ -666,7 +819,7 @@ public class UnitTest1
     }
 
     [Fact]
-    public void ServiceConfig_PublishSwagger_Development_IncludesSwaggerCodeInEndpointExtensions()
+    public void Service_PublishSwagger_Development_IncludesSwaggerCodeInEndpointExtensions()
     {
         using var dir = new TempProject();
 
@@ -681,14 +834,14 @@ public class UnitTest1
 
         var nsDir = System.IO.Path.Combine(dir.Path, "TempProject");
         Directory.CreateDirectory(nsDir);
-        File.WriteAllText(Path.Combine(nsDir, "ServiceConfig.cs"),
+        File.WriteAllText(Path.Combine(nsDir, "Service.cs"),
             """
             namespace TempProject;
             using Lwx.Builders.MicroService.Atributes;
             using Microsoft.AspNetCore.Builder;
 
             [LwxServiceConfig(PublishSwagger = LwxStage.Development)]
-            public static partial class ServiceConfig
+            public static partial class Service
             {
                 public static void Configure(WebApplicationBuilder b) { }
                 public static void Configure(WebApplication a) { }
@@ -696,10 +849,42 @@ public class UnitTest1
             """
         );
 
-        var (exit, output) = dir.Build();
+        // inject minimal stubs to satisfy OpenAPI/Swagger types & extension methods so the generated code compiles
+        File.WriteAllText(Path.Combine(nsDir, "SwaggerStubs.cs"),
+            """
+            namespace Microsoft.OpenApi.Models
+            {
+                public class OpenApiInfo
+                {
+                    public string Title { get; set; }
+                    public string Description { get; set; }
+                    public string Version { get; set; }
+                }
+            }
 
-        var genRoot = Directory.EnumerateFiles(dir.Path, "LwxEndpointExtensions.g.cs", SearchOption.AllDirectories).FirstOrDefault();
-        Assert.False(string.IsNullOrEmpty(genRoot), "LwxEndpointExtensions.g.cs should be emitted to disk");
+            namespace Microsoft.Extensions.DependencyInjection
+            {
+                public static class SwaggerServiceCollectionExtensions
+                {
+                    public static IServiceCollection AddSwaggerGen(this IServiceCollection svc, object? opts = null) => svc;
+                }
+            }
+
+            namespace Microsoft.AspNetCore.Builder
+            {
+                public static class SwaggerAppExtensions
+                {
+                    public static void UseSwagger(this WebApplication app) { }
+                    public static void UseSwaggerUI(this WebApplication app, object? opts = null) { }
+                }
+            }
+            """);
+
+        var (exit, output) = dir.Build();
+        Assert.True(exit == 0, output);
+
+        var genRoot = Directory.EnumerateFiles(dir.Path, "*Service.g.cs", SearchOption.AllDirectories).FirstOrDefault();
+        Assert.False(string.IsNullOrEmpty(genRoot), "Service.g.cs should be emitted to disk");
 
         var generatedContent = File.ReadAllText(genRoot);
 

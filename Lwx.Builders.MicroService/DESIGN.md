@@ -42,7 +42,7 @@ Note: in the examples that follow this document assumes the consuming project is
 Scope
 =====
 
-This specification is limited to rules and behaviors that the source generator enforces or relies upon: ServiceConfig, endpoints, DTOs, workers, timers, and service bus handlers. Coverage includes attribute contracts, required method signatures, namespace / file placement, generated outputs, diagnostics and runtime mapping behaviors.
+This specification is limited to rules and behaviors that the source generator enforces or relies upon: Service (root-level service descriptor), endpoints, DTOs, workers, timers, and service bus handlers. Coverage includes attribute contracts, required method signatures, namespace / file placement, generated outputs, diagnostics and runtime mapping behaviors.
 
 Requirements for Consuming Projects
 ==================================
@@ -54,12 +54,12 @@ General
 
 - The generator uses this convention to produce canonical placeholder types and mapping helpers. The generator reports diagnostic `LWX007` when this rule is violated.
 
-ServiceConfig (root-level application configuration)
+Service (root-level application configuration)
 --------------------------------------------------
 
-1.  The consuming project MUST declare a type named `ServiceConfig` in the root namespace and placed in `ServiceConfig.cs` at the project root. The generator will report `LWX011` if no such type exists.
+1.  The consuming project MUST declare a type named `Service` in the root namespace and placed in `Service.cs` at the project root. The generator will report `LWX011` if no such type exists.
 
-2.  The `ServiceConfig` type MUST be annotated with the `[LwxServiceConfig]` attribute. If the attribute appears on any other file or type the generator MUST report a diagnostic `LWX012`.
+2.  The `Service` type MUST be annotated with the `[LwxServiceConfig]` attribute. If the attribute appears on any other file or type the generator MUST report a diagnostic `LWX012`.
 
 3.  Required attribute properties on `[LwxServiceConfig]` are:
 
@@ -68,22 +68,26 @@ ServiceConfig (root-level application configuration)
     - Version (string) — MUST be present.
     - PublishSwagger (LwxStage) — MUST be present and define whether the Swagger UI will be published.
 
-4.  GenerateMain behaviour
+4.  Service helpers behaviour and Service contract
 
-    - If `GenerateMain = true` is specified on the attribute, the consuming project MUST NOT declare its own `Main` entry point. If a `Program.cs` (or user-provided Main) is present when `GenerateMain = true`, the generator WILL emit an error diagnostic (LWX013) because the generator synthesizes the application entry point.
+        - The generator no longer emits an application entry point (Main). Instead, it emits helper methods on the consuming project's `Service` type (filename `{AssemblyName}.Service.g.cs`). These helpers expose configure entrypoints which consumers can call from their `Program.cs`.
 
-    - When `GenerateMain = true`, the generator expects `ServiceConfig` to optionally provide two static methods to participate in startup configuration:
+            - When the consuming project does NOT declare `Service.Configure(WebApplicationBuilder)` and/or `Service.Configure(WebApplication)`, the generator emits `public static void Configure(WebApplicationBuilder)` and/or `public static void Configure(WebApplication)` helpers so callers can simply call `Service.Configure(builder)` / `Service.Configure(app)`.
 
-        - `public static void Configure(WebApplicationBuilder builder)` — OPTIONAL but, when present, MUST be `public static void` and have the exact parameter type `WebApplicationBuilder`.
+            - If the consuming project already provides a `Service.Configure(...)` overload with the matching signature, the generator avoids emitting duplicate signatures and instead emits `Service.LwxConfigure(...)` helper(s) so both generator-level wiring and consumer hooks can coexist without collisions.
 
-        - `public static void Configure(WebApplication app)` — OPTIONAL but, when present, MUST be `public static void` and have the exact parameter type `WebApplication`.
+        - `public static void Configure(WebApplicationBuilder builder)` — used to register Lwx services and workers and to invoke any `Service.Configure(WebApplicationBuilder)` defined by the consumer.
 
-    - The generator will emit diagnostics for invalid or unexpected `ServiceConfig` members:
+        - `public static void Configure(WebApplication app)` — used to wire endpoint mapping and to invoke any `Service.Configure(WebApplication)` defined by the consumer.
+
+    - Consumers MUST provide their own `Program.cs` (or other entrypoint). The explicit `Program.cs` enables clearer composition, avoids surprising file generation, and makes generator output easier to test and reason about.
+
+    - The generator still validates `Service` public surface (expected allowed public static methods are `Configure(WebApplicationBuilder)` and `Configure(WebApplication)`). When incorrect or unexpected members are found the generator emits the same diagnostics:
 
         - `LWX014` — emitted when a `Configure` method's signature does not match the required forms.
-        - `LWX015` — emitted when unexpected public methods are detected on `ServiceConfig` (the generator expects only the specified `Configure` methods when `GenerateMain` is used).
+        - `LWX015` — emitted when unexpected public methods are detected on `Service` (only the allowed `Configure` overloads are permitted).
 
-5.  `ServiceConfig` MUST be `partial` so the generator can produce a companion partial type for enhancements (for example, the generated `Main` lives in `ServiceConfig.Main.g.cs` when `GenerateMain = true`).
+5.  `Service` SHOULD be `partial` so the generator can produce companion generated files (for example `AssemblyName.Service.g.cs`) that call into consumer-provided `Service.Configure` overloads.
 
 Endpoints
 ---------
@@ -156,18 +160,18 @@ The generator uses a concise set of diagnostic codes to report rule violations a
 - LWX002 — Error: Invalid endpoint namespace (namespace does not contain `.Endpoints`).
 - LWX007 — Error: File path does not match the declared namespace for a type annotated with an Lwx attribute.
 - LWX008 — Info: Endpoint naming exception accepted (when `NamingExceptionJustification` is provided).
-- LWX011 — Error: ServiceConfig missing in root namespace.
-- LWX012 — Error: [LwxServiceConfig] attribute used in a non-ServiceConfig file.
-- LWX014 — Error: Invalid ServiceConfig.Configure signature.
-- LWX015 — Error: Unexpected public methods found on ServiceConfig when using GenerateMain.
-- LWX016 — Info: Generator emitted `ServiceConfig` Main generation source; diagnostic includes generated source (informational).
+- LWX011 — Error: Service missing in root namespace.
+- LWX012 — Error: [LwxServiceConfig] attribute used in a non-Service file.
+- LWX014 — Error: Invalid Service.Configure signature.
+- LWX015 — Error: Unexpected public methods found on Service (only Configure overloads are permitted).
+- LWX016 — Info: Generator emitted LwxServices helper source; diagnostic may include generated source (informational).
 
 Generated Sources and Developer Ergonomics
 =========================================
 
 1.  The generator produces deterministic filenames in the compiler output. Consumers who want to inspect the generated source SHOULD enable the compilation properties `EmitCompilerGeneratedFiles` and `CompilerGeneratedFilesOutputPath` to write generated files to disk (commonly under the project's `obj/` folder).
 
-2.  When `GenerateMain = true` the generator will create a companion file `ServiceConfig.Main.g.cs` containing a partial `ServiceConfig` type with a `Main` method in the same namespace as the declared `ServiceConfig` symbol. The presence of `ServiceConfig.Main.g.cs` MAY be surfaced as an informational diagnostic (`LWX016`) that includes the generated source text.
+2.  The generator will produce a companion helper file `{AssemblyName}.Service.g.cs` containing a partial static `Service` type in the project's root namespace. This type contains `LwxConfigure(WebApplicationBuilder)` and `LwxConfigure(WebApplication)` entrypoints that wire Lwx-provided services, workers and endpoints. The generator may surface an informational diagnostic (`LWX016`) that includes the generated source text for IDE preview.
 
 3.  Endpoint generated files follow the naming convention described above and include both placeholder types (for stable type references) and `Configure` helpers in the consuming namespace to perform the `app.Map*` wiring.
 
@@ -185,7 +189,7 @@ Testing and CI guidance
 Migration notes and warnings
 ==========================
 
-- Consumers that opt-in to `GenerateMain = true` MUST remove existing `Main` entry points to avoid conflicts. The generator will enforce this condition and fail compilation diagnostic checks if both exist.
+- Consumer projects MUST provide an application entrypoint (for example `Program.cs`). The generator no longer emits an application entrypoint and instead emits `LwxServices` helpers for consumer `Program.cs` to call.
 
 - The namespace and file-path rules are strictly enforced. When a large repository cannot be instantly migrated, consumer projects MAY use `NamingExceptionJustification` for endpoints as a bridge, but such exceptions should be tracked and removed when feasible to prevent accumulating technical debt.
 
@@ -199,7 +203,7 @@ Security and runtime behavior
 Appendix: Examples
 ==================
 
-ServiceConfig example (normative)
+Service example (normative)
 
 ```csharp
 namespace ExampleOrg.Product.ServiceAbc;
@@ -208,10 +212,9 @@ namespace ExampleOrg.Product.ServiceAbc;
     Title = "MyUnit Worker 001 API",
     Description = "API for MyUnit Worker 001",
     Version = "v1.0.0",
-    PublishSwagger = LwxStage.Development,
-    GenerateMain = true
+    PublishSwagger = LwxStage.Development
 )]
-public partial class ServiceConfig
+public partial class Service
 {
     // Optional: builder-time configuration. If present, the signature MUST be
     // `public static void Configure(WebApplicationBuilder builder)`.
@@ -242,7 +245,7 @@ public static class EndpointAbcParamId
 Normative change-log
 ====================
 
-This document formalizes generator behavior introduced across versions and consolidates enforcement points for `ServiceConfig` and endpoint declarations. Any further rule additions or changes MUST be reflected here and accompanied by unit/integration tests to prevent regressions.
+This document formalizes generator behavior introduced across versions and consolidates enforcement points for `Service` and endpoint declarations. Any further rule additions or changes MUST be reflected here and accompanied by unit/integration tests to prevent regressions.
 
 End of document.
 

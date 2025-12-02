@@ -1,2 +1,2 @@
-// LwxSwagger attribute removed. Use LwxServiceConfigAttribute in ServiceConfig.cs instead.
+// LwxSwagger attribute removed. Use LwxServiceConfigAttribute in Service.cs instead.
 // This file is retained only as a placeholder to avoid accidental references; it will be removed in a follow-up cleanup.

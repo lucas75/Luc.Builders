@@ -19,7 +19,7 @@ internal class LwxServiceConfigTypeProcessor(
     {
         // enforce file path and namespace matching for service config marker classes
         ProcessorUtils.ValidateFilePathMatchesNamespace(attr.TargetSymbol, ctx);
-        // Ensure the service config attribute is only used in a file explicitly named ServiceConfig.cs
+        // Ensure the service attribute is only used in a file explicitly named Service.cs
         var loc = attr.TargetSymbol.Locations.FirstOrDefault(l => l.IsInSource);
         if (loc != null)
         {
@@ -27,12 +27,12 @@ internal class LwxServiceConfigTypeProcessor(
             if (!string.IsNullOrEmpty(fp))
             {
                 var fileName = System.IO.Path.GetFileName(fp);
-                if (!string.Equals(fileName, "ServiceConfig.cs", StringComparison.OrdinalIgnoreCase))
+                if (!string.Equals(fileName, "Service.cs", StringComparison.OrdinalIgnoreCase))
                 {
                     var descriptor = new DiagnosticDescriptor(
                         "LWX012",
-                        "ServiceConfig must be declared in ServiceConfig.cs",
-                        "[LwxServiceConfig] must be declared in a file named 'ServiceConfig.cs'. Found in '{0}'",
+                        "Service must be declared in Service.cs",
+                        "[LwxServiceConfig] must be declared in a file named 'Service.cs'. Found in '{0}'",
                         "Configuration",
                         DiagnosticSeverity.Error,
                         isEnabledByDefault: true);
@@ -50,7 +50,7 @@ internal class LwxServiceConfigTypeProcessor(
         string? description = null;
         string? version = null;
         string publishLiteral = "Lwx.Builders.MicroService.Atributes.LwxStage.None";
-        bool generateMain = false;
+        // generator no longer creates a Main entrypoint; instead we emit helpers on the consumer `Service` type
 
         if (attr.AttributeData != null)
         {
@@ -89,10 +89,7 @@ internal class LwxServiceConfigTypeProcessor(
                 }
             }
 
-            if (named.TryGetValue("GenerateMain", out var gm) && gm.Value is bool b)
-            {
-                generateMain = b;
-            }
+            // GenerateMain option removed — do not interpret this flag
         }
 
         // If the publish stage is active (not None) make sure Swashbuckle is available
@@ -116,11 +113,11 @@ internal class LwxServiceConfigTypeProcessor(
             }
         }
 
-        // Validate ServiceConfig methods signatures and public surface
+        // Validate Service methods signatures and public surface
         var typeSymbol = attr.TargetSymbol as INamedTypeSymbol;
         if (typeSymbol != null)
         {
-            // Validate Configure methods declared on the ServiceConfig class
+            // Validate Configure methods declared on the Service type
             // Expected allowed public static methods:
             // - public static void Configure(WebApplicationBuilder)
             // - public static void Configure(WebApplication)
@@ -143,8 +140,8 @@ internal class LwxServiceConfigTypeProcessor(
                         {
                             var descriptor = new DiagnosticDescriptor(
                                 "LWX014",
-                                "Invalid ServiceConfig.Configure signature",
-                                "ServiceConfig.Configure must be declared as a public static void Configure(WebApplicationBuilder) or public static void Configure(WebApplication). Found: '{0}'",
+                                "Invalid Service.Configure signature",
+                                "Service.Configure must be declared as a public static void Configure(WebApplicationBuilder) or public static void Configure(WebApplication). Found: '{0}'",
                                 "Configuration",
                                 DiagnosticSeverity.Error,
                                 isEnabledByDefault: true);
@@ -157,8 +154,8 @@ internal class LwxServiceConfigTypeProcessor(
                     {
                         var descriptor = new DiagnosticDescriptor(
                             "LWX015",
-                            "Unexpected public method in ServiceConfig",
-                            "Public method '{0}' is not allowed in ServiceConfig. Only public static Configure(WebApplicationBuilder) and Configure(WebApplication) are permitted for customization when using the generator.",
+                            "Unexpected public method in Service",
+                            "Public method '{0}' is not allowed in Service. Only public static Configure(WebApplicationBuilder) and Configure(WebApplication) are permitted for customization when using the generator.",
                             "Configuration",
                             DiagnosticSeverity.Error,
                             isEnabledByDefault: true);
@@ -170,196 +167,157 @@ internal class LwxServiceConfigTypeProcessor(
             }
         }
 
-        GenerateLwxEndpointExtensions();
+        // Determine the service/app wiring snippets (previously generated in a separate
+        // LwxEndpointExtensions.g.cs). We now inline them into the Service helper file
+        // so everything the consumer needs is available on the Service partial.
+        var srcServices = string.Empty;
+        var srcApp = string.Empty;
+        if (publishLiteral != "Lwx.Builders.MicroService.Atributes.LwxStage.None")
+        {
+            var srcEnvCondition = publishLiteral.EndsWith(".Development", StringComparison.Ordinal)
+                ? "app.Environment.IsDevelopment()"
+                : "app.Environment.IsDevelopment() || app.Environment.IsProduction()";
 
-        if (generateMain)
-        {            
-            GenerateMain();
+            srcServices = "builder.Services.AddSwaggerGen();";
+            srcApp = $"if ({srcEnvCondition})\n{{\n    app.UseSwagger();\n    app.UseSwaggerUI();\n}}\n";
         }
+
+        // Always generate Service helpers for application wiring (inline endpoint wiring)
+        GenerateServiceHelpers(srcServices, srcApp);
     }
 
     /// <summary>
     /// Generates the LwxEndpointExtensions.g.cs content which wires Swagger/OpenAPI services and app middleware
     /// based on the ServiceConfig attribute metadata.
     /// </summary>
-    private void GenerateLwxEndpointExtensions()
+    // Endpoint extensions were previously emitted into a separate file. We no longer
+    // generate LwxEndpointExtensions; endpoint + swagger wiring is now inlined into
+    // the generated Service helpers. This keeps generated wiring centralized and
+    // avoids consumers needing to import additional extension types.
+    // (Method intentionally removed.)
+    
+
+    /// <summary>
+    /// Generate a helper Service partial in the consumer namespace which exposes
+    /// Configure(WebApplicationBuilder) and Configure(WebApplication) methods that
+    /// wire Lwx services and endpoints into an application. This replaces the previous
+    /// generated Main entrypoint so consumer projects may provide their own Program.cs
+    /// and call these strongly-named helpers from tests or application code.
+    /// </summary>
+    private void GenerateServiceHelpers(string srcServices, string srcApp)
     {
-        // Use the ServiceConfig attribute data from the instance
-        var swaggerAttr = attr.AttributeData;
+        // Generate the helpers in the same namespace that contains the consumer Service type
+        var ns = attr.TargetSymbol.ContainingNamespace?.ToDisplayString() ?? (compilation.AssemblyName ?? "Generated");
 
-        string title = "API";
-        string description = "API Description";
-        string version = "v1";
-        string publishLiteral = "Lwx.Builders.MicroService.Atributes.LwxStage.None";
-
-        if (swaggerAttr != null)
+        var srcWorkerCalls = new StringBuilder();
+        foreach (var workerName in parent.WorkerNames)
         {
-            var named = swaggerAttr.ToNamedArgumentMap();
-            if (named.TryGetValue("Title", out var t) && t.Value is string s1)
-            {
-                title = s1;
-            }
+            srcWorkerCalls.Append($"{workerName}.Configure(builder);\n\n");
+        }
 
-            if (named.TryGetValue("Description", out var d) && d.Value is string s2)
-            {
-                description = s2;
-            }
+        var srcEndpointCalls = new StringBuilder();
+        foreach (var endpointName in parent.EndpointNames)
+        {
+            srcEndpointCalls.Append($"{endpointName}.Configure(app);\n\n");
+        }
 
-            if (named.TryGetValue("Version", out var v) && v.Value is string s3)
-            {
-                version = s3;
-            }
+        // Resolve the fully-qualified Service type name so we can call user-provided Configure overloads.
+        var serviceConfigTypeName = ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation);
 
-            if (named.TryGetValue("PublishSwagger", out var p) && p.Value != null)
+        // Detect whether user ServiceConfig declared Configure(WebApplicationBuilder) and/or Configure(WebApplication)
+        var webAppBuilderType = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Builder.WebApplicationBuilder");
+        var webAppType = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Builder.WebApplication");
+
+        bool hasBuilderConfigure = false;
+        bool hasAppConfigure = false;
+        if (attr.TargetSymbol is INamedTypeSymbol tSym)
+        {
+            foreach (var m in tSym.GetMembers().OfType<IMethodSymbol>())
             {
-                var raw = p.Value;
-                if (raw is int iv)
-                {
-                    publishLiteral = iv switch
-                    {
-                        1 => "Lwx.Builders.MicroService.Atributes.LwxStage.Development",
-                        2 => "Lwx.Builders.MicroService.Atributes.LwxStage.Production",
-                        _ => "Lwx.Builders.MicroService.Atributes.LwxStage.None"
-                    };
-                }
-                else
-                {
-                    var tmp = raw.ToString() ?? "Lwx.Builders.MicroService.Atributes.LwxStage.None";
-                    publishLiteral = tmp.Contains('.') ? tmp : ("Lwx.Builders.MicroService.Atributes.LwxStage." + tmp);
-                }
+                if (m.Name != "Configure" || !m.IsStatic || m.DeclaredAccessibility != Accessibility.Public) continue;
+                if (m.Parameters.Length == 1 && SymbolEqualityComparer.Default.Equals(m.Parameters[0].Type, webAppBuilderType)) hasBuilderConfigure = true;
+                if (m.Parameters.Length == 1 && SymbolEqualityComparer.Default.Equals(m.Parameters[0].Type, webAppType)) hasAppConfigure = true;
             }
         }
 
-        var hasSwagger = swaggerAttr != null && publishLiteral != "Lwx.Builders.MicroService.Atributes.LwxStage.None";
-
-        string swaggerServicesCode;
-
-        var srcEnvContition =
-            publishLiteral.EndsWith(".Development", StringComparison.Ordinal)
-                ? "IsDevelopment()"
-                : "IsDevelopment() || IsProduction()";
-
-        if (!hasSwagger)
-        {
-            swaggerServicesCode = string.Empty;
-        }
-        else
-        {
-            // Use a single raw template; we only vary the condition expression when embedding.
-            swaggerServicesCode = $$"""
-                if (builder.Environment.{{srcEnvContition}})
-                {
-                    // Ensure API explorer is available for minimal APIs so Swagger has the API descriptions
-                    builder.Services.AddEndpointsApiExplorer();
-                    builder.Services.AddSwaggerGen(options =>
-                    {
-                        options.SwaggerDoc("{{GeneratorUtils.EscapeForCSharp(version)}}", new Microsoft.OpenApi.Models.OpenApiInfo
-                        { 
-                            Title = "{{GeneratorUtils.EscapeForCSharp(title)}}",
-                            Description = "{{GeneratorUtils.EscapeForCSharp(description)}}",
-                            Version = "{{GeneratorUtils.EscapeForCSharp(version)}}"
-                        });
-                    });
-                }
-                """;
-        }
-
-        string swaggerAppCode;
-        if (!hasSwagger)
-        {
-            swaggerAppCode = string.Empty;
-        }
-        else
-        {
-            swaggerAppCode = $$"""
-                if (app.Environment.{{srcEnvContition}})
-                {
-                    app.UseSwagger();
-                    app.UseSwaggerUI(options =>
-                    {
-                        options.DocumentTitle = "{{GeneratorUtils.EscapeForCSharp(title)}}";
-                    });
-                }
-                """;
-        }
+        // Choose generated method names. If the consumer already declares Configure(WebApplicationBuilder)
+        // or Configure(WebApplication) we must avoid emitting methods with those signatures to prevent
+        // duplicate definition errors. In that case we keep the LwxConfigure name for generator-created
+        // helpers. Otherwise we emit the nicer `Configure` helpers so consumers can call `Service.Configure(...)`
+        // directly from Program.cs.
+        var builderMethodName = hasBuilderConfigure ? "LwxConfigure" : "Configure";
+        var appMethodName = hasAppConfigure ? "LwxConfigure" : "Configure";
 
         var source = $$"""
             // <auto-generated/>
-            using System;
-            using System.Linq;
             using Microsoft.AspNetCore.Builder;
-            using Microsoft.AspNetCore.Routing;
-            using Microsoft.Extensions.DependencyInjection;
             using Microsoft.Extensions.Hosting;
+            using Microsoft.Extensions.DependencyInjection;
             using Lwx.Builders.MicroService.Atributes;
 
-            namespace Lwx.Builders.MicroService.Atributes
+            namespace {{ns}};
+
+            public static partial class Service
             {
                 /// <summary>
-                /// Provides extension methods for configuring Lwx in ASP.NET Core applications.
+                /// Configures Lwx services on the provided WebApplicationBuilder and invokes any
+                /// consumer-provided Service.Configure(WebApplicationBuilder) if present.
                 /// </summary>
-                public static class LwxEndpointExtensions
+                public static void {{builderMethodName}}(WebApplicationBuilder builder)
                 {
-                    /// <summary>
-                    /// Configures Lwx services, including Swagger if enabled.
-                    /// </summary>
-                    /// <param name="builder">The web application builder.</param>
-                    public static void LwxConfigure(this WebApplicationBuilder builder)
-                    {
-                        {{swaggerServicesCode.FixIndent(3,indentFirstLine: false)}}
-                    }
+                    // Generator-level service wiring (e.g. swagger or other services)
+                    {{srcServices}}
 
-                    /// <summary>
-                    /// Configures Lwx app and registers validation to ensure all registered endpoints are mapped through the Lwx mechanism.
-                    /// </summary>
-                    /// <param name="app">The web application instance.</param>
-                    public static void LwxConfigure(this WebApplication app)
-                    {
-                        {{swaggerAppCode.FixIndent(3,indentFirstLine: false)}}
+                    // Register Lwx workers
+                    {{srcWorkerCalls.FixIndent(2, indentFirstLine: false)}}
 
-                        var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
-                        lifetime.ApplicationStarted.Register(() =>
-                        {
-                            ValidateLwxEndpoints(app);
-                        });
-                    }
+                    // Allow user customization on Service.Configure(WebApplicationBuilder)
+                    {{(hasBuilderConfigure ? (serviceConfigTypeName + ".Configure(builder);") : string.Empty)}}
+                }
 
-                    private static void ValidateLwxEndpoints(WebApplication app)
-                    {
-                        var exceptions = new[] { "health", "ready", "swagger" };
-                        var endpointDataSources = app.Services.GetServices<EndpointDataSource>();
-                        foreach (var dataSource in endpointDataSources)
-                        {
-                            foreach (var endpoint in dataSource.Endpoints)
-                            {
-                                if (endpoint.Metadata.GetMetadata<LwxEndpointMetadata>() == null)
-                                {
-                                    var name = endpoint.DisplayName ?? endpoint.ToString();
-                                    if (!exceptions.Any(e => name.Contains(e, StringComparison.OrdinalIgnoreCase)))
-                                    {
-                                        throw new InvalidOperationException($"Endpoint {name} is not mapped by Lwx mechanism");
-                                    }
-                                }
-                            }
-                        }
-                    }
+                /// <summary>
+                /// Configures the application (middleware, endpoints) and invokes any
+                /// consumer-provided Service.Configure(WebApplication) if present.
+                /// </summary>
+                public static void {{appMethodName}}(WebApplication app)
+                {
+                    // Generator-level app wiring (e.g. swagger UI)
+                    {{srcApp}}
+
+                    // Allow user customization on Service.Configure(WebApplication)
+                    {{(hasAppConfigure ? (serviceConfigTypeName + ".Configure(app);") : string.Empty)}}
+
+                    // Map endpoints generated by Lwx
+                    {{srcEndpointCalls.FixIndent(2, indentFirstLine: false)}}
                 }
             }
             """;
 
-        ctx.AddSource("LwxEndpointExtensions.g.cs", SourceText.From(source, System.Text.Encoding.UTF8));
+        var genName = ProcessorUtils.SafeIdentifier(ns) + ".Service.g.cs";
+        ctx.AddSource(genName, SourceText.From(source, System.Text.Encoding.UTF8));
+
+        // Emit informational diagnostic with the generated source for IDE preview
+        ctx.ReportDiagnostic(Diagnostic.Create(
+            new DiagnosticDescriptor(
+                "LWX016",
+            "Generated Service partial",
+            "Generator produced '{0}' in namespace '{1}'. Generated source:\n{2}",
+                "Generation",
+                DiagnosticSeverity.Info,
+                isEnabledByDefault: true),
+            attr.Location, genName, ns, source));
     }
 
     /// <summary>
-    /// Report that no ServiceConfig attribute was found in the compilation.
+    /// Report that no Service descriptor was found in the compilation.
     /// </summary>
     public static void ReportMissingServiceConfig(SourceProductionContext spc)
     {
         spc.ReportDiagnostic(Diagnostic.Create(
             new DiagnosticDescriptor(
                 "LWX011",
-                "Missing ServiceConfig",
-                "Projects using Lwx generator must declare a [LwxServiceConfig] class (ServiceConfig.cs) with service metadata.",
+                "Missing Service",
+                "Projects using the Lwx generator must declare a [LwxServiceConfig] on a type named 'Service' in a file named Service.cs with service metadata.",
                 "Configuration",
                 DiagnosticSeverity.Error,
                 isEnabledByDefault: true),
@@ -367,123 +325,18 @@ internal class LwxServiceConfigTypeProcessor(
     }
 
     /// <summary>
-    /// Report a duplicate ServiceConfig attribute occurrence.
+    /// Report a duplicate Service attribute occurrence.
     /// </summary>
     public static void ReportMultipleServiceConfig(SourceProductionContext spc, Location location)
     {
         spc.ReportDiagnostic(Diagnostic.Create(
             new DiagnosticDescriptor(
                 "LWX017",
-                "Multiple ServiceConfig declarations",
-                "Multiple [LwxServiceConfig] declarations found. Only one [LwxServiceConfig] is allowed per project.",
+                "Multiple Service declarations",
+                "Multiple [LwxServiceConfig] declarations found. Only one [LwxServiceConfig] is allowed per project and it must be declared on a type named 'Service'.",
                 "Configuration",
                 DiagnosticSeverity.Error,
                 isEnabledByDefault: true),
             location));
-    }
-
-    /// <summary>
-    /// Generate Main (ServiceConfig.Main.g.cs) source that maps endpoints and calls worker configuration.
-    /// </summary>
-    private void GenerateMain()
-    {
-        // When generating Main we must validate that the consumer project does not have an existing Program.cs
-        // if the generator is expected to produce Main. The generator previously did this in Generator.cs; move
-        // the check here so the processor owns all ServiceConfig / Main generation concerns.
-        var ns = attr.TargetSymbol.ContainingNamespace?.ToDisplayString() ?? "Generated";
-
-        var hasProgramCs = compilation.SyntaxTrees.Any(st =>
-            string.Equals(System.IO.Path.GetFileName(st.FilePath), "Program.cs", StringComparison.OrdinalIgnoreCase));
-
-        if (hasProgramCs)
-        {
-            ctx.ReportDiagnostic(Diagnostic.Create(
-                new DiagnosticDescriptor(
-                    "LWX013",
-                    "Program.cs not allowed when GenerateMain is true",
-                    "When [LwxServiceConfig(GenerateMain = true)] is set, you must not have a custom Program.cs file. The Program.cs is auto-generated with standard ASP.NET Core setup including LwxConfigure calls and endpoint mapping. Use ServiceConfig.Configure(WebApplicationBuilder) and ServiceConfig.Configure(WebApplication) for additional customizations.",
-                    "Configuration",
-                    DiagnosticSeverity.Error,
-                    isEnabledByDefault: true),
-                attr.Location));
-
-            // Bail out - consumer has a Program.cs and generator must not overwrite it.
-            return;
-        }
-
-        var srcEndpointCalls = new StringBuilder();
-        foreach (var endpointName in parent.EndpointNames)
-        {
-            srcEndpointCalls.Append($$"""
-                {{endpointName}}.Configure(app);
-
-                """);
-        }
-
-        var srcWorkerCalls = new StringBuilder();
-        foreach (var workerName in parent.WorkerNames)
-        {
-            srcWorkerCalls.Append($$"""
-                {{workerName}}.Configure(builder);
-
-                """);
-        }
-
-        var source = $$"""
-            // <auto-generated/>
-            using Microsoft.AspNetCore.Builder;
-            using Microsoft.Extensions.Hosting;
-            using Lwx.Builders.MicroService.Atributes;
-
-            namespace {{attr.TargetSymbol.ContainingNamespace?.ToDisplayString() ?? "Generated"}};
-
-            public static partial class ServiceConfig
-            {
-                    public static void Main(string[] args)
-                    {
-                        var builder = WebApplication.CreateBuilder(args);
-
-                        // Configure Lwx services, including Swagger if enabled
-                        builder.LwxConfigure();
-
-                        // Register workers generated by Lwx (each worker may decide whether to run based on stage)
-                        {{srcWorkerCalls.FixIndent(2, indentFirstLine: false)}}
-
-                        // Allow additional configuration in user ServiceConfig.Configure(WebApplicationBuilder)
-                        Configure(builder);
-
-                        var app = builder.Build();
-
-                        // Configure Lwx app, including Swagger UI if enabled
-                        app.LwxConfigure();
-
-                        // Allow additional configuration in user ServiceConfig.Configure(WebApplication)
-                        Configure(app);
-
-                        // Map all endpoints generated by Lwx source generator
-                        {{srcEndpointCalls.FixIndent(2, indentFirstLine: false)}}
-
-                        app.Run();
-                    }
-                }
-            """;
-
-        ctx.AddSource("ServiceConfig.Main.g.cs", SourceText.From(source, System.Text.Encoding.UTF8));
-
-        // Emit informational diagnostic with the generated source for IDE preview
-        var generatedName = "ServiceConfig.Main.g.cs";
-        var methodPreview = source;
-        ctx.ReportDiagnostic(Diagnostic.Create(
-            new DiagnosticDescriptor(
-                "LWX016",
-                "Generated ServiceConfig partial",
-                "Generator produced '{0}' in namespace '{1}'. Generated source:\n{2}",
-                "Generation",
-                DiagnosticSeverity.Info,
-                isEnabledByDefault: true),
-            attr.Location, generatedName, ns, methodPreview));
-
-        // generated source has been added via ctx.AddSource and diagnostics emitted
-        return;
     }
 }

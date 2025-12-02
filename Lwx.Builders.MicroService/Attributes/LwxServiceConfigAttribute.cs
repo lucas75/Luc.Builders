@@ -15,7 +15,7 @@ namespace Lwx.Builders.MicroService.Atributes
         public string Description { get; set; }
         public string Version { get; set; }
         public LwxStage PublishSwagger { get; set; } = LwxStage.None;
-        public bool GenerateMain { get; set; } = false;
+        // GenerateMain flag removed — generator no longer emits a Main method.
 
         public LwxServiceConfigAttribute() { }
     }

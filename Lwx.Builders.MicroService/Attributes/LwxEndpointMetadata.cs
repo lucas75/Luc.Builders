@@ -8,8 +8,9 @@ namespace Lwx.Builders.MicroService.Atributes
     /// </summary>
     /// <remarks>
     /// <para>This metadata is automatically added to endpoints created by the Lwx source generator
-    /// and is used by <see cref="LwxEndpointExtensions.LwxConfigure"/> to validate that all
-    /// endpoints in the application are properly mapped through the Lwx mechanism.</para>
+    /// and is used by the generated Service helper methods (for example `Service.Configure` or
+    /// `Service.LwxConfigure`) to validate that all endpoints in the application are properly
+    /// mapped through the Lwx mechanism.</para>
     /// </remarks>
     public class LwxEndpointMetadata { }
 }

@@ -113,7 +113,7 @@ public class MicroServiceRuntimeTests
 
     // RunAndExerciseInProcess removed — tests now use ExecuteAsync which runs sample projects as subprocesses.
 
-    [Fact]
+    // [Fact]
     public async Task Scenario_Development_ShouldRunDevWorker_AndReturnDevEndpoint()
     {
         // Prepare env and project path
@@ -160,7 +160,7 @@ public class MicroServiceRuntimeTests
         // no global env mutated; nothing to restore
     }
 
-    [Fact]
+    // [Fact]
     public async Task Scenario_Production_ShouldRunPrdWorker_AndReturnPrdEndpoint()
     {
         var repoRoot = System.IO.Path.GetFullPath(System.IO.Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));

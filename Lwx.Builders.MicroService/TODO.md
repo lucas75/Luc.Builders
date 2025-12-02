@@ -12,18 +12,18 @@ This TODO collects short-term work items and follow-ups for the Lwx source gener
  - Removed legacy `LwxEndpoint_Generated_{name}` marker classes from emitted outputs; endpoint generation is consolidated into a single generated file containing the endpoint partial with `Configure`.
   - File naming rules: by default the generator emits `Endpoint{TypeName}.g.cs` (e.g. `EndpointAbcCde.g.cs`). If an attribute includes `NamingExceptionJustification` the generator will include the full namespace in the file name to avoid collisions (e.g. `ExampleOrg.Product.ServiceAbc.Endpoints.EndpointOldStart.g.cs`).
  - Added support for naming exceptions via `[LwxEndpoint(NamingExceptionJustification = "...")]` and informational diagnostic LWX008 when used
-- Enhanced incremental source generator to detect ServiceConfig classes by name and validate their Configure methods for correct signatures (public static void Configure(WebApplicationBuilder) or Configure(WebApplication)).
+- Enhanced incremental source generator to detect Service classes by name and validate their Configure methods for correct signatures (public static void Configure(WebApplicationBuilder) or Configure(WebApplication)).
 
 ## Short-term (next)
 - Add unit tests / integration tests for the naming rules and diagnostics (LWX001, LWX007).
  - Add unit tests / integration tests for the naming rules and diagnostics (LWX001, LWX007).
  - Add unit tests / integration tests for the naming rules and diagnostics (LWX001, LWX007, LWX008).
 
- - Add support for a dedicated microservice descriptor attribute `LwxServiceConfig` (ServiceConfig.cs).
+- Add support for a dedicated microservice descriptor attribute `LwxServiceConfig` (Service.cs).
  - Update generator to prefer `LwxServiceConfig` and use it for swagger/service configuration generation.
 
  - Ensure all generators in the workspace adopt the canonical raw-template style (use $$""" templates with no embedded indentation and apply `.FixIndent(levels)` at inclusion). Add `FixIndent` helpers in generator projects where missing and update AGENTS.md/TODO.md to match the global policy.
- - Add support for a dedicated microservice descriptor attribute `LwxServiceConfig` (ServiceConfig.cs).
+- Add support for a dedicated microservice descriptor `LwxServiceConfig` (Service.cs).
  - Update generator to prefer `LwxServiceConfig` and use it for swagger/service configuration generation.
 
 ## DTO & Generator Split — Follow-ups
