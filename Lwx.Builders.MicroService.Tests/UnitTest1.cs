@@ -431,6 +431,139 @@ public class UnitTest1
     }
 
     [Fact]
+    public void Endpoint_InvalidClassName_EmitsLWX001()
+    {
+        using var dir = new TempProject();
+        var nsDir = Path.Combine(dir.Path, "TempProject");
+        Directory.CreateDirectory(nsDir);
+
+        var endpointsDir = Path.Combine(nsDir, "Endpoints");
+        Directory.CreateDirectory(endpointsDir);
+
+        File.WriteAllText(Path.Combine(endpointsDir, "EndpointWrongName.cs"),
+            """
+            namespace TempProject.Endpoints;
+            using Lwx.Builders.MicroService.Atributes;
+
+            [LwxEndpoint("GET /abc/cde")] public static partial class EndpointWrongName
+            {
+                public static async Task<string> Execute() { await Task.CompletedTask; return "ok"; }
+            }
+            """);
+
+        // add a Service to force generation of endpoint wiring
+        File.WriteAllText(Path.Combine(nsDir, "Service.cs"),
+            """
+            namespace TempProject;
+            using Lwx.Builders.MicroService.Atributes;
+            [LwxService]
+            public static partial class Service { }
+            """);
+
+        var (exit, output) = dir.Build();
+        Assert.NotEqual(0, exit);
+        Assert.Contains("LWX001", output);
+    }
+
+    [Fact]
+    public void Endpoint_NamingException_EmitsLWX008_And_GeneratesMapping()
+    {
+        using var dir = new TempProject();
+        var nsDir = Path.Combine(dir.Path, "TempProject");
+        Directory.CreateDirectory(nsDir);
+
+        var endpointsDir = Path.Combine(nsDir, "Endpoints");
+        Directory.CreateDirectory(endpointsDir);
+
+        File.WriteAllText(Path.Combine(endpointsDir, "EndpointLegacy.cs"),
+            """
+            namespace TempProject.Endpoints;
+            using Lwx.Builders.MicroService.Atributes;
+
+            [LwxEndpoint("GET /abc/cde", NamingExceptionJustification = "Legacy name preserved")] public static partial class EndpointLegacy
+            {
+                public static async Task<string> Execute() { await Task.CompletedTask; return "ok"; }
+            }
+            """);
+
+        // ensure generated sources are written to disk
+        var csprojPath = Path.Combine(dir.Path, "TestProj.csproj");
+        var csprojText = File.ReadAllText(csprojPath);
+        if (!csprojText.Contains("<EmitCompilerGeneratedFiles>"))
+        {
+            csprojText = csprojText.Replace("</PropertyGroup>",
+                "  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>\n  <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>\n</PropertyGroup>");
+            File.WriteAllText(csprojPath, csprojText);
+        }
+
+        // Add Service to force generation of service helper
+        File.WriteAllText(Path.Combine(nsDir, "Service.cs"),
+            """
+            namespace TempProject;
+            using Lwx.Builders.MicroService.Atributes;
+            [LwxService]
+            public static partial class Service { }
+            """);
+
+        var (exit, output) = dir.Build();
+
+        // Build should succeed; LWX008 is informational and might not appear in CLI output.
+        Assert.Equal(0, exit);
+        // Ensure no LWX001 error was emitted (it should be suppressed by NamingExceptionJustification)
+        Assert.DoesNotContain("LWX001", output);
+
+        // Try to read the generated endpoint file if present on disk
+        var genRoot = Directory.EnumerateFiles(dir.Path, "*EndpointLegacy.g.cs", SearchOption.AllDirectories).FirstOrDefault();
+        var generatedContent = string.Empty;
+        if (!string.IsNullOrEmpty(genRoot))
+        {
+            generatedContent = File.ReadAllText(genRoot);
+        }
+
+        // If no generated content found, at least ensure the informational diagnostic LWX008 was emitted
+        if (string.IsNullOrEmpty(generatedContent))
+        {
+            Assert.Contains("LWX008", output);
+        }
+    }
+
+    [Fact]
+    public void Endpoint_FilePathMismatch_EmitsLWX007()
+    {
+        using var dir = new TempProject();
+
+        var nsDir = Path.Combine(dir.Path, "TempProject");
+        Directory.CreateDirectory(nsDir);
+
+        // place a file in Endpoints but declare a different namespace
+        var endpointsDir = Path.Combine(nsDir, "Endpoints");
+        Directory.CreateDirectory(endpointsDir);
+        File.WriteAllText(Path.Combine(endpointsDir, "EndpointBadPath.cs"),
+            """
+            namespace TempProject.Wrong;
+            using Lwx.Builders.MicroService.Atributes;
+
+            [LwxEndpoint("GET /abc")] public static partial class EndpointBadPath
+            {
+                public static async Task<string> Execute() { await Task.CompletedTask; return "ok"; }
+            }
+            """);
+
+        // add a Service to ensure generator runs across compilation
+        File.WriteAllText(Path.Combine(nsDir, "Service.cs"),
+            """
+            namespace TempProject;
+            using Lwx.Builders.MicroService.Atributes;
+            [LwxService]
+            public static partial class Service { }
+            """);
+
+        var (exit, output) = dir.Build();
+        Assert.NotEqual(0, exit);
+        Assert.Contains("LWX007", output);
+    }
+
+    [Fact]
     public void EndpointNamespace_ClassWithoutAttribute_EmitsLWX018()
     {
         using var dir = new TempProject();

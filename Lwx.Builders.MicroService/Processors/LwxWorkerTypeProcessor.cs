@@ -216,6 +216,7 @@ internal class LwxWorkerTypeProcessor(
         using System;
         using Microsoft.Extensions.DependencyInjection;
         using Microsoft.AspNetCore.Builder;
+        using Microsoft.Extensions.Hosting;
         using Lwx.Builders.MicroService.Atributes;
 
         namespace {{ns}};
