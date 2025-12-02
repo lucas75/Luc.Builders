@@ -17,6 +17,8 @@ namespace Lwx.Builders.MicroService.Atributes
         public LwxStage PublishSwagger { get; set; } = LwxStage.None;
         // GenerateMain flag removed — generator no longer emits a Main method.
 
+        public double ReadnessMaxPercent { get; set; } = 0.8;
+
         public LwxServiceAttribute() { }
     }
 }
