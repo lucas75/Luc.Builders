@@ -35,8 +35,10 @@ internal class LwxEndpointTypeProcessor(
 
         GenerateSourceFiles(name, ns, rootNs, endpointClassName, optionalFirstSegment, uriArg, securityProfile, summary, description, publishLiteral);
 
-        // Register endpoint type on parent so Service has the list of endpoints for generation
-        parent.EndpointNames.Add(ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation));
+        // Register endpoint type with its service registration based on namespace
+        var servicePrefix = Generator.ComputeServicePrefix(ns);
+        var reg = parent.GetOrCreateRegistration(servicePrefix);
+        reg.EndpointNames.Add(ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation));
     }
 
     private string? ExtractUriArgument()
@@ -390,7 +392,9 @@ internal class LwxEndpointTypeProcessor(
 
         ProcessorUtils.AddGeneratedFile(ctx, generatedFileName, source);
 
-        // Register endpoint metadata on the parent generator for listing and diagnostics
-        parent.EndpointInfos.Add((ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation), httpVerb, pathPart));
+        // Register endpoint metadata on the service registration for listing and diagnostics
+        var servicePrefix = Generator.ComputeServicePrefix(ns);
+        var reg = parent.GetOrCreateRegistration(servicePrefix);
+        reg.EndpointInfos.Add((ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation), httpVerb, pathPart));
     }
 }

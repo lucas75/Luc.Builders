@@ -1,6 +1,6 @@
 using System.Threading;
 
-namespace Lwx.Builders.MicroService.Tests;
+namespace Lwx.Builders.MicroService.Tests.MockServices;
 
 public interface IWorkerCounters
 {

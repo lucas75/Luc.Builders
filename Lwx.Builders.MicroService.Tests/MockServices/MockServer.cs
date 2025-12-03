@@ -14,11 +14,11 @@ public sealed class MockServer : IAsyncDisposable
     public IHost Host { get; }
     public HttpClient Client { get; }
         
-        /// <summary>
-        /// Convenience accessor to the per-host IWorkerCounters instance registered in the test host.
-        /// Tests can use this to inspect or reset counters without reaching into Host.Services.
-        /// </summary>
-        public IWorkerCounters Counters => Host.Services.GetRequiredService<IWorkerCounters>();
+    /// <summary>
+    /// Convenience accessor to the per-host IWorkerCounters instance registered in the test host.
+    /// Tests can use this to inspect or reset counters without reaching into Host.Services.
+    /// </summary>
+    public IWorkerCounters Counters => Host.Services.GetRequiredService<IWorkerCounters>();
 
     private MockServer(IHost host, HttpClient client)
     {
@@ -33,9 +33,18 @@ public sealed class MockServer : IAsyncDisposable
         builder.Environment.EnvironmentName = environment;
         // Register per-host worker counters
         builder.Services.AddSingleton<IWorkerCounters, WorkerCounters>();
-        Lwx.Builders.MicroService.Tests.Service.Configure(builder);
+        
+        // Configure both mock services - these calls reference generated code
+        // and will cause a compile error if the generator doesn't produce them
+        MockServices001.Service.Configure(builder);
+        MockServices002.Service.Configure(builder);
+        
         var app = builder.Build();
-        Lwx.Builders.MicroService.Tests.Service.Configure(app);
+        
+        // Configure both mock services app middleware
+        MockServices001.Service.Configure(app);
+        MockServices002.Service.Configure(app);
+        
         await app.StartAsync();
         var client = app.GetTestClient();
         return new MockServer(app, client);

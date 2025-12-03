@@ -112,7 +112,34 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
  - Tests pass successfully for the solution; `Lwx.Builders.Dto` also includes its own unit/integration coverage in the solution test run.
 - Ready for continued development of additional processor types or feature enhancements
 
-- # Key Files and Locations
+## Multi-Service Architecture (December 2025)
+
+The generator now supports multiple services per project, associated by namespace hierarchy:
+
+### Namespace-Based Service Association
+- Endpoints/workers are associated with services based on their namespace prefix
+- `Assembly.Abc.Endpoints.Foo` → belongs to service at `Assembly.Abc` (Service.cs in that namespace)
+- `Assembly.Cde.Workers.Bar` → belongs to service at `Assembly.Cde`
+- Each service generates its own `Service.Configure(...)` with only its associated endpoints/workers
+
+### Data Model Changes
+- `Generator` now uses `Dictionary<string, ServiceRegistration>` instead of flat lists
+- `ServiceRegistration` class holds endpoints/workers for a specific namespace prefix
+- `ComputeServicePrefix()` extracts the service namespace from endpoint/worker namespaces
+
+### New Diagnostics
+- `LWX017` - Duplicate Service: Now triggers when two services share the same namespace prefix
+- `LWX020` - Service namespace validation: Service must be under assembly namespace
+- `LWX021` - Orphan Endpoint: Endpoint has no matching service in its namespace hierarchy
+- `LWX022` - Orphan Worker: Worker has no matching service in its namespace hierarchy
+
+### Test/Library Project Detection
+Services in test or library projects have relaxed namespace placement rules. Detection via:
+- Assembly name ending in `.Tests`, `.Test`, `.Lib`, `.Library`
+- Absence of `Program.cs` in the compilation
+- `OutputKind.DynamicallyLinkedLibrary` compilation option
+
+# Key Files and Locations
 
 - **Generator Core**: `Generator.cs`
 - **Processors**: `Processors/` directory with individual processor classes

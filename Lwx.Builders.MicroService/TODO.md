@@ -1,7 +1,29 @@
 # TODO
 
-1. Remove warning LWX008: this is unecessay. (DONE - removed informational diagnostic and tests updated)
-2. Locate and remove dangling ocurrences of ServiceConfig (it was renamed to Service). (No lingering references found — only TODO mention removed)
-3. Update the Lwx.Builders.MicroService to provide a /health and /ready endpoints. The health endpoint must wait the Lifecycle start event before returning (use a TaskCompletionSource) to ensure the first answer will only come after the server started. (DONE - generator emits /health (waits for ApplicationStarted) and /ready endpoints in Service.ConfigureHealthz)
-4. Make Lwx.Builders.MicroService initialization to list all endpoints, workers and other resources on the console. The Endpoints should be listed as method path?query -> Endpoint class. The workers should be listed as Worker class nThreads=x (DONE - generator will print a list during ApplicationStarted with endpoint/worker info)
-5. Fix attribute namespace typo. (DONE - namespace `Lwx.Builders.MicroService.Atributes` renamed to `Lwx.Builders.MicroService.Atributtes`, and all references updated in attributes, processors, tests and sample projects.)
+## ✅ Completed: Multi-Service Architecture (December 2025)
+
+The following changes have been implemented:
+
+1. ✅ **Allow multiple LwxService** - Each namespace prefix can have its own service
+2. ✅ **Associate Endpoints and Workers to LwxService by namespace**:
+   - `AssemblyNamespace.Abc.Endpoints...` → `AssemblyNamespace.Abc.Service`
+   - `AssemblyNamespace.Abc.Workers...` → `AssemblyNamespace.Abc.Service`
+   - `AssemblyNamespace.Cde.Endpoints...` → `AssemblyNamespace.Cde.Service`
+   - `AssemblyNamespace.Cde.Workers...` → `AssemblyNamespace.Cde.Service`
+3. ✅ **Generated output**:
+   - `AssemblyNamespace.Abc.Service.Configure(...)` - wires only Abc's endpoints/workers
+   - `AssemblyNamespace.Cde.Service.Configure(...)` - wires only Cde's endpoints/workers
+4. ✅ **Namespace validation**: Service outside assembly root only allowed in test/lib projects
+   - Detection via: assembly name patterns (`.Tests`, `.Lib`), absence of `Program.cs`, `OutputKind`
+
+### New Diagnostics
+- `LWX017` - Duplicate Service for same namespace prefix
+- `LWX020` - Service namespace must be under assembly namespace
+- `LWX021` - Orphan Endpoint (no matching service)
+- `LWX022` - Orphan Worker (no matching service)
+
+### Key Implementation Files
+- `Generator.cs` - New `ServiceRegistration` class and `ServiceRegistrations` dictionary
+- `LwxServiceTypeProcessor.cs` - Rewritten to use service registrations
+- `LwxEndpointTypeProcessor.cs` - Registers endpoints to appropriate service by namespace
+- `LwxWorkerTypeProcessor.cs` - Registers workers to appropriate service by namespace 

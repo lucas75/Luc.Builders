@@ -5,15 +5,63 @@ using Microsoft.CodeAnalysis;
 
 namespace Lwx.Builders.MicroService;
 
+/// <summary>
+/// Holds registration data for endpoints and workers belonging to a specific service namespace.
+/// </summary>
+internal sealed class ServiceRegistration
+{
+    public string ServiceNamespacePrefix { get; init; } = string.Empty;
+    public List<string> EndpointNames { get; } = new();
+    public List<string> WorkerNames { get; } = new();
+    public List<(string TypeName, string HttpMethod, string? Path)> EndpointInfos { get; } = new();
+    public List<(string TypeName, int Threads)> WorkerInfos { get; } = new();
+}
+
 [Generator(LanguageNames.CSharp)]
 public class Generator : IIncrementalGenerator
 {
+    /// <summary>
+    /// Dictionary of service registrations keyed by the service namespace prefix.
+    /// For example, "ExampleOrg.Product.Abc" for a service at ExampleOrg.Product.Abc.Service.
+    /// </summary>
+    internal readonly Dictionary<string, ServiceRegistration> ServiceRegistrations = new(StringComparer.Ordinal);
 
-    internal readonly List<string> EndpointNames = new();
-    internal readonly List<string> WorkerNames = new();
-    // Detailed info used for runtime wiring and debug listing
-    internal readonly List<(string TypeName, string HttpMethod, string? Path)> EndpointInfos = new();
-    internal readonly List<(string TypeName, int Threads)> WorkerInfos = new();
+    /// <summary>
+    /// Gets or creates a ServiceRegistration for the given namespace prefix.
+    /// </summary>
+    internal ServiceRegistration GetOrCreateRegistration(string serviceNamespacePrefix)
+    {
+        if (!ServiceRegistrations.TryGetValue(serviceNamespacePrefix, out var reg))
+        {
+            reg = new ServiceRegistration { ServiceNamespacePrefix = serviceNamespacePrefix };
+            ServiceRegistrations[serviceNamespacePrefix] = reg;
+        }
+        return reg;
+    }
+
+    /// <summary>
+    /// Computes the service namespace prefix from an endpoint or worker namespace.
+    /// For "Assembly.Abc.Endpoints.Sub" returns "Assembly.Abc".
+    /// For "Assembly.Abc.Workers.Sub" returns "Assembly.Abc".
+    /// </summary>
+    internal static string ComputeServicePrefix(string ns)
+    {
+        // Find .Endpoints or .Workers segment and return everything before it
+        var endpointsIdx = ns.IndexOf(".Endpoints", StringComparison.Ordinal);
+        if (endpointsIdx > 0)
+        {
+            return ns.Substring(0, endpointsIdx);
+        }
+
+        var workersIdx = ns.IndexOf(".Workers", StringComparison.Ordinal);
+        if (workersIdx > 0)
+        {
+            return ns.Substring(0, workersIdx);
+        }
+
+        // Fallback: return the namespace as-is (shouldn't happen for valid endpoints/workers)
+        return ns;
+    }
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -134,19 +182,51 @@ public class Generator : IIncrementalGenerator
                 var scList = attrs.ToArray();
                 if (scList.Length == 0)
                 {
-                    Processors.LwxServiceTypeProcessor.ReportMissingService(spc);
-                }
-                else if (scList.Length > 1)
-                {
-                    foreach (var sc in scList)
-                    {
-                        Processors.LwxServiceTypeProcessor.ReportMultipleService(spc, sc!.Location);
-                    }
+                    Processors.LwxServiceTypeProcessor.ReportMissingService(spc, compilation);
                 }
                 else
                 {
-                    var rp = new Processors.RootProcessor(this, scList[0]!, spc, compilation);
-                    rp.Execute();
+                    // Build a dictionary of service namespace prefixes for validation
+                    var serviceNamespacePrefixes = new HashSet<string>(StringComparer.Ordinal);
+
+                    foreach (var sc in scList)
+                    {
+                        if (sc == null) continue;
+
+                        // Extract the service namespace prefix (namespace without trailing segment if it matches type name)
+                        var serviceNs = sc.TargetSymbol.ContainingNamespace?.ToDisplayString() ?? string.Empty;
+                        var servicePrefix = serviceNs;
+
+                        // Validate and register
+                        if (!serviceNamespacePrefixes.Add(servicePrefix))
+                        {
+                            // Duplicate service prefix
+                            Processors.LwxServiceTypeProcessor.ReportDuplicateServicePrefix(spc, sc.Location, servicePrefix);
+                            continue;
+                        }
+
+                        // Process the service
+                        var rp = new Processors.RootProcessor(this, sc, spc, compilation);
+                        rp.Execute();
+                    }
+
+                    // After processing all services, check for orphan endpoints/workers
+                    foreach (var kvp in ServiceRegistrations)
+                    {
+                        if (!serviceNamespacePrefixes.Contains(kvp.Key))
+                        {
+                            // Report orphan endpoints
+                            foreach (var ep in kvp.Value.EndpointInfos)
+                            {
+                                Processors.LwxServiceTypeProcessor.ReportOrphanEndpoint(spc, kvp.Key, ep.TypeName);
+                            }
+                            // Report orphan workers
+                            foreach (var w in kvp.Value.WorkerInfos)
+                            {
+                                Processors.LwxServiceTypeProcessor.ReportOrphanWorker(spc, kvp.Key, w.TypeName);
+                            }
+                        }
+                    }
                 }
             }
         );

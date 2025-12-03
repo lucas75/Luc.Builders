@@ -128,7 +128,8 @@ public class CompileErrorTests
         Assert.Contains("LWX015", diagIdsA);
         Assert.Contains("LWX003", diagIdsA);
 
-        // Scenario B: duplicate Service declarations to trigger LWX017
+        // Scenario B: duplicate Service declarations in the SAME namespace to trigger LWX017
+        // Note: Multiple services in DIFFERENT namespaces are now allowed (multi-service architecture)
         var sourcesB = new Dictionary<string, string>
         {
             ["Service.cs"] = $$"""
@@ -139,12 +140,12 @@ public class CompileErrorTests
                 public static partial class Service { }
                 """,
 
-            ["ServiceBad.cs"] = $$"""
+            ["ServiceDupe.cs"] = $$"""
                 using Lwx.Builders.MicroService.Atributtes;
-                namespace TestApp.Other;
+                namespace TestApp;
 
                 [LwxService(Title = "Test2")]
-                public static partial class ServiceBad { }
+                public static partial class ServiceDupe { }
                 """
         };
 

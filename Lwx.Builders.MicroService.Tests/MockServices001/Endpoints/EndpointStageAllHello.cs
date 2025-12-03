@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using Lwx.Builders.MicroService.Atributtes;
 
-namespace Lwx.Builders.MicroService.Tests.Endpoints;
+namespace Lwx.Builders.MicroService.Tests.MockServices001.Endpoints;
 
 [LwxEndpoint(
     Uri = "GET /stage-all/hello",

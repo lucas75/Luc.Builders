@@ -4,8 +4,9 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Lwx.Builders.MicroService.Atributtes;
+using Lwx.Builders.MicroService.Tests.MockServices;
 
-namespace Lwx.Builders.MicroService.Tests.Workers;
+namespace Lwx.Builders.MicroService.Tests.MockServices001.Workers;
 
 [LwxWorker(
     Stage = LwxStage.DevelopmentOnly,
