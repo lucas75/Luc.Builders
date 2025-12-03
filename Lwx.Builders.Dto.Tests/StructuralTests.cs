@@ -11,7 +11,10 @@ using Lwx.Builders.Dto.Tests.Dto;
 
 public class StructuralTests
 {
-    [Fact]
+    /// <summary>
+    /// Confirms the generator produces backing fields and properties for partial properties defined in DTOs.
+    /// </summary>
+    [Fact(DisplayName = "Generator: emits properties and backing fields for partial DTO properties")]
     public void DtoGenerator_Generates_For_Partial_Properties()
     {
         var t = typeof(NormalDto);
@@ -23,7 +26,10 @@ public class StructuralTests
         Assert.NotNull(fName);
     }
 
-    [Fact]
+    /// <summary>
+    /// Ensures DictDto includes an internal dictionary backing field for dynamic properties.
+    /// </summary>
+    [Fact(DisplayName = "DictDto: emits internal dictionary backend for properties")]
     public void DictionaryDto_Generates_Dictionary_Backend()
     {
         var t = typeof(DictDto);
@@ -32,7 +38,10 @@ public class StructuralTests
         Assert.True(dictField.FieldType.FullName?.StartsWith("System.Collections.Generic.Dictionary") ?? false, "Expected _properties to be a Dictionary<,>");
     }
 
-    [Fact]
+    /// <summary>
+    /// Asserts a property decorated with a JSON converter in the generator results in the JsonConverterAttribute being emitted.
+    /// </summary>
+    [Fact(DisplayName = "Properties: emit JsonConverterAttribute for custom converters")]
     public void PropertyWithJsonConverter_Is_Emitted_With_JsonConverterAttribute()
     {
         var t = typeof(IgnoreDto);
@@ -43,7 +52,10 @@ public class StructuralTests
         Assert.Equal(typeof(MyStringConverter), convType);
     }
 
-    [Fact]
+    /// <summary>
+    /// Verifies LwxDtoIgnore marks properties as ignored and generator does not emit LWX005 for those properties.
+    /// </summary>
+    [Fact(DisplayName = "Ignored property: generator skips and no LWX005 diagnostic")]
     public void LwxDtoIgnore_Skips_Property_And_No_LWX005()
     {
         var t = typeof(IgnoreDto);
@@ -54,7 +66,10 @@ public class StructuralTests
         Assert.True(hasIgnoreAttr, "Expected property 'Ignored' to be decorated with LwxDtoIgnoreAttribute");
     }
 
-    [Fact]
+    /// <summary>
+    /// Verifies date/time types are emitted with appropriate JSON converters and round-trip serialization works.
+    /// </summary>
+    [Fact(DisplayName = "Date/time types: generator emits JSON converters and runtime round-trip passes")]
     public void DateTimeTypes_Automatically_Get_JsonConverters()
     {
         var t = typeof(IgnoreDto);

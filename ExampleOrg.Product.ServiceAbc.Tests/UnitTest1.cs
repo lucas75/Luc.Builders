@@ -6,7 +6,10 @@ namespace ExampleOrg.Product.ServiceAbc.Tests;
 
 public class ServiceTests
 {
-    [Fact]
+    /// <summary>
+    /// Verifies the Service class exists and has the [LwxService] attribute applied.
+    /// </summary>
+    [Fact(DisplayName = "Service: class exists and is annotated with [LwxService]")]
     public void Service_ClassExists_WithAttribute()
     {
         var t = typeof(ExampleOrg.Product.ServiceAbc.Service);
@@ -16,7 +19,10 @@ public class ServiceTests
         Assert.NotNull(attr);
     }
 
-    [Fact]
+    /// <summary>
+    /// Verifies the Service's PublishSwagger property is set to DevelopmentOnly.
+    /// </summary>
+    [Fact(DisplayName = "Service: PublishSwagger is DevelopmentOnly")]
     public void Service_PublishSwagger_IsDevelopment()
     {
         var t = typeof(ExampleOrg.Product.ServiceAbc.Service);

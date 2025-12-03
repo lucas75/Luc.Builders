@@ -1,13 +1,21 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using Lwx.Builders.MicroService.Tests.MockServices;
 using Microsoft.CodeAnalysis;
 using Xunit;
 
+namespace Lwx.Builders.MicroService.Tests;
+
+[DisplayName("Compile Error Tests")]
 public class CompileErrorTests
 {
-    [Fact]
+    /// <summary>
+    /// Validates diagnostics for endpoints and workers with naming/path/annotation problems.
+    /// Expects errors for invalid names, namespace placement, path mismatches, and unannotated members.
+    /// </summary>
+    [Fact(DisplayName = "Endpoints/Workers diagnostics: naming, path and annotation errors detected")]
     public void Combined_Naming_Path_Annotation_Diagnostics()
     {
         var sources = new Dictionary<string, string>
@@ -102,7 +110,11 @@ public class CompileErrorTests
         Assert.Contains("LWX019", diagIds); // unannotated worker
     }
 
-    [Fact]
+    /// <summary>
+    /// Verifies service-level diagnostics like invalid Configure signatures, unexpected public methods,
+    /// PublishSwagger usage, and duplicate service definitions in the same namespace.
+    /// </summary>
+    [Fact(DisplayName = "Service diagnostics: signature, swagger, unexpected methods, duplicate services")]
     public void Combined_ServiceLevel_Diagnostics()
     {
         // Scenario A: single Service with invalid signature + unexpected public method + PublishSwagger (causes LWX014, LWX015, LWX003)
@@ -154,7 +166,10 @@ public class CompileErrorTests
         Assert.Contains("LWX017", diagIdsB);
     }
 
-    [Fact]
+    /// <summary>
+    /// Ensures an error is reported when no Service declaration is present in a project with endpoints/workers.
+    /// </summary>
+    [Fact(DisplayName = "No Service: missing Service declaration reports diagnostic LWX011")]
     public void Combined_MissingService_Diagnostic()
     {
         var sources = new Dictionary<string, string>
@@ -169,7 +184,10 @@ public class CompileErrorTests
         Assert.True(MockCompiler.HasDiagnostic(result, "LWX011"), $"Expected LWX011 diagnostic. Got: {MockCompiler.FormatDiagnostics(result)}");
     }
 
-    [Fact]
+    /// <summary>
+    /// Confirms the generator produces Service helper methods and generated files for a valid Service.
+    /// </summary>
+    [Fact(DisplayName = "Generator: emits Service helper methods and files")]
     public void Generator_Generates_Service_Helpers()
     {
         var sources = new Dictionary<string, string>

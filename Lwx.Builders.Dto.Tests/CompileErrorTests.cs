@@ -8,7 +8,11 @@ using Lwx.Builders.Dto.Tests.MockServices;
 // CompileErrorTests: use an in-memory generator harness rather than invoking MSBuild.
 public class CompileErrorTests
 {   
-    [Fact]
+    /// <summary>
+    /// Validates that invalid DTO declarations produce the expected compile-time diagnostics
+    /// and warnings (LWX003, LWX004, LWX005, LWX006, LWX007).
+    /// </summary>
+    [Fact(DisplayName = "Error DTO - reports expected compile errors and warnings")]
     public void ErrorDto_AllExpectedDiagnosticsPresent()
     {
         var ErrorDtoSources = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)

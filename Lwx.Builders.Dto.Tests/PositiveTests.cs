@@ -11,7 +11,11 @@ using Lwx.Builders.Dto.Tests.Dto;
 
 public class PositiveTests
 {
-    [Fact]
+    /// <summary>
+    /// Ensures enum properties are serialized as strings and the generator emits the
+    /// LWX004 warning for enum properties when a JsonStringEnumConverter is applied.
+    /// </summary>
+    [Fact(DisplayName = "Enum property: JSON string converter and LWX004 warning")]
     public void EnumProperty_Reports_LWX004_And_Adds_JsonStringEnumConverter()
     {
         var instance = new IgnoreDto { Id = 1, Color = MyColors.Green };
@@ -19,7 +23,10 @@ public class PositiveTests
         Assert.Contains("\"color\":\"Green\"", json);
     }
 
-    [Fact]
+    /// <summary>
+    /// Basic round-trip serialization test for NormalDto.
+    /// </summary>
+    [Fact(DisplayName = "NormalDto: serialize/deserialize round-trip")]
     public void LoadNormalDto_CanSerializeDeserialize()
     {
         var theInstance = new NormalDto { Id = 123, Name = "hello" };
@@ -29,7 +36,10 @@ public class PositiveTests
         Assert.Equal("hello", theInstance.Name);
     }
 
-    [Fact]
+    /// <summary>
+    /// Verifies IgnoreDto uses the custom converter successfully across a serialize/deserialize roundtrip.
+    /// </summary>
+    [Fact(DisplayName = "IgnoreDto: custom converter round-trip")]
     public void LoadIgnoreDto_CustomConverterWorksOnRoundtrip()
     {
         var theInstance = new IgnoreDto { Id = 2, Value = "abc" };
@@ -38,7 +48,11 @@ public class PositiveTests
         Assert.Equal("abc", theInstance.Value);
     }
 
-    [Fact]
+    /// <summary>
+    /// Verifies that DTO types (Normal, Dict, Ignore) can be serialized and deserialized
+    /// for all supported property types (numbers, strings, dates, enums, nested objects).
+    /// </summary>
+    [Fact(DisplayName = "DTOs: serialize/deserialize all supported types")]
     public void Dtos_Build_And_Serialize_AllTypes()
     {
         // NormalDto
@@ -71,7 +85,10 @@ public class PositiveTests
         Assert.Equal(9, dict!.Id);
     }
 
-    [Theory]
+    /// <summary>
+    /// Confirms DateTime/DateOnly/TimeOnly values are parsed from multiple JSON formats for NormalDto.
+    /// </summary>
+    [Theory(DisplayName = "Date/time parsing: accepts multiple JSON formats (NormalDto)")]
     [InlineData("""{"id":1,"date":"2025-11-26","time":"15:30:00","offset":"2025-11-26T15:30:00+02:00"}""", "2025-11-26", "15:30:00", "2025-11-26T15:30:00+02:00")]
     [InlineData("""{"id":1,"date":"2025-11-26","time":"15:30:00","offset":"2025-11-26T13:30:00Z"}""", "2025-11-26", "15:30:00", "2025-11-26T13:30:00Z")]
     [InlineData("""{"id":1,"date":"2025-11-26","time":"15:30:00.123","offset":"2025-11-26T15:30:00.123+02:00"}""", "2025-11-26", "15:30:00.123", "2025-11-26T15:30:00.123+02:00")]
@@ -86,7 +103,10 @@ public class PositiveTests
         Assert.Equal(DateTimeOffset.Parse(offset), dto.Dh);
     }
 
-    [Theory]
+    /// <summary>
+    /// Confirms DateTime/DateOnly/TimeOnly values are parsed from multiple JSON formats for DictDto.
+    /// </summary>
+    [Theory(DisplayName = "Date/time parsing: accepts multiple JSON formats (DictDto)")]
     [InlineData("""{"id":1,"date":"2025-11-26","time":"15:30:00","offset":"2025-11-26T15:30:00+02:00"}""", "2025-11-26", "15:30:00", "2025-11-26T15:30:00+02:00")]
     [InlineData("""{"id":1,"date":"2025-11-26","time":"15:30:00","offset":"2025-11-26T13:30:00Z"}""", "2025-11-26", "15:30:00", "2025-11-26T13:30:00Z")]
     [InlineData("""{"id":1,"date":"2025-11-26","time":"15:30:00.123","offset":"2025-11-26T15:30:00.123+02:00"}""", "2025-11-26", "15:30:00.123", "2025-11-26T15:30:00.123+02:00")]
@@ -101,7 +121,10 @@ public class PositiveTests
         Assert.Equal(DateTimeOffset.Parse(offset), dto.Dh);
     }
 
-    [Theory]
+    /// <summary>
+    /// Confirms DateTime/DateOnly/TimeOnly values are parsed from multiple JSON formats for IgnoreDto.
+    /// </summary>
+    [Theory(DisplayName = "Date/time parsing: accepts multiple JSON formats (IgnoreDto)")]
     [InlineData("""{"id":1,"ignored":999,"ok":5,"value":"v","color":"Green","offset":"2025-11-26T15:30:00+02:00","date":"2025-11-26","time":"15:30:00"}""", "2025-11-26", "15:30:00", "2025-11-26T15:30:00+02:00")]
     [InlineData("""{"id":1,"ignored":999,"ok":5,"value":"v","color":"Green","offset":"2025-11-26T13:30:00Z","date":"2025-11-26","time":"15:30:00"}""", "2025-11-26", "15:30:00", "2025-11-26T13:30:00Z")]
     [InlineData("""{"id":1,"ignored":999,"ok":5,"value":"v","color":"Green","offset":"2025-11-26T15:30:00.123+02:00","date":"2025-11-26","time":"15:30:00.123"}""", "2025-11-26", "15:30:00.123", "2025-11-26T15:30:00.123+02:00")]
@@ -116,7 +139,10 @@ public class PositiveTests
         Assert.Equal(DateTimeOffset.Parse(offset), dto.Offset);
     }
 
-    [Theory]
+    /// <summary>
+    /// Validates enum JSON parsing accepts both names and numeric values across DTO types.
+    /// </summary>
+    [Theory(DisplayName = "Enum parsing: accepts names and numeric values")]
     [InlineData("""{"id":1,"color":"Green"}""", """{"id":1,"color":1}""", """{"id":1,"color":1}""", MyColors.Green)]
     [InlineData("""{"id":1,"color":"Red"}""", """{"id":1,"color":0}""", """{"id":1,"color":0}""", MyColors.Red)]
     [InlineData("""{"id":1,"color":1}""", """{"id":1,"color":1}""", """{"id":1,"color":1}""", MyColors.Green)]
@@ -140,7 +166,10 @@ public class PositiveTests
         Assert.Equal(expected, ig!.Color);
     }
 
-    [Theory]
+    /// <summary>
+    /// Validates parsing of integer properties from JSON, including edge cases and bounds.
+    /// </summary>
+    [Theory(DisplayName = "Integer parsing: accepts numeric values and bounds")]
     [InlineData("""{"id":0}""", 0)]
     [InlineData("""{"id":1}""", 1)]
     [InlineData("""{"id":-1}""", -1)]
@@ -161,7 +190,10 @@ public class PositiveTests
         Assert.Equal(id, ig!.Ok);
     }
 
-    [Theory]
+    /// <summary>
+    /// Ensures string properties accept various Unicode strings and very long values.
+    /// </summary>
+    [Theory(DisplayName = "Strings: accept unicode and long strings")]
     [InlineData("""{"id":1,"name":"","value":""}""", "")]
     [InlineData("""{"id":1,"name":"a","value":"a"}""", "a")]
     [InlineData("""{"id":1,"name":"こんにちは","value":"こんにちは"}""", "こんにちは")]
@@ -183,7 +215,10 @@ public class PositiveTests
         Assert.Equal(value, ig!.Value);
     }
 
-    [Fact]
+    /// <summary>
+    /// Validates nested custom objects are serialized and deserialized correctly.
+    /// </summary>
+    [Fact(DisplayName = "Nested object: round-trip serialization works")]
     public void CustomObject_Roundtrip_Works()
     {
         // Small nested object not tied to the generator — ensure runtime nested serialization works.

@@ -9,7 +9,10 @@ using Lwx.Builders.Dto.Tests.Dto;
 
 public class NegativeTests
 {
-    [Theory]
+    /// <summary>
+    /// Asserts that malformed or type-invalid JSON inputs for NormalDto throw a JsonException.
+    /// </summary>
+    [Theory(DisplayName = "NormalDto: invalid JSON throws JsonException")]
     // invalid integer for id
     [InlineData("""{"id":"not-an-int"}""")]
     // invalid offset
@@ -31,7 +34,10 @@ public class NegativeTests
         Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<NormalDto>(json));
     }
 
-    [Theory]
+    /// <summary>
+    /// Asserts that malformed or type-invalid JSON inputs for DictDto throw a JsonException.
+    /// </summary>
+    [Theory(DisplayName = "DictDto: invalid JSON throws JsonException")]
     // invalid integer for id
     [InlineData("""{"id":"not-an-int"}""")]
     // invalid offset
@@ -53,7 +59,10 @@ public class NegativeTests
         Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<DictDto>(json));
     }
 
-    [Theory]
+    /// <summary>
+    /// Asserts that malformed or type-invalid JSON inputs for IgnoreDto throw a JsonException.
+    /// </summary>
+    [Theory(DisplayName = "IgnoreDto: invalid JSON throws JsonException")]
     // invalid int for ok
     [InlineData("""{"ok":"bad-int"}""")]
     // invalid offset
@@ -75,7 +84,10 @@ public class NegativeTests
         Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<IgnoreDto>(json));
     }
 
-    [Theory]
+    /// <summary>
+    /// Asserts that invalid JSON for nested/holder types throws a JsonException.
+    /// </summary>
+    [Theory(DisplayName = "Nested holder: invalid JSON throws JsonException")]
     // malformed JSON (guaranteed parser error)
     [InlineData("""{""")]
     // explicit text that's not valid JSON
