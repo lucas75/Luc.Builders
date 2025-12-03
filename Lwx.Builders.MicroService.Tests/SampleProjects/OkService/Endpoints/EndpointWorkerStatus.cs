@@ -1,9 +1,9 @@
 using System.Threading.Tasks;
 using Lwx.Builders.MicroService.Atributes;
-using Lwx.Builders.MicroService.Tests.Workers;
+using OkService.Workers;
 using Microsoft.Extensions.Hosting;
 
-namespace Lwx.Builders.MicroService.Tests.Endpoints;
+namespace OkService.Endpoints;
 
 [LwxEndpoint(
     Uri = "GET /worker-status", 

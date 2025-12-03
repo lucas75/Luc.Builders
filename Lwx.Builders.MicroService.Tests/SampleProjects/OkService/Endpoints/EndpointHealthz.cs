@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using Lwx.Builders.MicroService.Atributes;
 
-namespace Lwx.Builders.MicroService.Tests.Endpoints;
+namespace OkService.Endpoints;
 
 [LwxEndpoint(
     Uri = "GET /healthz", 

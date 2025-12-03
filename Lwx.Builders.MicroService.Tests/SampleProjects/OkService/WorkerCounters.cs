@@ -1,6 +1,6 @@
 using System.Threading;
 
-namespace Lwx.Builders.MicroService.Tests;
+namespace OkService;
 
 public static class WorkerCounters
 {

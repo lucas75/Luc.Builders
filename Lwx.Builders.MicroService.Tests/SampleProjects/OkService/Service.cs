@@ -6,7 +6,7 @@ using Lwx.Builders.MicroService.Atributes;
 using System;
 using System.Linq;
 
-namespace Lwx.Builders.MicroService.Tests;
+namespace OkService;
 
 [LwxService(PublishSwagger = LwxStage.None)]
 public static partial class Service

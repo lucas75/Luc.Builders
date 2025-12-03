@@ -4,6 +4,7 @@
     <IsPackable>false</IsPackable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,20 +17,11 @@
   </ItemGroup>
 
   <ItemGroup>
-      <!-- Tests should not compile sample project sources as part of the test assembly.
-        Temporary sample projects created by tests will reference the generator directly. -->
+    <ProjectReference Include="../Lwx.Builders.MicroService/Lwx.Builders.MicroService.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
       <Compile Remove="SampleProjects\**\*.cs" />
-      <Compile Remove="Projects\**\*.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Lwx.Builders.MicroService\Lwx.Builders.MicroService.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-    <ProjectReference Include="..\Lwx.Builders.Dto\Lwx.Builders.Dto.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- Provide ASP.NET Core types required for test-endpoints and workers when compiled into the test assembly -->
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
 </Project>

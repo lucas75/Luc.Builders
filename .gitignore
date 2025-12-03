@@ -485,3 +485,5 @@ $RECYCLE.BIN/
 
 **/appsettings.Development.json
 **/appsettings.Local.json
+
+.Trash-[0-9]*/

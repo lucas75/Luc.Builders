@@ -5,7 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Lwx.Builders.MicroService.Atributes;
 
-namespace Lwx.Builders.MicroService.Tests.Workers;
+namespace OkService.Workers;
 
 [LwxWorker(
     Stage = LwxStage.All, 

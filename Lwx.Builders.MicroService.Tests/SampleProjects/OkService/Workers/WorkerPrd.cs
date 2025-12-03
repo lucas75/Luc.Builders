@@ -5,23 +5,23 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Lwx.Builders.MicroService.Atributes;
 
-namespace Lwx.Builders.MicroService.Tests.Workers;
+namespace OkService.Workers;
 
-[LwxWorker(    
-    Stage = LwxStage.DevelopmentOnly, 
+[LwxWorker(
+    Stage = LwxStage.All, 
     Threads = 1
 )]
-public partial class WorkerDev(ILogger<WorkerDev> logger) : BackgroundService
+public partial class WorkerPrd(ILogger<WorkerPrd> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("WorkerDev starting up.");
+        logger.LogInformation("WorkerPrd starting up.");
         while (!stoppingToken.IsCancellationRequested)
         {
-            WorkerCounters.IncDev();
-            logger.LogInformation("WorkerDev heartbeat at {time}", DateTimeOffset.UtcNow);
+            WorkerCounters.IncPrd();
+            logger.LogInformation("WorkerPrd heartbeat at {time}", DateTimeOffset.UtcNow);
             await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
         }
-        logger.LogInformation("WorkerDev stopping.");
+        logger.LogInformation("WorkerPrd stopping.");
     }
 }
