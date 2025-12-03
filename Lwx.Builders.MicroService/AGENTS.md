@@ -52,6 +52,7 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
 - Implemented type validation with diagnostics for unsupported property types
 - Added enum constant validation to warn missing `JsonPropertyName` attributes
 - Updated attribute embedding to include new DTO-related attributes
+- Fixed typo in attribute namespace: renamed `Lwx.Builders.MicroService.Atributes` to `Lwx.Builders.MicroService.Atributtes` across the repository (attributes, processors, tests, and sample projects). Updated processors and templates so the generator emits the corrected namespace in generated sources.
 
 ### Completed Refactoring (Previous)
 - Refactored large `Execute()` method in `LwxEndpointTypeProcessor` into focused private methods:

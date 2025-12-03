@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Lwx.Builders.MicroService.Tests;
+using Lwx.Builders.MicroService.Tests.MockServices;
 using Microsoft.CodeAnalysis;
 using Xunit;
 
@@ -13,7 +13,7 @@ public class CompileErrorTests
         var sources = new Dictionary<string, string>
         {
             ["Service.cs"] = $$"""
-                using Lwx.Builders.MicroService.Atributes;
+                using Lwx.Builders.MicroService.Atributtes;
                 namespace TestApp;
 
                 [LwxService(Title = "Test")]
@@ -23,7 +23,7 @@ public class CompileErrorTests
             // endpoint with bad name
             ["Endpoints/BadName.cs"] = $$"""
                 using System.Threading.Tasks;
-                using Lwx.Builders.MicroService.Atributes;
+                using Lwx.Builders.MicroService.Atributtes;
                 namespace TestApp.Endpoints;
 
                 [LwxEndpoint(Uri = "GET /hello", Summary = "hello", Publish = LwxStage.All)]
@@ -36,7 +36,7 @@ public class CompileErrorTests
             // endpoint in wrong namespace (no '.Endpoints')
             ["WrongNamespace.cs"] = $$"""
                 using System.Threading.Tasks;
-                using Lwx.Builders.MicroService.Atributes;
+                using Lwx.Builders.MicroService.Atributtes;
                 namespace TestApp.NotEndpoints;
 
                 [LwxEndpoint(Uri = "GET /wrong", Summary = "wrong", Publish = LwxStage.All)]
@@ -49,7 +49,7 @@ public class CompileErrorTests
             // file path mismatch for endpoint
             ["WrongPath.cs"] = $$"""
                 using System.Threading.Tasks;
-                using Lwx.Builders.MicroService.Atributes;
+                using Lwx.Builders.MicroService.Atributtes;
                 namespace TestApp.Deep.Nested.Endpoints;
 
                 [LwxEndpoint(Uri = "GET /deep", Summary = "deep", Publish = LwxStage.All)]
@@ -80,7 +80,7 @@ public class CompileErrorTests
             // worker file path mismatch
             ["WorkerWrongPath.cs"] = $$"""
                 using Microsoft.Extensions.Hosting;
-                using Lwx.Builders.MicroService.Atributes;
+                using Lwx.Builders.MicroService.Atributtes;
                 namespace TestApp.BadPath.Workers;
 
                 [LwxWorker(Name = "WrongPathWorker")]
@@ -91,7 +91,7 @@ public class CompileErrorTests
                 """,
         };
 
-        var result = GeneratorTestHarness.RunGenerator(sources);
+        var result = MockCompiler.RunGenerator(sources);
         var diagIds = result.Diagnostics.Select(d => d.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         // Verify expected diagnostics
@@ -110,7 +110,7 @@ public class CompileErrorTests
         {
             ["Service.cs"] = $$"""
                 using Microsoft.AspNetCore.Builder;
-                using Lwx.Builders.MicroService.Atributes;
+                using Lwx.Builders.MicroService.Atributtes;
                 namespace TestApp;
 
                 [LwxService(Title = "Test", PublishSwagger = LwxStage.All)]
@@ -122,7 +122,7 @@ public class CompileErrorTests
                 """
         };
 
-        var resultA = GeneratorTestHarness.RunGenerator(sourcesA);
+        var resultA = MockCompiler.RunGenerator(sourcesA);
         var diagIdsA = resultA.Diagnostics.Select(d => d.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
         Assert.Contains("LWX014", diagIdsA);
         Assert.Contains("LWX015", diagIdsA);
@@ -132,7 +132,7 @@ public class CompileErrorTests
         var sourcesB = new Dictionary<string, string>
         {
             ["Service.cs"] = $$"""
-                using Lwx.Builders.MicroService.Atributes;
+                using Lwx.Builders.MicroService.Atributtes;
                 namespace TestApp;
 
                 [LwxService(Title = "Test1")]
@@ -140,7 +140,7 @@ public class CompileErrorTests
                 """,
 
             ["ServiceBad.cs"] = $$"""
-                using Lwx.Builders.MicroService.Atributes;
+                using Lwx.Builders.MicroService.Atributtes;
                 namespace TestApp.Other;
 
                 [LwxService(Title = "Test2")]
@@ -148,7 +148,7 @@ public class CompileErrorTests
                 """
         };
 
-        var resultB = GeneratorTestHarness.RunGenerator(sourcesB);
+        var resultB = MockCompiler.RunGenerator(sourcesB);
         var diagIdsB = resultB.Diagnostics.Select(d => d.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
         Assert.Contains("LWX017", diagIdsB);
     }
@@ -164,8 +164,32 @@ public class CompileErrorTests
                 """
         };
 
-        var result = GeneratorTestHarness.RunGenerator(sources);
-        Assert.True(GeneratorTestHarness.HasDiagnostic(result, "LWX011"), $"Expected LWX011 diagnostic. Got: {GeneratorTestHarness.FormatDiagnostics(result)}");
+        var result = MockCompiler.RunGenerator(sources);
+        Assert.True(MockCompiler.HasDiagnostic(result, "LWX011"), $"Expected LWX011 diagnostic. Got: {MockCompiler.FormatDiagnostics(result)}");
+    }
+
+    [Fact]
+    public void Generator_Generates_Service_Helpers()
+    {
+        var sources = new Dictionary<string, string>
+        {
+            ["Service.cs"] = $$"""
+                using Microsoft.AspNetCore.Builder;
+                using Lwx.Builders.MicroService.Atributtes;
+                namespace TestApp;
+
+                [LwxService(Title = "Test", PublishSwagger = LwxStage.None)]
+                public static partial class Service { }
+                """
+        };
+
+        var res = MockCompiler.RunGenerator(sources);
+        // Expected generated filename is {safe(ns)}.Service.g.cs => TestApp.Service.g.cs
+        Assert.Contains(res.GeneratedSources.Keys, k => k.EndsWith("TestApp.Service.g.cs", StringComparison.OrdinalIgnoreCase));
+        var genContent = res.GeneratedSources.Values.FirstOrDefault(v => v.Contains("Configure(WebApplicationBuilder"));
+        Assert.NotNull(genContent);
+        Assert.Contains("Configure(WebApplicationBuilder", genContent);
+        Assert.Contains("Configure(WebApplication", genContent);
     }
 }
 

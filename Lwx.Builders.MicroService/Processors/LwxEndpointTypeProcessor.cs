@@ -226,7 +226,7 @@ internal class LwxEndpointTypeProcessor(
         string? securityProfile = null;
         string? summary = null;
         string? description = null;
-        string publishLiteral = "Lwx.Builders.MicroService.Atributes.LwxStage.None";
+        string publishLiteral = "Lwx.Builders.MicroService.Atributtes.LwxStage.None";
 
         if (attr.AttributeData != null)
         {
@@ -253,14 +253,14 @@ internal class LwxEndpointTypeProcessor(
                 {
                     publishLiteral = iv switch
                     {
-                        1 => "Lwx.Builders.MicroService.Atributes.LwxStage.DevelopmentOnly",
-                        2 => "Lwx.Builders.MicroService.Atributes.LwxStage.All",
-                        _ => "Lwx.Builders.MicroService.Atributes.LwxStage.None"
+                        1 => "Lwx.Builders.MicroService.Atributtes.LwxStage.DevelopmentOnly",
+                        2 => "Lwx.Builders.MicroService.Atributtes.LwxStage.All",
+                        _ => "Lwx.Builders.MicroService.Atributtes.LwxStage.None"
                     };
                 }
                 else
                 {
-                    var tmp = p.Value.ToString() ?? "Lwx.Builders.MicroService.Atributes.LwxStage.None";
+                    var tmp = p.Value.ToString() ?? "Lwx.Builders.MicroService.Atributtes.LwxStage.None";
                     publishLiteral = tmp.Contains('.') ? tmp : ("Lwx.Builders.MicroService." + tmp);
                 }
             }
@@ -361,7 +361,7 @@ internal class LwxEndpointTypeProcessor(
         using Microsoft.AspNetCore.Routing;
         using Microsoft.AspNetCore.Authorization;
         using Microsoft.Extensions.Hosting;
-        using Lwx.Builders.MicroService.Atributes;
+        using Lwx.Builders.MicroService.Atributtes;
 
         namespace {{ns}};
 

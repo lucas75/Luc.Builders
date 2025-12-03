@@ -14,14 +14,18 @@
     <PackageReference Include="coverlet.collector" Version="3.2.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.10.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.10.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Lwx.Builders.MicroService/Lwx.Builders.MicroService.csproj" />
+    <ProjectReference 
+      Include="../Lwx.Builders.MicroService/Lwx.Builders.MicroService.csproj" 
+      OutputItemType="Analyzer" 
+      />
   </ItemGroup>
 
   <ItemGroup>
-      <Compile Remove="SampleProjects\**\*.cs" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
 </Project>

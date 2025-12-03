@@ -24,8 +24,8 @@ internal class LwxWorkerTypeProcessor(
         string? workerName = null;
         string description = string.Empty;
         int threads = 2;
-        string stageLiteral = "Lwx.Builders.MicroService.Atributes.LwxStage.None";
-        string policyLiteral = "Lwx.Builders.MicroService.Atributes.LwxWorkerPolicy.AlwaysHealthy";
+        string stageLiteral = "Lwx.Builders.MicroService.Atributtes.LwxStage.None";
+        string policyLiteral = "Lwx.Builders.MicroService.Atributtes.LwxWorkerPolicy.AlwaysHealthy";
 
         if (attr.AttributeData != null)
         {
@@ -40,15 +40,15 @@ internal class LwxWorkerTypeProcessor(
                 {
                     stageLiteral = iv switch
                     {
-                        1 => "Lwx.Builders.MicroService.Atributes.LwxStage.DevelopmentOnly",
-                        2 => "Lwx.Builders.MicroService.Atributes.LwxStage.All",
-                        _ => "Lwx.Builders.MicroService.Atributes.LwxStage.None"
+                        1 => "Lwx.Builders.MicroService.Atributtes.LwxStage.DevelopmentOnly",
+                        2 => "Lwx.Builders.MicroService.Atributtes.LwxStage.All",
+                        _ => "Lwx.Builders.MicroService.Atributtes.LwxStage.None"
                     };
                 }
                 else
                 {
-                    var tmp = raw.ToString() ?? "Lwx.Builders.MicroService.Atributes.LwxStage.None";
-                    stageLiteral = tmp.Contains('.') ? tmp : ("Lwx.Builders.MicroService.Atributes.LwxStage." + tmp);
+                    var tmp = raw.ToString() ?? "Lwx.Builders.MicroService.Atributtes.LwxStage.None";
+                    stageLiteral = tmp.Contains('.') ? tmp : ("Lwx.Builders.MicroService.Atributtes.LwxStage." + tmp);
                 }
             }
 
@@ -59,16 +59,16 @@ internal class LwxWorkerTypeProcessor(
                 {
                     policyLiteral = iv switch
                     {
-                        0 => "Lwx.Builders.MicroService.Atributes.LwxWorkerPolicy.UnhealthyIfExit",
-                        1 => "Lwx.Builders.MicroService.Atributes.LwxWorkerPolicy.UnhealthyOnException",
-                        2 => "Lwx.Builders.MicroService.Atributes.LwxWorkerPolicy.AlwaysHealthy",
-                        _ => "Lwx.Builders.MicroService.Atributes.LwxWorkerPolicy.AlwaysHealthy"
+                        0 => "Lwx.Builders.MicroService.Atributtes.LwxWorkerPolicy.UnhealthyIfExit",
+                        1 => "Lwx.Builders.MicroService.Atributtes.LwxWorkerPolicy.UnhealthyOnException",
+                        2 => "Lwx.Builders.MicroService.Atributtes.LwxWorkerPolicy.AlwaysHealthy",
+                        _ => "Lwx.Builders.MicroService.Atributtes.LwxWorkerPolicy.AlwaysHealthy"
                     };
                 }
                 else
                 {
-                    var tmp = raw.ToString() ?? "Lwx.Builders.MicroService.Atributes.LwxWorkerPolicy.AlwaysHealthy";
-                    policyLiteral = tmp.Contains('.') ? tmp : ("Lwx.Builders.MicroService.Atributes.LwxWorkerPolicy." + tmp);
+                    var tmp = raw.ToString() ?? "Lwx.Builders.MicroService.Atributtes.LwxWorkerPolicy.AlwaysHealthy";
+                    policyLiteral = tmp.Contains('.') ? tmp : ("Lwx.Builders.MicroService.Atributtes.LwxWorkerPolicy." + tmp);
                 }
             }
         }
@@ -217,7 +217,7 @@ internal class LwxWorkerTypeProcessor(
         using Microsoft.Extensions.DependencyInjection;
         using Microsoft.AspNetCore.Builder;
         using Microsoft.Extensions.Hosting;
-        using Lwx.Builders.MicroService.Atributes;
+        using Lwx.Builders.MicroService.Atributtes;
 
         namespace {{ns}};
 

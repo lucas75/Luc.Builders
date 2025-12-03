@@ -1,5 +1,5 @@
 ﻿using System.Reflection;
-using Lwx.Builders.MicroService.Atributes;
+using Lwx.Builders.MicroService.Atributtes;
 using Xunit;
 
 namespace ExampleOrg.Product.ServiceAbc.Tests;

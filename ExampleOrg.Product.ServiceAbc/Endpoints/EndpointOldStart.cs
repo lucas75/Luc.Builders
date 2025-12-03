@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using Lwx.Builders.MicroService.Atributes;
+using Lwx.Builders.MicroService.Atributtes;
 using Microsoft.AspNetCore.Http;
 
 namespace ExampleOrg.Product.ServiceAbc.Endpoints;

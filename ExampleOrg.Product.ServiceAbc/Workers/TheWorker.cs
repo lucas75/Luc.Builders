@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Lwx.Builders.MicroService.Atributes;
+using Lwx.Builders.MicroService.Atributtes;
 
 namespace ExampleOrg.Product.ServiceAbc.Workers;
 

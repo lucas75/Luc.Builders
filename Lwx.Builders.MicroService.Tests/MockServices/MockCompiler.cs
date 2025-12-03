@@ -8,14 +8,14 @@ using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
-namespace Lwx.Builders.MicroService.Tests;
+namespace Lwx.Builders.MicroService.Tests.MockServices;
 
 /// <summary>
 /// Thread-safe utility class that creates a CSharpGeneratorDriver-based test harness
 /// for the Lwx.Builders.MicroService source generator. This allows tests to run
 /// in-memory without invoking MSBuild.
 /// </summary>
-public static class GeneratorTestHarness
+public static class MockCompiler
 {
     private static readonly object s_lock = new();
     private static ImmutableArray<MetadataReference>? s_cachedReferences;
@@ -144,6 +144,21 @@ public static class GeneratorTestHarness
             AddAssemblyIfAvailable(references, "Microsoft.Extensions.DependencyInjection.Abstractions");
             AddAssemblyIfAvailable(references, "Microsoft.Extensions.Logging");
             AddAssemblyIfAvailable(references, "Microsoft.Extensions.Logging.Abstractions");
+
+            // Add the generator assembly itself so consumer source code referencing
+            // generator-defined attributes (e.g., Lwx.Builders.MicroService.Atributtes) can compile.
+            try
+            {
+                var genAsm = typeof(Lwx.Builders.MicroService.Generator).Assembly;
+                if (!string.IsNullOrEmpty(genAsm.Location) && System.IO.File.Exists(genAsm.Location))
+                {
+                    references.Add(MetadataReference.CreateFromFile(genAsm.Location));
+                }
+            }
+            catch
+            {
+                // Ignore if generator assembly cannot be located. The generator may still run via syntax analysis.
+            }
 
             s_cachedReferences = references.ToImmutableArray();
             return s_cachedReferences.Value;

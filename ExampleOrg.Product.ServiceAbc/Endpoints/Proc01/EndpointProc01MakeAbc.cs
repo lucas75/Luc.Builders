@@ -1,5 +1,5 @@
 using ExampleOrg.Product.ServiceAbc.Dto;
-using Lwx.Builders.MicroService.Atributes;
+using Lwx.Builders.MicroService.Atributtes;
 using Microsoft.AspNetCore.Mvc;
 // using Lwx.Builders.MicroService; (not required here)
 

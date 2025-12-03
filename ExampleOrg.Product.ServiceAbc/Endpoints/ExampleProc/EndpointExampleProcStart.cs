@@ -1,4 +1,4 @@
-using Lwx.Builders.MicroService.Atributes;
+using Lwx.Builders.MicroService.Atributtes;
 
 namespace ExampleOrg.Product.ServiceAbc.Endpoints.ExampleProc;
 

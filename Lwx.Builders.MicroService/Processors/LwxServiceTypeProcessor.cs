@@ -49,7 +49,7 @@ internal class LwxServiceTypeProcessor(
         string? title = null;
         string? description = null;
         string? version = null;
-        string publishLiteral = "Lwx.Builders.MicroService.Atributes.LwxStage.None";
+        string publishLiteral = "Lwx.Builders.MicroService.Atributtes.LwxStage.None";
         // generator no longer creates a Main entrypoint; instead we emit helpers on the consumer `Service` type
 
         double readinessPercent = 80.0; // default percent
@@ -78,15 +78,15 @@ internal class LwxServiceTypeProcessor(
                 {
                     publishLiteral = iv switch
                     {
-                        1 => "Lwx.Builders.MicroService.Atributes.LwxStage.DevelopmentOnly",
-                        2 => "Lwx.Builders.MicroService.Atributes.LwxStage.All",
-                        _ => "Lwx.Builders.MicroService.Atributes.LwxStage.None"
+                        1 => "Lwx.Builders.MicroService.Atributtes.LwxStage.DevelopmentOnly",
+                        2 => "Lwx.Builders.MicroService.Atributtes.LwxStage.All",
+                        _ => "Lwx.Builders.MicroService.Atributtes.LwxStage.None"
                     };
                 }
                 else
                 {
-                    var tmp = raw.ToString() ?? "Lwx.Builders.MicroService.Atributes.LwxStage.None";
-                    publishLiteral = tmp.Contains('.') ? tmp : ("Lwx.Builders.MicroService.Atributes.LwxStage." + tmp);
+                    var tmp = raw.ToString() ?? "Lwx.Builders.MicroService.Atributtes.LwxStage.None";
+                    publishLiteral = tmp.Contains('.') ? tmp : ("Lwx.Builders.MicroService.Atributtes.LwxStage." + tmp);
                 }
             }
 
@@ -112,7 +112,7 @@ internal class LwxServiceTypeProcessor(
         }
 
         // If the publish stage is active (not None) make sure Swashbuckle is available
-        if (publishLiteral != "Lwx.Builders.MicroService.Atributes.LwxStage.None")
+        if (publishLiteral != "Lwx.Builders.MicroService.Atributtes.LwxStage.None")
         {
             var openApiInfoType = compilation.GetTypeByMetadataName("Microsoft.OpenApi.Models.OpenApiInfo");
             if (openApiInfoType == null)
@@ -191,7 +191,7 @@ internal class LwxServiceTypeProcessor(
         // so everything the consumer needs is available on the Service partial.
         var srcServices = string.Empty;
         var srcApp = string.Empty;
-        if (publishLiteral != "Lwx.Builders.MicroService.Atributes.LwxStage.None")
+        if (publishLiteral != "Lwx.Builders.MicroService.Atributtes.LwxStage.None")
         {
             var srcEnvCondition = publishLiteral.EndsWith(".DevelopmentOnly", StringComparison.Ordinal)
                 ? "app.Environment.IsDevelopment()"
@@ -293,7 +293,7 @@ internal class LwxServiceTypeProcessor(
             using Microsoft.Extensions.Configuration;
             using Microsoft.Extensions.Hosting;
             using Microsoft.Extensions.DependencyInjection;
-            using Lwx.Builders.MicroService.Atributes;
+            using Lwx.Builders.MicroService.Atributtes;
 
             namespace {{ns}};
 

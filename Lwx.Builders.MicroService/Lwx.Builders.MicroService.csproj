@@ -22,8 +22,7 @@
   <!-- Embedded attribute source files for the generator (Attributes/ contains public attribute definitions) -->
   <ItemGroup>
     <EmbeddedResource Include="Attributes\**\*.cs" />
-    <Compile Remove="Templates\**\*.cs" />
-    <Compile Remove="Generator\Processors\**\*.cs" />
+    <Compile Remove="Attributes\**\*.cs" />
   </ItemGroup>
 
   <!-- Exclude templates from compilation -->
