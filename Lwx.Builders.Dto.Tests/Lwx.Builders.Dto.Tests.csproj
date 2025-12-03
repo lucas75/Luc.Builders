@@ -14,8 +14,8 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.10.0" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
-    <!-- Use the generator project as an analyzer for the tests so the generator runs when the test project is built -->
-    <ProjectReference Include="..\Lwx.Builders.Dto\Lwx.Builders.Dto.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+            <!-- Use the generator project as an analyzer for the tests so the generator runs when the test project is built -->
+            <ProjectReference Include="..\Lwx.Builders.Dto\Lwx.Builders.Dto.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <Compile Remove="SampleProjects\**\*.cs" />
   </ItemGroup>
 </Project>

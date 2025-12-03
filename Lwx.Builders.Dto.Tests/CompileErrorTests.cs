@@ -1,59 +1,112 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Xunit;
+using Lwx.Builders.Dto.Tests.MockServices;
 
-// CompileErrorTests: these tests use committed SampleProjects and MSBuild to assert
-// compile-time diagnostics and generator warnings/errors.
-
+// CompileErrorTests: use an in-memory generator harness rather than invoking MSBuild.
 public class CompileErrorTests
-{
+{   
     [Fact]
-    public void DtoGenerator_Reports_LWX005_When_Missing_Property_Attribute()
+    public void ErrorDto_AllExpectedDiagnosticsPresent()
     {
-        var res = SharedTestHelpers.BuildAndRunSampleProject("ErrorDto");
-        var has = res.BuildOutput?.Contains("LWX005", StringComparison.OrdinalIgnoreCase) ?? false;
-        Assert.True(has, "Expected diagnostic LWX005 to be reported when DTO property is missing LwxDtoProperty or LwxDtoIgnore");
-    }
+        var ErrorDtoSources = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Program.cs"] = $$"""
+                System.Console.WriteLine("ERROR_DTO_OK");
+                return 0;
 
-    [Fact]
-    public void ClassWithField_Reports_LWX006()
-    {
-        var res = SharedTestHelpers.BuildAndRunSampleProject("ErrorDto");
-        var hasLwx006 = res.BuildOutput?.Contains("LWX006", StringComparison.OrdinalIgnoreCase) ?? false;
-        Assert.True(hasLwx006, "Expected LWX006 diagnostic when DTO definition contains fields");
-    }
+                """,
 
-    [Fact]
-    public void PropertyWithoutConverter_UnsupportedType_Reports_LWX003()
-    {
-        var res = SharedTestHelpers.BuildAndRunSampleProject("ErrorDto");
-        var hasLwx003b = res.BuildOutput?.Contains("LWX003", StringComparison.OrdinalIgnoreCase) ?? false;
-        Assert.True(hasLwx003b, "Expected LWX003 diagnostic when property type is unsupported and no JsonConverter is provided");
-    }
+            ["Dto/BadDto.cs"] = $$"""
+                using Lwx.Builders.Dto.Atributes;
+                namespace ErrorDto.Dto;
 
-    [Fact]
-    public void DateTime_Property_Warns_LWX007_Recommend_DateTimeOffset()
-    {
-        var res = SharedTestHelpers.BuildAndRunSampleProject("ErrorDto");
-        var hasLwx007 = res.BuildOutput?.Contains("LWX007", StringComparison.OrdinalIgnoreCase) ?? false;
-        Assert.True(hasLwx007, "Expected LWX007 warning when using DateTime, recommending DateTimeOffset");
-    }
+                [LwxDto(Type = DtoType.Normal)]
+                public partial class BadDto
+                {
+                    [LwxDtoProperty(JsonName = "ts")]
+                    public partial System.DateTime Timestamp { get; set; }
+                }
 
-    [Fact]
-    public void EnumConstants_Report_LWX004()
-    {
-        var res = SharedTestHelpers.BuildAndRunSampleProject("ErrorDto");
-        var hasLwx004 = res.BuildOutput?.Contains("LWX004", StringComparison.OrdinalIgnoreCase) ?? false;
-        Assert.True(hasLwx004, "Expected LWX004 warning for enum constants without JsonPropertyName attributes");
-    }
+                """,
 
-    [Fact]
-    public void ErrorDto_Fails_To_Build()
-    {
-        var res = SharedTestHelpers.BuildAndRunSampleProject("ErrorDto");
-        Assert.False(res.BuildSucceeded, "Expected ErrorDto project to fail to build");
-        var hasKnown = (res.BuildOutput?.Contains("LWX003", StringComparison.OrdinalIgnoreCase) ?? false)
-            || (res.BuildOutput?.Contains("LWX005", StringComparison.OrdinalIgnoreCase) ?? false)
-            || (res.BuildOutput?.Contains("LWX006", StringComparison.OrdinalIgnoreCase) ?? false);
-        Assert.True(hasKnown, "Expected at least one LWX003/LWX005/LWX006 diagnostic in the failed build output");
+            ["Dto/BrokenDto.cs"] = $$"""
+                using Lwx.Builders.Dto.Atributes;
+                namespace ErrorDto.Dto;
+
+                [LwxDto(Type = DtoType.Normal)]
+                public partial class BrokenDto
+                {
+                    public partial int Bad { get; set; }
+                }
+
+                """,
+
+            ["Dto/DateTimeDto.cs"] = $$"""
+                using Lwx.Builders.Dto.Atributes;
+                namespace ErrorDto.Dto;
+
+                [LwxDto(Type = DtoType.Normal)]
+                public partial class DateTimeDto
+                {
+                    [LwxDtoProperty(JsonName = "timestamp", JsonConverter = typeof(System.Text.Json.Serialization.JsonConverter<System.DateTime>))]
+                    public partial System.DateTime Timestamp { get; set; }
+                }
+
+                """,
+
+            ["Dto/EnumDto.cs"] = $$"""
+                using Lwx.Builders.Dto.Atributes;
+                namespace ErrorDto.Dto;
+
+                [LwxDto(Type = DtoType.Normal)]
+                public partial class EnumDto
+                {
+                    [LwxDtoProperty(JsonName = "color")]
+                    public partial MyColors Color { get; set; }
+                }
+
+                public enum MyColors { Red = 0, Green = 1 }
+
+                """,
+
+            ["Dto/FieldDto.cs"] = $$"""
+                using Lwx.Builders.Dto.Atributes;
+                namespace ErrorDto.Dto;
+
+                [LwxDto(Type = DtoType.Normal)]
+                public partial class FieldDto
+                {
+                    public int NotAllowedField;
+
+                    [LwxDtoProperty(JsonName = "id")]
+                    public partial int Id { get; set; }
+                }
+
+                """,
+        };
+
+        var RunResult = MockCompiler.RunGenerator(ErrorDtoSources);
+
+        // Ensure compilation/generator produced errors as expected
+        Assert.True(RunResult.HasErrors, $"Expected generator/compilation errors. Diagnostics: {MockCompiler.FormatDiagnostics(RunResult)}");
+
+        // Collect diagnostic IDs
+        var diagIds = RunResult.Diagnostics.Select(d => d.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // Error diagnostics we expect
+        Assert.True(diagIds.Contains("LWX003"), $"Expected diagnostic LWX003 (unsupported property type / missing converter). Diagnostics: {MockCompiler.FormatDiagnostics(RunResult)}");
+        Assert.True(diagIds.Contains("LWX005"), $"Expected diagnostic LWX005 (missing property attribute). Diagnostics: {MockCompiler.FormatDiagnostics(RunResult)}");
+        Assert.True(diagIds.Contains("LWX006"), $"Expected diagnostic LWX006 (field detected where not allowed). Diagnostics: {MockCompiler.FormatDiagnostics(RunResult)}");
+
+        // Warnings we expect
+        Assert.True(diagIds.Contains("LWX004"), $"Expected warning LWX004 (enum constants). Diagnostics: {MockCompiler.FormatDiagnostics(RunResult)}");
+        Assert.True(diagIds.Contains("LWX007"), $"Expected warning LWX007 (naming/path mismatch). Diagnostics: {MockCompiler.FormatDiagnostics(RunResult)}");
+
+        // At least one of the main error categories must be present (safety net)
+        var hasKnown = diagIds.Contains("LWX003") || diagIds.Contains("LWX005") || diagIds.Contains("LWX006");
+        Assert.True(hasKnown, "Expected at least one LWX003/LWX005/LWX006 diagnostic in the failed result");
     }
 }
