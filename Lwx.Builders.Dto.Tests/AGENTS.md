@@ -10,41 +10,32 @@ Purpose
 
 Project context (short)
 -----------------------
-- The test suite is organized into two major testing approaches:
-  - Runtime/Unit tests: fast tests that compile DTO types into the test assembly and use System.Text.Json at runtime.
-    * Files: `PositiveTests.cs`, `NegativeTests.cs`, `StructuralTests.cs`, `OtherTests.cs`.
-    * Canonical DTOs used by runtime tests: `NormalDto`, `DictDto`, `IgnoreDto` (under `Dto/`).
-   - On-disk MSBuild sample projects: used for negative/compile-error tests and to validate generator diagnostics.
-    * Location: `SampleProjects/` (examples: `ErrorDto`)
-    * Tests that rely on these use `SharedTestHelpers.BuildAndRunSampleProject(...)` for reproducible builds.
+- The test suite focuses on runtime/unit tests that compile DTO types into the test assembly and use System.Text.Json at runtime.
+  * Files: `PositiveTests.cs`, `NegativeTests.cs`, `StructuralTests.cs`, `OtherTests.cs`.
+  * Canonical DTOs used by runtime tests: `NormalDto`, `DictDto`, `IgnoreDto` (under `Dto/`).
 
 Recent history and rationale
 ----------------------------
 - Tests were recently reorganized to be more realistic and faster:
   - Good-path tests were moved into the test assembly + runtime checks (faster).
-  - Failure/diagnostic tests stayed as on-disk MSBuild sample projects to allow deterministic builds and inspect generated files.
+  - Failure/diagnostic tests use in-memory generator tests for deterministic builds and inspect generated files.
   - The test fixtures were consolidated to three canonical DTO fixtures: `NormalDto`, `DictDto`, `IgnoreDto`.
 
 Agent responsibilities (what an AI agent should do when editing tests)
 ------------------------------------------------------------------
 1. Preserve test speed & determinism
    - Prefer modifying runtime tests when the change is purely behavioral or about serialization runtimes.
-   - Use on-disk sample projects only when you need to reproduce MSBuild-time diagnostics or validate generated source files.
+   - Use in-memory generator tests for diagnostic tests to allow deterministic builds and inspect generated files.
 
    IMPORTANT: Reflection and compiler/MSBuild access policy
    - Reflection-based inspection of generated types (using System.Reflection) should only be used in `StructuralTests.cs`.
-   - Compiler / MSBuild-driven builds or direct inspection of generated source files should only be used in `CompileErrorTests.cs` (or tests that explicitly exercise sample projects under `SampleProjects/`).
+   - Compiler / MSBuild-driven builds or direct inspection of generated source files should only be used in `CompileErrorTests.cs`.
    - Do NOT use reflection or run ad-hoc compiler/MSBuild operations from runtime Positive/Negative tests — these tests must remain pure, fast, and deterministic (System.Text.Json runtime behavior only).
 
 2. Test authoring guidelines
    - Prefer xUnit Theories and InlineData for variants (e.g., date/time formats or edge-case values).
-   - Keep sample projects minimal and clearly named — they are developer-facing fixtures.
-   - Do not commit generated files. Tests should build the sample projects to reproduce generator output and diagnostics.
-
-3. When adding a new sample project
-   - Add it under `SampleProjects/<Name>/` and keep it tiny and well-documented.
-   - Ensure the ProjectReference to the generator uses: OutputItemType="Analyzer" ReferenceOutputAssembly="false" so the generator runs correctly during build.
-   - Add/adjust tests that call `SharedTestHelpers.BuildAndRunSampleProject("<Name>")` to exercise the new sample.
+   - Keep tests minimal and clearly named.
+   - Do not commit generated files. Tests should use in-memory generation to reproduce generator output and diagnostics.
 
 4. When modifying public canonical DTOs
    - Update `Dto/NormalDto.cs`, `Dto/DictDto.cs`, or `Dto/IgnoreDto.cs` only when the change is intended across many tests.
