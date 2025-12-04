@@ -98,6 +98,11 @@ public sealed class MockServer : IAsyncDisposable
         MockServices002.Service.Configure(app);
         await app.StartAsync();
         var client = app.GetTestClient();
+
+        var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+        var tcs = new TaskCompletionSource();
+        lifetime.ApplicationStarted.Register(() => tcs.SetResult());
+        await tcs.Task;
                 
         return new MockServer
         {
@@ -106,7 +111,7 @@ public sealed class MockServer : IAsyncDisposable
             RunningInstances = 0,
             Environment = environment,
         };
-        }
+    }
 
     private static string ResolveAppSettingsPath()
     {
