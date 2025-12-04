@@ -4,6 +4,8 @@ using System.Text.Json.Serialization;
 using Xunit;
 using Lwx.Builders.Dto.Tests.Dto;
 
+namespace Lwx.Builders.Dto.Tests;
+
 // StructuralTests: these tests inspect the compiled DTO types using reflection
 // to ensure the source generator produced the expected backing fields, attributes,
 // and property types. These tests intentionally use reflection and are slower than

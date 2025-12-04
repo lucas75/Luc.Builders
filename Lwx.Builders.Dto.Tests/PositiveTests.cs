@@ -4,6 +4,8 @@ using System.Globalization;
 using Xunit;
 using Lwx.Builders.Dto.Tests.Dto;
 
+namespace Lwx.Builders.Dto.Tests;
+
 // PositiveTests: these tests DO NOT use reflection or build sample projects.
 // They instantiate DTO types (NormalDto, DictDto, IgnoreDto), serialize and deserialize them,
 // and assert correct runtime behavior. Keep these tests free of reflection to make

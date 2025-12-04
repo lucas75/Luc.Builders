@@ -7,6 +7,8 @@ using Lwx.Builders.Dto.Tests.Dto;
 // by System.Text.Json when targeting the DTO types. These tests assert that
 // invalid values cause JsonException (or equivalent) instead of producing an object.
 
+namespace Lwx.Builders.Dto.Tests;
+
 public class NegativeTests
 {
     /// <summary>
