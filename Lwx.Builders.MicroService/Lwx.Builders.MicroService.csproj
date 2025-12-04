@@ -11,6 +11,7 @@
     <AssemblyName>Lwx.Builders.MicroService</AssemblyName>
     <RootNamespace>Lwx.Builders.MicroService</RootNamespace>
     <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
+    <ThreadPoolMaxThreads>32</ThreadPoolMaxThreads>
   </PropertyGroup>
 
   <ItemGroup>

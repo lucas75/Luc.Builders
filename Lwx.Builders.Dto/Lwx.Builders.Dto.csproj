@@ -8,6 +8,7 @@
     <AssemblyName>Lwx.Builders.Dto</AssemblyName>
     <RootNamespace>Lwx.Builders.Dto</RootNamespace>
     <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
+    <ThreadPoolMaxThreads>32</ThreadPoolMaxThreads>
   </PropertyGroup>
 
   <ItemGroup>
