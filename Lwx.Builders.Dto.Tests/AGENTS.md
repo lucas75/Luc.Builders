@@ -20,6 +20,7 @@ Recent history and rationale
   - Good-path tests were moved into the test assembly + runtime checks (faster).
   - Failure/diagnostic tests use in-memory generator tests for deterministic builds and inspect generated files.
   - The test fixtures were consolidated to three canonical DTO fixtures: `NormalDto`, `DictDto`, `IgnoreDto`.
+  - SampleProjects removed as outdated; tests now use in-memory generation.
 
 Agent responsibilities (what an AI agent should do when editing tests)
 ------------------------------------------------------------------
@@ -57,15 +58,9 @@ dotnet build ./Lwx.Builders.Dto.Tests/Lwx.Builders.Dto.Tests.csproj
 dotnet test ./Lwx.Builders.Dto.Tests/Lwx.Builders.Dto.Tests.csproj --no-build
 ```
 
-   - When editing samples or generators, run the sample project builds directly for easier debugging:
-
-```bash
-dotnet build Lwx.Builders.Dto.Tests/SampleProjects/<ProjectName> -v:m
-```
-
 7. Safety and style
    - Do not modify generated files. Tests rely on the generator's outputs; modifying generated outputs will make tests meaningless.
-   - Avoid adding reflection or build-time logic into runtime tests. If a test needs to examine generated code or diagnostics, put it in `StructuralTests.cs` or `CompileErrorTests.cs` and follow the sample-projects approach.
+   - Avoid adding reflection or build-time logic into runtime tests. If a test needs to examine generated code or diagnostics, put it in `StructuralTests.cs` or `CompileErrorTests.cs`.
    - When adding new tests or DTOs, follow the established small, readable coding style used in the repo and keep methods short.
 
    Generator template policy
@@ -84,7 +79,6 @@ dotnet build Lwx.Builders.Dto.Tests/SampleProjects/<ProjectName> -v:m
 Where to find things
 --------------------
 - Test assembly DTOs: `Lwx.Builders.Dto.Tests/Dto/`
-- Sample projects: `Lwx.Builders.Dto.Tests/SampleProjects/` (used by compile-error tests)
 - Helper utilities: `Lwx.Builders.Dto.Tests/SharedTestHelpers.cs`
 - Compile-error tests: `CompileErrorTests.cs`
 - Runtime positive/negative tests: `PositiveTests.cs`, `NegativeTests.cs`
