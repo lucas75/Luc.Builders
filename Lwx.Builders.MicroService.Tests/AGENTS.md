@@ -10,3 +10,7 @@ Note: Error generating sample projects were removed in favor of in-memory genera
 Notes:
 - Tests should compile these sample projects via MSBuild and assert expected diagnostics. These sample projects should not be compiled as part of the unit test project's own build; the test project has `Compile Remove` entries for `SampleProjects/**`.
 - Do not create tests now; sample projects are prepared and will be asserted in future compile-time tests.
+
+## MockServer
+
+**IMPORTANT:** Do not change MockServer.cs without asking the operator first. This class is critical for test infrastructure and any modifications could break tests or performance.

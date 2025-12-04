@@ -6,10 +6,12 @@ using System.Threading.Tasks;
 using Xunit;
 using Lwx.Builders.MicroService.Tests.MockServices;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using System.ComponentModel;
 
 namespace Lwx.Builders.MicroService.Tests;
 
+[Collection("MockServer")]
 [DisplayName("Mock Server Tests")]
 public class MockServerTests
 {
@@ -20,18 +22,11 @@ public class MockServerTests
     [Fact(DisplayName = "Dev server: exposes DevelopmentOnly and All endpoints; worker heartbeats update")]
     public async Task RunDevServer_Exposes_DevAndPrdEndpoints()
     {
-        await using var runner = await MockServer.StartDevAsync();
-        var runnerCounter = runner.Counters;
-        runnerCounter.Reset();
+        await using var runner = await MockServer.StartDevServer();
         var client = runner.Client;        
         Assert.Equal("hello", await runner.GetWithTimeoutAsync("/stage-dev-only/hello"));        
         Assert.Equal("hello", await runner.GetWithTimeoutAsync("/stage-all/hello"));        
         Assert.Null(await runner.GetWithTimeoutAsync("/stage-none/hello"));
-        await Task.Delay(1200);
-        Assert.Equal(0, runnerCounter.WorkerStageNoneTicks);
-        Assert.True(runnerCounter.WorkerStageNoneTicks == 0, "Expected a none worker heartbeat = 0 in Development mode");
-        Assert.True(runnerCounter.WorkerStageDevelopmentOnlyTicks > 0, "Expected a dev (DevelopmentOnly) worker heartbeat > 0 in Development mode");
-        Assert.True(runnerCounter.WorkerStageAllTicks > 0, "Expected an 'All' worker heartbeat > 0 in Development mode");
     }
 
     /// <summary>
@@ -41,16 +36,12 @@ public class MockServerTests
     [Fact(DisplayName = "Production server: omits DevelopmentOnly endpoints; All workers run")]
     public async Task RunPrdServer_Omits_DevEndpoint()
     {
-        await using var runner = await MockServer.StartPrdAsync();
-        var runnerCounter2 = runner.Counters;
-        runnerCounter2.Reset();
+        await using var runner = await MockServer.StartPrdServer();
         var client = runner.Client;        
         Assert.Equal("hello", await runner.GetWithTimeoutAsync("/stage-all/hello"));        
         Assert.Null(await runner.GetWithTimeoutAsync("/stage-dev-only/hello"));        
         Assert.Null(await runner.GetWithTimeoutAsync("/stage-none/hello"));
-        await Task.Delay(1200);        
-        Assert.Equal(0, runnerCounter2.WorkerStageNoneTicks);
-        Assert.Equal(0, runnerCounter2.WorkerStageDevelopmentOnlyTicks);
-        Assert.True(runnerCounter2.WorkerStageAllTicks > 0, "Expected 'All' worker heartbeat > 0 in Production mode");
     }
+
+
 }

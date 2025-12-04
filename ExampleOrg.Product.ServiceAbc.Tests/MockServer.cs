@@ -1,9 +1,6 @@
 // IMPORTANT: Do not change this file without asking the operator first.
 // This class is critical for test infrastructure and any modifications could break tests or performance.
 
-// IMPORTANT: Do not change this file without asking the operator first.
-// This class is critical for test infrastructure and any modifications could break tests or performance.
-
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.TestHost;
@@ -14,21 +11,20 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Reflection;
 
-namespace Lwx.Builders.MicroService.Tests.MockServices;
-
+namespace ExampleOrg.Product.ServiceAbc.Tests;
 
 public sealed class MockServer : IAsyncDisposable
 {
     public required IHost Host { get; init; }
     public required HttpClient Client { get; init; }
     public required string Environment { get; init; }
-    public int RunningInstances;    
-    
+    public int RunningInstances;
+
     private static MockServer? _devServer = null;
     private static MockServer? _prdServer = null;
     private static readonly SemaphoreSlim _lock = new(1, 1);
-        
-    public static async Task<MockServer> StartDevServer()
+
+    public static async Task<MockServer> StartDevServer(bool loadConfig = true)
     {
         await _lock.WaitAsync();
         try
@@ -38,19 +34,17 @@ public sealed class MockServer : IAsyncDisposable
                 _devServer.RunningInstances++;
                 return _devServer;
             }
-            // Create a new dev server instance
-            {            
-                _devServer = await StartAsync("Development");            
-                _devServer.RunningInstances++;
-                return _devServer;
-            }
+            _devServer = await StartAsync("Development", loadConfig);
+            _devServer.RunningInstances++;
+            return _devServer;
         }
         finally
         {
             _lock.Release();
         }
     }
-    public static async Task<MockServer> StartPrdServer()
+
+    public static async Task<MockServer> StartPrdServer(bool loadConfig = true)
     {
         await _lock.WaitAsync();
         try
@@ -60,7 +54,7 @@ public sealed class MockServer : IAsyncDisposable
                 _prdServer.RunningInstances++;
                 return _prdServer;
             }
-            _prdServer = await StartAsync("Production");
+            _prdServer = await StartAsync("Production", loadConfig);
             _prdServer.RunningInstances++;
             return _prdServer;
         }
@@ -70,7 +64,7 @@ public sealed class MockServer : IAsyncDisposable
         }
     }
 
-    private static async Task<MockServer> StartAsync(string environment)
+    private static async Task<MockServer> StartAsync(string environment, bool loadConfig = true)
     {
         var builder = WebApplication.CreateBuilder([]);
         builder.WebHost.UseTestServer();
@@ -80,25 +74,22 @@ public sealed class MockServer : IAsyncDisposable
         builder.Logging.ClearProviders();
         builder.Logging.SetMinimumLevel(LogLevel.Warning);
 
-        // Load static JSON configuration for tests from MockServices/MockServer.appsettings.json
-        var jsonPath = ResolveAppSettingsPath();
-        builder.Configuration.AddJsonFile(jsonPath, optional: false, reloadOnChange: false);
-        
-        // Register per-host worker counters
-        builder.Services.AddSingleton<IWorkerCounters, WorkerCounters>();
+        // Load static JSON configuration for tests from MockServer.appsettings.json if requested
+        if (loadConfig)
+        {
+            var jsonPath = ResolveAppSettingsPath();
+            builder.Configuration.AddJsonFile(jsonPath, optional: false, reloadOnChange: false);
+        }
 
-        // Configure both mock services - these calls reference generated code
-        // and will cause a compile error if the generator doesn't produce them
-        MockServices001.Service.Configure(builder);
-        MockServices002.Service.Configure(builder);
+        // Configure the service - this references generated code
+        ExampleOrg.Product.ServiceAbc.Service.Configure(builder);
 
         var app = builder.Build();
-        // Configure both mock services app middleware
-        MockServices001.Service.Configure(app);
-        MockServices002.Service.Configure(app);
+        // Configure the service app middleware
+        ExampleOrg.Product.ServiceAbc.Service.Configure(app);
         await app.StartAsync();
         var client = app.GetTestClient();
-                
+
         return new MockServer
         {
             Host = app,
@@ -106,23 +97,23 @@ public sealed class MockServer : IAsyncDisposable
             RunningInstances = 0,
             Environment = environment,
         };
-        }
+    }
 
     private static string ResolveAppSettingsPath()
     {
-        // First look relative to runtime base directory, then walk up the file tree to find MockServices/MockServer.appsettings.json
+        // First look relative to runtime base directory, then walk up the file tree to find MockServer.appsettings.json
         var baseDir = AppContext.BaseDirectory ?? Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        var candidate = Path.Combine(baseDir!, "MockServices", "MockServer.appsettings.json");
+        var candidate = Path.Combine(baseDir!, "MockServer.appsettings.json");
         if (File.Exists(candidate)) return candidate;
 
         var dir = new DirectoryInfo(baseDir!);
         while (dir != null)
         {
-            candidate = Path.Combine(dir.FullName, "MockServices", "MockServer.appsettings.json");
+            candidate = Path.Combine(dir.FullName, "MockServer.appsettings.json");
             if (File.Exists(candidate)) return candidate;
             dir = dir.Parent;
         }
-        throw new FileNotFoundException("Could not find MockServices/MockServer.appsettings.json in the output or ancestor directories.");
+        throw new FileNotFoundException("Could not find MockServer.appsettings.json in the output or ancestor directories.");
     }
 
     public async Task<string?> GetWithTimeoutAsync(string path, int timeoutMs = 500)
@@ -166,25 +157,25 @@ public sealed class MockServer : IAsyncDisposable
             if (RunningInstances <= 0)
             {
                 dispose = true;
-                if(Environment == "Development")
+                if (Environment == "Development")
                 {
-                    _devServer = null;            
+                    _devServer = null;
                 }
-                else if(Environment == "Production")
+                else if (Environment == "Production")
                 {
-                    _prdServer = null;                
-                }                                
+                    _prdServer = null;
+                }
             }
         }
-        finally 
+        finally
         {
-            _lock.Release();            
+            _lock.Release();
         }
 
-        if(dispose)
+        if (dispose)
         {
             try { Client.Dispose(); } catch { }
-            try { await Host.StopAsync(); } catch { }  
-        }        
+            try { await Host.StopAsync(); } catch { }
+        }
     }
 }

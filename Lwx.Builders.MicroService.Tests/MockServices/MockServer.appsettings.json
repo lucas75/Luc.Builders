@@ -1,0 +1,8 @@
+{
+  "WorkerStageAll": {
+    "SomeConfig": "configured-value"
+  },
+  "WorkerWithConfig": {
+    "Abc": "test-value"
+  }
+}

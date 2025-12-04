@@ -10,18 +10,16 @@ namespace Lwx.Builders.MicroService.Tests.MockServices002.Workers;
 [LwxWorker(
     Stage = LwxStage.All,
     Threads = 1,
-    Description = "Simple worker for MockServices002"
+    Description = "Worker that reads configuration via [FromConfig]"
 )]
-public partial class WorkerSimple(ILogger<WorkerSimple> logger, [FromConfig("DefConfig")] string DefConfig = "default") : BackgroundService
+public partial class WorkerWithConfig(ILogger<WorkerWithConfig> logger, [FromConfig("Abc")] string abc) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("WorkerSimple starting up (config DefConfig = {config}).", DefConfig);
+        logger.LogInformation("WorkerWithConfig starting. config Abc={abc}", abc);
         while (!stoppingToken.IsCancellationRequested)
         {
-            logger.LogInformation("WorkerSimple heartbeat at {time}", DateTimeOffset.UtcNow);
             await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
         }
-        logger.LogInformation("WorkerSimple stopping.");
     }
 }
