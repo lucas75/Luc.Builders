@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {				
+		"markdown.preview.fontSize": 16,
+		"dotnet.codeLens.enableReferencesCodeLens": false,
+		"dotnet.backgroundAnalysis.compilerDiagnosticsScope": "fullSolution",
+    	"dotnet.backgroundAnalysis.analyzerDiagnosticsScope": "fullSolution",
+		"workbench.editorAssociations": {
+			"*.md": "vscode.markdown.preview.editor"
+		},		
+		"files.exclude": {
+			".Trash-[0-9]*": true
+		}
+	},
+}
