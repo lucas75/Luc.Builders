@@ -70,17 +70,17 @@ namespace MyCompany.MyService.Workers;
     Threads = 2,
     Policy = LwxWorkerPolicy.UnhealthyIfExit
 )]
-public partial class MyWorker(
-    ILogger<MyWorker> logger,
-    [FromConfig("Interval")] int intervalMs = 5000
-) : BackgroundService
+public partial class MyWorker(ILogger<MyWorker> logger) : BackgroundService
 {
+    [LwxSetting("MyWorker:Interval")]
+    public static partial int IntervalMs { get; }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
         {
             logger.LogInformation("Worker running at {Time}", DateTimeOffset.Now);
-            await Task.Delay(intervalMs, stoppingToken);
+            await Task.Delay(IntervalMs > 0 ? IntervalMs : 5000, stoppingToken);
         }
     }
 }
@@ -148,17 +148,25 @@ Publish = LwxStage.DevelopmentOnly
 Publish = LwxStage.None
 ```
 
-## Worker Reference
+## Configuration Settings with [LwxSetting]
 
-### Configuration Injection
-
-Workers can inject configuration values using `[FromConfig]`:
+Use static partial properties with `[LwxSetting]` to read configuration values:
 
 ```csharp
-public partial class MyWorker(
-    [FromConfig("ConnectionString")] string connStr,
-    [FromConfig("BatchSize")] int batchSize = 100
-) : BackgroundService
+public partial class MyWorker(ILogger<MyWorker> logger) : BackgroundService
+{
+    [LwxSetting("MyWorker:ConnectionString")]
+    public static partial string ConnectionString { get; }
+    
+    [LwxSetting("MyWorker:BatchSize")]
+    public static partial int BatchSize { get; }
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        logger.LogInformation("Using connection: {conn}", ConnectionString);
+        // ...
+    }
+}
 ```
 
 Configuration is read from `appsettings.json`:
@@ -171,6 +179,12 @@ Configuration is read from `appsettings.json`:
   }
 }
 ```
+
+**Supported types:** `string`, `int`, `bool`, `double`, `long`, `float`, `decimal`
+
+**Key format:** Use `:` as separator for nested sections (e.g., `"Section:SubSection:Key"`).
+
+The backing fields are populated during `Service.Configure(WebApplicationBuilder)` before any services are registered.
 
 ### Worker Policies
 

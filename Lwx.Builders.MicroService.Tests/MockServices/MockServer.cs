@@ -83,7 +83,7 @@ public sealed class MockServer : IAsyncDisposable
         // Load static JSON configuration for tests from MockServices/MockServer.appsettings.json
         var jsonPath = ResolveAppSettingsPath();
         builder.Configuration.AddJsonFile(jsonPath, optional: false, reloadOnChange: false);
-        
+                
         // Register per-host worker counters
         builder.Services.AddSingleton<IWorkerCounters, WorkerCounters>();
 

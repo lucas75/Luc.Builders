@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Collections.Generic;
 using System;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -80,100 +78,7 @@ internal class LwxWorkerTypeProcessor(
             ? string.Join('.', stageLiteral.Split('.').Skip(Math.Max(0, stageLiteral.Split('.').Length - 2)))
             : stageLiteral;
 
-        // Inspect constructor parameters for [FromConfig] annotations
-        var ctor = (attr.TargetSymbol as INamedTypeSymbol)?.InstanceConstructors
-            .Where(c => !c.IsImplicitlyDeclared)
-            .OrderByDescending(c => c.Parameters.Length)
-            .FirstOrDefault()
-            ?? (attr.TargetSymbol as INamedTypeSymbol)?.InstanceConstructors.FirstOrDefault();
-
-        var configParams = new List<(IParameterSymbol param, string configKey, string propName)>();
-        if (ctor != null)
-        {
-            foreach (var p in ctor.Parameters)
-            {
-                var fc = p.GetAttributes().FirstOrDefault(a => a.AttributeClass?.Name == "FromConfigAttribute");
-                if (fc != null)
-                {
-                    string nameInAttr = string.Empty;
-                    if (fc.ConstructorArguments.Length > 0 && fc.ConstructorArguments[0].Value is string v) nameInAttr = v;
-                    if (string.IsNullOrEmpty(nameInAttr)) nameInAttr = p.Name ?? p.ToDisplayString();
-                    var propName = ProcessorUtils.PascalSafe(nameInAttr);
-                    configParams.Add((p, nameInAttr, propName));
-                }
-            }
-        }
-
         string configureMethod;
-        // Prepare config POCO and factory-based registration snippets if needed
-        var configClassSource = string.Empty;
-        var factoryRegistration = string.Empty;
-        if (configParams.Count > 0)
-        {
-            var configClassName = ProcessorUtils.SafeIdentifier(attr.TargetSymbol.Name + "Config");
-            var sbProps = new System.Text.StringBuilder();
-            foreach (var (param, key, propName) in configParams)
-            {
-                var typeName = param.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                sbProps.Append($"public {typeName} {propName} {{ get; set; }} = default!;\n");
-            }
-
-            configClassSource = $$"""
-                // config POCO used to bind worker configuration
-                public class {{configClassName}}
-                {
-                {{sbProps.FixIndent(2, indentFirstLine: false)}}
-                }
-
-                """;
-
-            // Build factory-based registration when config params exist
-            var factoryArgs = new System.Text.StringBuilder();
-            if (ctor != null)
-            {
-                var first = true;
-                foreach (var p in ctor.Parameters)
-                {
-                    if (!first) factoryArgs.Append(", ");
-                    first = false;
-                    var hasCfg = configParams.Any(cp => SymbolEqualityComparer.Default.Equals(cp.param, p));
-                    if (hasCfg)
-                    {
-                        // find matching prop name
-                        var match = configParams.First(cp => SymbolEqualityComparer.Default.Equals(cp.param, p));
-                        factoryArgs.Append($"cfg.{match.propName}");
-                    }
-                    else
-                    {
-                        var pType = p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                        factoryArgs.Append($"sp.GetRequiredService<{pType}>()");
-                    }
-                }
-            }
-
-            var configClassName2 = ProcessorUtils.SafeIdentifier(attr.TargetSymbol.Name + "Config");
-
-            var bindSnippet = $$"""
-                // bind configuration section for this worker
-                builder.Services.Configure<{{configClassName2}}>(builder.Configuration.GetSection("{{GeneratorUtils.EscapeForCSharp(effectiveName)}}"));
-
-                """;
-
-            var instancesSnippet = $$"""
-                for (int i = 0; i < {{threads}}; i++)
-                {
-                    builder.Services.AddSingleton<Microsoft.Extensions.Hosting.IHostedService>(sp =>
-                    {
-                        var cfg = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<{{configClassName2}}>>().Value;
-                        return new {{attr.TargetSymbol.Name}}({{factoryArgs}});
-                    });
-                }
-
-                """;
-
-            // The factoryRegistration will be the combined binding + instances snippet
-            factoryRegistration = bindSnippet + instancesSnippet;
-        }
 
         if (stageLiteral != null && stageLiteral.EndsWith(".None", System.StringComparison.Ordinal))
         {
@@ -205,7 +110,7 @@ internal class LwxWorkerTypeProcessor(
                         builder.Services.AddSingleton(new LwxWorkerDescriptor { Name = "{{GeneratorUtils.EscapeForCSharp(effectiveName)}}", Description = "{{GeneratorUtils.EscapeForCSharp(description)}}", Threads = {{threads}}, Policy = {{policyLiteral}} });
 
                         // Register the worker as a hosted service. The worker will be activated according to the application's DI lifecycle.
-                        {{(configParams.Count > 0 ? factoryRegistration : $"for (int i = 0; i < {threads}; i++) {{ builder.Services.AddHostedService<{attr.TargetSymbol.Name}>(); }}")}}
+                        for (int i = 0; i < {{threads}}; i++) { builder.Services.AddHostedService<{{attr.TargetSymbol.Name}}>(); }
                     }
                 }
                 """;
@@ -226,7 +131,6 @@ internal class LwxWorkerTypeProcessor(
             {{configureMethod.FixIndent(1, indentFirstLine: false)}}
         }
 
-        {{configClassSource}}
         """;
 
         ProcessorUtils.AddGeneratedFile(ctx, $"LwxWorker_{name}.g.cs", source);

@@ -15,6 +15,7 @@ internal sealed class ServiceRegistration
     public List<string> WorkerNames { get; } = new();
     public List<(string TypeName, string HttpMethod, string? Path)> EndpointInfos { get; } = new();
     public List<(string TypeName, int Threads)> WorkerInfos { get; } = new();
+    public List<Processors.SettingInfo> Settings { get; } = new();
 }
 
 [Generator(LanguageNames.CSharp)]
@@ -77,6 +78,7 @@ public class Generator : IIncrementalGenerator
             new Processors.LwxEndpointMetadataPostInitializationProcessor(this, ctx).Execute();
             new Processors.LwxEndpointExtensionsPostInitializationProcessor(this, ctx).Execute();
             new Processors.LwxServicePostInitializationProcessor(this, ctx).Execute();
+            new Processors.LwxSettingPostInitializationProcessor(this, ctx).Execute();
         });
 
         var attrProvider = context.SyntaxProvider

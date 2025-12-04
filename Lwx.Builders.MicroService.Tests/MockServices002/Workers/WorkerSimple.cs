@@ -12,8 +12,11 @@ namespace Lwx.Builders.MicroService.Tests.MockServices002.Workers;
     Threads = 1,
     Description = "Simple worker for MockServices002"
 )]
-public partial class WorkerSimple(ILogger<WorkerSimple> logger, [FromConfig("DefConfig")] string DefConfig = "default") : BackgroundService
+public partial class WorkerSimple(ILogger<WorkerSimple> logger) : BackgroundService
 {
+    [LwxSetting("WorkerSimple:DefConfig")]
+    public static partial string DefConfig { get; }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         logger.LogInformation("WorkerSimple starting up (config DefConfig = {config}).", DefConfig);

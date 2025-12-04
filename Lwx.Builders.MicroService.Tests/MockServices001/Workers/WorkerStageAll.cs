@@ -13,8 +13,11 @@ namespace Lwx.Builders.MicroService.Tests.MockServices001.Workers;
     Threads = 1,
     Description = "This worker runs in all stages (dev, staging, production)"
 )]
-public partial class WorkerStageAll(ILogger<WorkerStageAll> logger, IWorkerCounters counters, [FromConfig("SomeConfig")] string SomeConfig = "default") : BackgroundService
+public partial class WorkerStageAll(ILogger<WorkerStageAll> logger, IWorkerCounters counters) : BackgroundService
 {
+    [LwxSetting("WorkerStageAll:SomeConfig")]
+    public static partial string SomeConfig { get; }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         logger.LogInformation("WorkerStageAll starting up (config SomeConfig = {config}).", SomeConfig);

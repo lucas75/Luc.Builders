@@ -28,13 +28,6 @@ internal class LwxWorkerPostInitializationProcessor(
           "LwxWorkerPolicy.g.cs"
         );
 
-        // Embed FromConfig attribute so consumers can annotate parameters
-        ProcessorUtils.AddEmbeddedSource(
-          ctx,
-          "Attributes/FromConfigAttribute.cs",
-          "FromConfigAttribute.g.cs"
-        );
-
         // Expose a worker descriptor type to consumer projects used for health/metadata
         ProcessorUtils.AddEmbeddedSource(
           ctx,

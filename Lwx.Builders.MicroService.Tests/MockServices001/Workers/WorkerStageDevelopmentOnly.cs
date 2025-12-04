@@ -13,8 +13,11 @@ namespace Lwx.Builders.MicroService.Tests.MockServices001.Workers;
     Threads = 1,
     Description = "This worker runs only in development stage"
 )]
-public partial class WorkerStageDevelopmentOnly(ILogger<WorkerStageDevelopmentOnly> logger, IWorkerCounters counters, [FromConfig("OtherConfig")] string OtherConfig = "default") : BackgroundService
+public partial class WorkerStageDevelopmentOnly(ILogger<WorkerStageDevelopmentOnly> logger, IWorkerCounters counters) : BackgroundService
 {
+    [LwxSetting("WorkerStageDevelopmentOnly:OtherConfig")]
+    public static partial string OtherConfig { get; }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         logger.LogInformation("WorkerStageDevelopmentOnly starting up (config OtherConfig = {config}).", OtherConfig);

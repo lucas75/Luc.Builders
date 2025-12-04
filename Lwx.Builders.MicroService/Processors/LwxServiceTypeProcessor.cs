@@ -353,9 +353,41 @@ internal class LwxServiceTypeProcessor(
 
         var builderSwaggerMethod = "ConfigureSwagger";
         var builderWorkersMethod = "ConfigureWorkers";
+        var builderSettingsMethod = "ConfigureSettings";
         var appSwaggerMethod = "ConfigureSwagger";
         var appHealthzMethod = "ConfigureHealthz";
         var appEndpointsMethod = "ConfigureEndpoints";
+
+        // Build settings initialization code
+        var srcSettingsCalls = new StringBuilder();
+        foreach (var setting in reg.Settings)
+        {
+            var fieldName = setting.GetFieldName();
+            var typeWithoutGlobal = setting.PropertyType.StartsWith("global::")
+                ? setting.PropertyType.Substring("global::".Length)
+                : setting.PropertyType;
+
+            // Generate the appropriate configuration read method based on type
+            var configReadExpr = GenerateConfigRead(setting.PropertyType, setting.ConfigKey);
+            srcSettingsCalls.AppendLine($"// Setting: {setting.ContainingTypeMinimal}.{setting.PropertyName} from \"{setting.ConfigKey}\"");
+            srcSettingsCalls.AppendLine($"SetField_{setting.SequenceNumber}_{SanitizeForFieldName(setting.ConfigKey)}(builder.Configuration, {configReadExpr});");
+        }
+
+        // Build field setter methods for each setting
+        var srcSettingSetters = new StringBuilder();
+        foreach (var setting in reg.Settings)
+        {
+            var fieldName = setting.GetFieldName();
+            var sanitizedKey = SanitizeForFieldName(setting.ConfigKey);
+            srcSettingSetters.AppendLine($$"""
+
+    private static void SetField_{{setting.SequenceNumber}}_{{sanitizedKey}}(IConfiguration config, {{setting.PropertyType}} value)
+    {
+        var field = typeof({{setting.ContainingTypeMinimal}}).GetField("{{fieldName}}", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        field?.SetValue(null, value);
+    }
+""");
+        }
 
         var readinessDefaultPercentStr = readinessDefaultPercent.ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
         var source = $$"""
@@ -380,6 +412,7 @@ public static partial class Service
     {
         // Use split configure methods so consumers can call specific parts
         // as needed and for clearer separation of concerns.
+        {{builderSettingsMethod}}(builder);
         {{builderSwaggerMethod}}(builder);
         {{builderWorkersMethod}}(builder);
 
@@ -425,6 +458,15 @@ public static partial class Service
         {{srcWorkerCalls.FixIndent(2, indentFirstLine: false)}}
     }
 
+    /// <summary>
+    /// Initialize LwxSetting properties from configuration
+    /// </summary>
+    public static void {{builderSettingsMethod}}(WebApplicationBuilder builder)
+    {
+        // Read configuration values and set backing fields for [LwxSetting] properties
+        {{srcSettingsCalls.FixIndent(2, indentFirstLine: false)}}
+    }
+{{srcSettingSetters}}
     /// <summary>
     /// Configure Swagger/OpenAPI on the app pipeline (if enabled)
     /// </summary>
@@ -578,5 +620,48 @@ public static partial class Service
                 DiagnosticSeverity.Error,
                 isEnabledByDefault: true),
             Location.None, workerTypeName, expectedServicePrefix));
+    }
+
+    /// <summary>
+    /// Generate a configuration read expression for the given type and key.
+    /// </summary>
+    private static string GenerateConfigRead(string propertyType, string configKey)
+    {
+        var escapedKey = GeneratorUtils.EscapeForCSharp(configKey);
+        var typeWithoutGlobal = propertyType.StartsWith("global::")
+            ? propertyType.Substring("global::".Length)
+            : propertyType;
+
+        return typeWithoutGlobal switch
+        {
+            "string" or "System.String" => $"builder.Configuration[\"{escapedKey}\"] ?? string.Empty",
+            "int" or "System.Int32" => $"builder.Configuration.GetValue<int>(\"{escapedKey}\")",
+            "bool" or "System.Boolean" => $"builder.Configuration.GetValue<bool>(\"{escapedKey}\")",
+            "double" or "System.Double" => $"builder.Configuration.GetValue<double>(\"{escapedKey}\")",
+            "long" or "System.Int64" => $"builder.Configuration.GetValue<long>(\"{escapedKey}\")",
+            "float" or "System.Single" => $"builder.Configuration.GetValue<float>(\"{escapedKey}\")",
+            "decimal" or "System.Decimal" => $"builder.Configuration.GetValue<decimal>(\"{escapedKey}\")",
+            _ => $"builder.Configuration[\"{escapedKey}\"] ?? string.Empty"
+        };
+    }
+
+    /// <summary>
+    /// Sanitize a configuration key to be a valid field name.
+    /// </summary>
+    private static string SanitizeForFieldName(string key)
+    {
+        var sb = new StringBuilder(key.Length);
+        foreach (var ch in key)
+        {
+            if (char.IsLetterOrDigit(ch) || ch == '_')
+            {
+                sb.Append(ch);
+            }
+            else
+            {
+                sb.Append('_');
+            }
+        }
+        return sb.ToString();
     }
 }

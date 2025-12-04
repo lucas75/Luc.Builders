@@ -14,11 +14,14 @@ namespace ExampleOrg.Product.ServiceAbc.Workers;
     Policy = LwxWorkerPolicy.AlwaysHealthy,
     Stage = LwxStage.DevelopmentOnly
 )]
-public partial class TheWorker(ILogger<TheWorker> logger, [FromConfig("Abc")] string abc) : BackgroundService
+public partial class TheWorker(ILogger<TheWorker> logger) : BackgroundService
 {
+    [LwxSetting("TheWorker:Abc")]
+    public static partial string Abc { get; }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("TheWorker starting up (config Abc = {abc}).", abc);
+        logger.LogInformation("TheWorker starting up (config Abc = {abc}).", Abc);
 
         while (!stoppingToken.IsCancellationRequested)
         {
