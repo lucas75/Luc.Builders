@@ -43,5 +43,22 @@ public class MockServerTests
         Assert.Null(await runner.GetWithTimeoutAsync("/stage-none/hello"));
     }
 
-
+    /// <summary>
+    /// Starts a production server and verifies that workers for 'All' stages are running,
+    /// while 'DevelopmentOnly' workers are not.
+    /// </summary>
+    [Fact(DisplayName = "Production server: verifies workers are running for All stages only")]
+    public async Task RunPrdServer_Verifies_WorkersRunning()
+    {
+        await using var runner = await MockServer.StartPrdServer();
+        // Wait for workers to start and increment counters
+        await Task.Delay(500);
+        var counters = runner.Host.Services.GetRequiredService<IWorkerCounters>();
+        // Workers for 'All' stages should be running
+        Assert.True(counters.WorkerStageAllTicks > 0, "WorkerStageAll should have ticks in production");
+        // Workers for 'DevelopmentOnly' should not be running
+        Assert.True(counters.WorkerStageDevelopmentOnlyTicks == 0, "WorkerStageDevelopmentOnly should not have ticks in production");
+        // Workers for 'None' should not be running
+        Assert.True(counters.WorkerStageNoneTicks == 0, "WorkerStageNone should not have ticks in production");
+    }
 }
