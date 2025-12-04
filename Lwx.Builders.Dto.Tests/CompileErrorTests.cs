@@ -5,6 +5,8 @@ using System.Linq;
 using Xunit;
 using Lwx.Builders.Dto.Tests.MockServices;
 
+namespace Lwx.Builders.Dto.Tests;
+
 // CompileErrorTests: use an in-memory generator harness rather than invoking MSBuild.
 public class CompileErrorTests
 {   
