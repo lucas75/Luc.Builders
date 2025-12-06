@@ -1,5 +1,108 @@
 # TODO
 
+## Feature Request: MessageProcessor Mechanism
+
+A mechanism to parse messages received from message queues or http endpoints.
+
+```csharp
+
+public interface ILwxQueueProvider {
+   // Human friendly name for diagnostics
+   string Name { get; }
+
+   // Called by runtime/generator wiring to provide configuration for the named section.
+   // Example: sectionName="MyQueueA" corresponds to appsettings: "Queues:MyQueueA:{...}"
+   void Configure(Microsoft.Extensions.Configuration.IConfiguration configuration, string sectionName);
+
+   // Set provider-level error policy (connection / worker errors)
+   void SetProviderErrorPolicy(ILwxProviderErrorPolicy policy);
+
+   // Start/stop the worker that reads/messages and invokes handler
+   Task StartAsync(Func<ILwxQueueMessage, CancellationToken, Task> handler, int concurrency, CancellationToken ct);
+   Task StopAsync(CancellationToken ct);
+}
+
+public interface ILwxQueueMessage {
+   // Message properties and lifecycle methods
+   string MessageId { get; }
+   ReadOnlyMemory<byte> Payload { get; }
+   IReadOnlyDictionary<string,string> Headers { get; }
+   DateTimeOffset EnqueuedAt { get; }
+
+   ValueTask CompleteAsync(CancellationToken ct = default);
+   ValueTask AbandonAsync(string? reason = null, CancellationToken ct = default);
+   ValueTask DeadLetterAsync(string? reason = null, CancellationToken ct = default);
+}
+
+// Errors thrown by the handler (message-processing) are handled by this policy.
+public interface ILwxErrorPolicy {
+   Task HandleErrorAsync(ILwxQueueMessage msg, Exception ex, CancellationToken ct = default);
+}
+
+// Errors at the provider/worker level (connections, topology, background failures).
+public interface ILwxProviderErrorPolicy {
+   Task HandleProviderErrorAsync(Exception ex, CancellationToken ct = default);
+}
+
+// Example in-memory provider as a driver for tests/samples.
+// Reads settings from the named section "Queues:{sectionName}".
+public class ExampleQueue : ILwxQueueProvider {
+   private readonly System.Threading.Channels.Channel<ILwxQueueMessage> _channel = System.Threading.Channels.Channel.CreateUnbounded<ILwxQueueMessage>();
+
+   public string Name => nameof(ExampleQueue);
+
+   public void Configure(Microsoft.Extensions.Configuration.IConfiguration configuration, string sectionName) {
+      // Read settings from configuration.GetSection($"Queues:{sectionName}") ...
+      // e.g. Readers, MaxBatchSize, VisibilityTimeout, etc.
+   }
+
+   public void SetProviderErrorPolicy(ILwxProviderErrorPolicy policy) { /* omitted */ }
+
+   public Task StartAsync(Func<ILwxQueueMessage, CancellationToken, Task> handler, int concurrency, CancellationToken ct) { /* omitted */ }
+   public Task StopAsync(CancellationToken ct) { /* omitted */ }
+}
+
+// Attribute usage: generator/runtime should validate types and config section existence.
+[LwxMessageHandler(
+   Uri = "POST /receive-message",
+   Stage = LwxStage.All,
+   QueueProvider = typeof(ExampleQueue),        // driver type that implements ILwxQueueProvider
+   QueueConfigSection = "MyExampleQueue",       // named section: "Queues:MyExampleQueue"
+   QueueReaders = 2,                            // concurrency (can be overridden in provider config)
+   HandlerErrorPolicy = typeof(DefaultHandlerErrorPolicy),
+   ProviderErrorPolicy = typeof(DefaultProviderErrorPolicy)
+)]
+public partial class EndpointReceiveMessage {
+   public static Task Execute(ILwxQueueMessage msg) { /* omitted */ }
+}
+
+// Default policies (bodies omitted)
+public class DefaultHandlerErrorPolicy : ILwxErrorPolicy { /* omitted */ }
+public class DefaultProviderErrorPolicy : ILwxProviderErrorPolicy { /* omitted */ }
+```
+
+Configuration sample (appsettings.json)
+```json
+{
+  "Queues": {
+    "MyExampleQueue": {
+      "Readers": 2,
+      "SomeProviderSpecificSetting": "value"
+    }
+  }
+}
+```
+
+Runtime/Generator checklist (summary):
+- Validate QueueProvider implements ILwxQueueProvider (emit diagnostic if not).
+- Validate QueueConfigSection exists in configuration (emit diagnostic if missing).
+- Resolve provider from DI or instantiate and call Configure(configuration, QueueConfigSection).
+- Set ProviderErrorPolicy and HandlerErrorPolicy; pass handler wrapper that captures policy handling.
+- Start provider with configured concurrency (QueueReaders or value from config).
+- On provider errors, the provider should call the ProviderErrorPolicy; generator/runtime may use the policy to decide to restart, backoff, or shut down service.
+
+# CHANGELOG
+
 ## ✅ Completed: LwxSetting Mechanism (December 2025)
 
 Replaced `[FromConfig]` constructor parameter injection with `[LwxSetting]` static partial properties:
@@ -53,4 +156,4 @@ The following changes have been implemented:
 - `Generator.cs` - New `ServiceRegistration` class and `ServiceRegistrations` dictionary
 - `LwxServiceTypeProcessor.cs` - Rewritten to use service registrations
 - `LwxEndpointTypeProcessor.cs` - Registers endpoints to appropriate service by namespace
-- `LwxWorkerTypeProcessor.cs` - Registers workers to appropriate service by namespace 
+- `LwxWorkerTypeProcessor.cs` - Registers workers to appropriate service by namespace
