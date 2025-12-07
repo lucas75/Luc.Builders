@@ -13,8 +13,10 @@ internal sealed class ServiceRegistration
     public string ServiceNamespacePrefix { get; init; } = string.Empty;
     public List<string> EndpointNames { get; } = new();
     public List<string> WorkerNames { get; } = new();
+    public List<string> MessageHandlerNames { get; } = new();
     public List<(string TypeName, string HttpMethod, string? Path)> EndpointInfos { get; } = new();
     public List<(string TypeName, int Threads)> WorkerInfos { get; } = new();
+    public List<(string TypeName, int QueueReaders, string QueueConfigSection, string HttpUri)> MessageHandlerInfos { get; } = new();
     public List<Processors.SettingInfo> Settings { get; } = new();
 }
 
@@ -44,10 +46,11 @@ public class Generator : IIncrementalGenerator
     /// Computes the service namespace prefix from an endpoint or worker namespace.
     /// For "Assembly.Abc.Endpoints.Sub" returns "Assembly.Abc".
     /// For "Assembly.Abc.Workers.Sub" returns "Assembly.Abc".
+    /// For "Assembly.Abc.MessageHandlers.Sub" returns "Assembly.Abc".
     /// </summary>
     internal static string ComputeServicePrefix(string ns)
     {
-        // Find .Endpoints or .Workers segment and return everything before it
+        // Find .Endpoints, .Workers, or .MessageHandlers segment and return everything before it
         var endpointsIdx = ns.IndexOf(".Endpoints", StringComparison.Ordinal);
         if (endpointsIdx > 0)
         {
@@ -60,7 +63,13 @@ public class Generator : IIncrementalGenerator
             return ns.Substring(0, workersIdx);
         }
 
-        // Fallback: return the namespace as-is (shouldn't happen for valid endpoints/workers)
+        var messageHandlersIdx = ns.IndexOf(".MessageHandlers", StringComparison.Ordinal);
+        if (messageHandlersIdx > 0)
+        {
+            return ns.Substring(0, messageHandlersIdx);
+        }
+
+        // Fallback: return the namespace as-is (shouldn't happen for valid endpoints/workers/handlers)
         return ns;
     }
 
@@ -79,6 +88,7 @@ public class Generator : IIncrementalGenerator
             new Processors.LwxEndpointExtensionsPostInitializationProcessor(this, ctx).Execute();
             new Processors.LwxServicePostInitializationProcessor(this, ctx).Execute();
             new Processors.LwxSettingPostInitializationProcessor(this, ctx).Execute();
+            new Processors.LwxMessageHandlerPostInitializationProcessor(this, ctx).Execute();
         });
 
         var attrProvider = context.SyntaxProvider
@@ -168,6 +178,34 @@ public class Generator : IIncrementalGenerator
                             spc.ReportDiagnostic(Diagnostic.Create(descriptor, loc, sym.ToDisplayString()));
                         }
                     }
+
+                    if (ns.Contains(".MessageHandlers", StringComparison.Ordinal))
+                    {
+                        var hasMessageHandler = sym.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxMessageHandlerAttribute");
+                        
+                        // Exclude classes that implement helper interfaces for message processing
+                        // These are allowed in the MessageHandlers namespace
+                        var namedSym = sym as INamedTypeSymbol;
+                        var isHelperType = namedSym?.AllInterfaces.Any(i => 
+                            i.Name == "ILwxQueueProvider" || 
+                            i.Name == "ILwxErrorPolicy" || 
+                            i.Name == "ILwxProviderErrorPolicy" ||
+                            i.Name == "ILwxQueueMessage") ?? false;
+
+                        if (!hasMessageHandler && !isHelperType)
+                        {
+                            var descriptor = new DiagnosticDescriptor(
+                                "LWX050",
+                                "Class in MessageHandlers namespace must be annotated",
+                                "Classes declared in namespaces containing '.MessageHandlers' must be annotated with [LwxMessageHandler] or implement a message processing interface. Found: '{0}'",
+                                "Usage",
+                                DiagnosticSeverity.Error,
+                                isEnabledByDefault: true);
+
+                            var loc = cd.Identifier.GetLocation();
+                            spc.ReportDiagnostic(Diagnostic.Create(descriptor, loc, sym.ToDisplayString()));
+                        }
+                    }
                 }
             }
         });
@@ -212,7 +250,7 @@ public class Generator : IIncrementalGenerator
                         rp.Execute();
                     }
 
-                    // After processing all services, check for orphan endpoints/workers
+                    // After processing all services, check for orphan endpoints/workers/messagehandlers
                     foreach (var kvp in ServiceRegistrations)
                     {
                         if (!serviceNamespacePrefixes.Contains(kvp.Key))
@@ -226,6 +264,11 @@ public class Generator : IIncrementalGenerator
                             foreach (var w in kvp.Value.WorkerInfos)
                             {
                                 Processors.LwxServiceTypeProcessor.ReportOrphanWorker(spc, kvp.Key, w.TypeName);
+                            }
+                            // Report orphan message handlers
+                            foreach (var mh in kvp.Value.MessageHandlerInfos)
+                            {
+                                Processors.LwxServiceTypeProcessor.ReportOrphanMessageHandler(spc, kvp.Key, mh.TypeName);
                             }
                         }
                     }

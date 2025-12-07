@@ -14,6 +14,17 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
 
 ## Recent Development History
 
+### MessageHandler Mechanism (January 2025)
+- Implemented complete message queue processing infrastructure with configurable providers and error policies
+- New core interfaces: `ILwxQueueProvider`, `ILwxQueueMessage`, `ILwxErrorPolicy`, `ILwxProviderErrorPolicy`
+- Default policies: `LwxDefaultErrorPolicy` (logs + abandons), `LwxDefaultProviderErrorPolicy` (logs only)
+- `[LwxMessageHandler]` attribute with Uri, Stage, QueueProvider, QueueConfigSection, QueueReaders, HandlerErrorPolicy, ProviderErrorPolicy properties
+- New processor: `LwxMessageHandlerTypeProcessor` generates hosted background services and HTTP endpoints
+- ServiceRegistration updated with MessageHandlerNames/MessageHandlerInfos
+- Namespace convention: `.MessageHandlers` (parallel to `.Endpoints` and `.Workers`)
+- New diagnostics: LWX040-LWX051 for MessageHandler validation
+- 8 unit tests covering valid handlers, missing providers, invalid naming, wrong namespace, unannotated classes
+
 ### LwxSetting Configuration Mechanism (December 2025)
 - Replaced `[FromConfig]` constructor parameter injection with `[LwxSetting]` static partial property mechanism
 - New `LwxSettingAttribute` for annotating static partial properties with configuration keys (e.g., `[LwxSetting("Section:Key")]`)

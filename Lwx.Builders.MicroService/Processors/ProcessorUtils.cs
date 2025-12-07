@@ -33,6 +33,9 @@ internal static class LwxConstants
     public const string LwxSetting = "LwxSetting";
     public const string LwxSettingAttribute = "LwxSettingAttribute";
 
+    public const string LwxMessageHandler = "LwxMessageHandler";
+    public const string LwxMessageHandlerAttribute = "LwxMessageHandlerAttribute";
+
 
     public static readonly string[] AttributeNames = [
         LwxEndpoint,
@@ -42,7 +45,8 @@ internal static class LwxConstants
         LwxTimer,
         LwxServiceBusProducer,
         LwxService,
-        LwxSetting
+        LwxSetting,
+        LwxMessageHandler
     ];
 }
 

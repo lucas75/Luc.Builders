@@ -157,3 +157,97 @@ The following changes have been implemented:
 - `LwxServiceTypeProcessor.cs` - Rewritten to use service registrations
 - `LwxEndpointTypeProcessor.cs` - Registers endpoints to appropriate service by namespace
 - `LwxWorkerTypeProcessor.cs` - Registers workers to appropriate service by namespace
+
+---
+
+## ✅ Completed: MessageHandler Mechanism (January 2025)
+
+Implemented message queue processing with configurable providers and error policies:
+
+1. ✅ **Core Interfaces**:
+   - `ILwxQueueProvider` - Queue provider abstraction with Configure/Start/Stop lifecycle
+   - `ILwxQueueMessage` - Message abstraction with Complete/Abandon/DeadLetter lifecycle
+   - `ILwxErrorPolicy` - Handler-level error policy for message processing errors
+   - `ILwxProviderErrorPolicy` - Provider-level error policy for connection/worker errors
+
+2. ✅ **Default Policies**:
+   - `LwxDefaultErrorPolicy` - Logs and abandons messages on handler errors
+   - `LwxDefaultProviderErrorPolicy` - Logs provider errors
+
+3. ✅ **`[LwxMessageHandler]` Attribute** with properties:
+   - `Uri` - HTTP endpoint path for receiving messages (e.g., "POST /receive-order")
+   - `Stage` - Execution stage (Dev, Test, Prod, All, NonProd)
+   - `QueueProvider` - Type implementing `ILwxQueueProvider`
+   - `QueueConfigSection` - Configuration section name (reads from `Queues:{section}`)
+   - `QueueReaders` - Concurrency level (default: 1)
+   - `HandlerErrorPolicy` - Type implementing `ILwxErrorPolicy` (optional)
+   - `ProviderErrorPolicy` - Type implementing `ILwxProviderErrorPolicy` (optional)
+
+4. ✅ **Generated Code**:
+   - Hosted background service for queue consumption
+   - HTTP endpoint for manual message submission
+   - Service wiring via `ConfigureMessageHandlers(builder)` and `ConfigureMessageHandlers(app)`
+
+5. ✅ **Namespace Convention**: MessageHandlers must be in `.MessageHandlers` namespace
+   - Similar to `.Endpoints` and `.Workers` patterns
+
+### New Diagnostics
+- `LWX040` - MessageHandler must be partial class
+- `LWX041` - MessageHandler must have Execute method
+- `LWX042` - MessageHandler.Execute must be static
+- `LWX043` - MessageHandler.Execute must return Task
+- `LWX044` - MessageHandler.Execute must have ILwxQueueMessage parameter
+- `LWX045` - QueueProvider must implement ILwxQueueProvider
+- `LWX046` - HandlerErrorPolicy must implement ILwxErrorPolicy
+- `LWX047` - ProviderErrorPolicy must implement ILwxProviderErrorPolicy
+- `LWX048` - MessageHandler must be in MessageHandlers namespace
+- `LWX049` - Orphan MessageHandler (no matching service)
+- `LWX050` - Class in MessageHandlers namespace requires attribute or interface
+- `LWX051` - MessageHandler Execute must have CancellationToken parameter
+
+### Key Implementation Files
+- `Attributes/ILwxQueueMessage.cs` - Message interface
+- `Attributes/ILwxQueueProvider.cs` - Provider interface
+- `Attributes/ILwxErrorPolicy.cs` - Handler error policy interface
+- `Attributes/ILwxProviderErrorPolicy.cs` - Provider error policy interface
+- `Attributes/LwxDefaultErrorPolicy.cs` - Default handler error policy
+- `Attributes/LwxDefaultProviderErrorPolicy.cs` - Default provider error policy
+- `Attributes/LwxMessageHandlerAttribute.cs` - MessageHandler attribute
+- `Attributes/LwxMessageHandlerDescriptor.cs` - Runtime descriptor
+- `Processors/LwxMessageHandlerTypeProcessor.cs` - Type processor
+- `Processors/LwxMessageHandlerPostInitializationProcessor.cs` - Embeds interfaces/attribute
+- `Generator.cs` - ServiceRegistration updated with MessageHandlerNames/Infos
+- `LwxServiceTypeProcessor.cs` - Generates ConfigureMessageHandlers methods
+
+### Example Usage
+
+```csharp
+// In MessageHandlers namespace
+[LwxMessageHandler(
+    Uri = "POST /receive-order",
+    Stage = LwxStage.All,
+    QueueProvider = typeof(ExampleQueueProvider),
+    QueueConfigSection = "OrderQueue",
+    QueueReaders = 2
+)]
+public partial class MessageHandlerReceiveOrder
+{
+    public static Task Execute(ILwxQueueMessage msg, CancellationToken ct)
+    {
+        // Process the message
+        return msg.CompleteAsync(ct).AsTask();
+    }
+}
+```
+
+Configuration in appsettings.json:
+```json
+{
+  "Queues": {
+    "OrderQueue": {
+      "Readers": 2,
+      "ProviderSpecificSetting": "value"
+    }
+  }
+}
+```
