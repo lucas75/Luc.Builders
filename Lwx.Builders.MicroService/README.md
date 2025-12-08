@@ -34,21 +34,21 @@ public partial class Service { }
 
 ### 2. Create Endpoints
 
-Place endpoints in an `Endpoints/` folder. The class name determines the route:
+Place endpoints in an `Endpoints/` folder. The class name determines the route, and the attribute goes on the `Execute` method:
 
 ```csharp
 using Lwx.Builders.MicroService.Atributtes;
 
 namespace MyCompany.MyService.Endpoints;
 
-[LwxEndpoint(
-    Uri = "GET /hello",
-    SecurityProfile = "public",
-    Summary = "Hello World",
-    Publish = LwxStage.All
-)]
 public static partial class EndpointHello
 {
+    [LwxEndpoint(
+        Uri = "GET /hello",
+        SecurityProfile = "public",
+        Summary = "Hello World",
+        Publish = LwxStage.All
+    )]
     public static Task<string> Execute([FromQuery] string? name)
     {
         return Task.FromResult($"Hello, {name ?? "World"}!");
@@ -110,6 +110,8 @@ MyCompany.MyService/
 [LwxEndpoint(Uri = "GET /users/{id}")]      // Path parameter
 [LwxEndpoint(Uri = "GET /users/{id}/posts/{postId}")]  // Multiple parameters
 ```
+
+All attributes go on the `Execute` method, not the class.
 
 ### Class Naming Convention
 
@@ -215,16 +217,16 @@ public class MyQueueProvider : ILwxQueueProvider
 }
 
 // Endpoints/EndpointMsgReceiveOrder.cs - Message endpoint
-[LwxMessageEndpoint(
-    Uri = "POST /receive-order",
-    QueueStage = LwxStage.All,           // Queue consumer runs everywhere
-    UriStage = LwxStage.DevelopmentOnly, // HTTP endpoint only in dev
-    QueueProvider = typeof(MyQueueProvider),
-    QueueConfigSection = "OrderQueue",
-    QueueReaders = 2
-)]
 public partial class EndpointMsgReceiveOrder
 {
+    [LwxMessageEndpoint(
+        Uri = "POST /receive-order",
+        QueueStage = LwxStage.All,           // Queue consumer runs everywhere
+        UriStage = LwxStage.DevelopmentOnly, // HTTP endpoint only in dev
+        QueueProvider = typeof(MyQueueProvider),
+        QueueConfigSection = "OrderQueue",
+        QueueReaders = 2
+    )]
     public static Task Execute(
         ILwxQueueMessage msg,
         ILogger<EndpointMsgReceiveOrder> logger)
@@ -240,7 +242,7 @@ public partial class EndpointMsgReceiveOrder
 Message endpoint classes must:
 - Start with `EndpointMsg` prefix (e.g., `EndpointMsgReceiveOrder`)
 - Be in a `.Endpoints` namespace
-- Have a static `Execute` method with `ILwxQueueMessage` parameter
+- Have a static `Execute` method annotated with `[LwxMessageEndpoint]` and an `ILwxQueueMessage` parameter
 
 ### Stage Configuration
 
@@ -252,13 +254,13 @@ Use separate stages for queue and HTTP:
 
 ## Timer Endpoints
 
-Schedule recurring tasks with cron expressions or simple intervals:
+Schedule recurring tasks with cron expressions or simple intervals. The attribute goes on the `Execute` method:
 
 ```csharp
 // Interval-based timer - runs every 30 seconds
-[LwxTimer(IntervalSeconds = 30, Summary = "Cleanup timer")]
 public static partial class EndpointTimerCleanup
 {
+    [LwxTimer(IntervalSeconds = 30, Summary = "Cleanup timer")]
     public static void Execute()
     {
         Console.WriteLine("Timer executed!");
@@ -266,13 +268,13 @@ public static partial class EndpointTimerCleanup
 }
 
 // Cron-based timer - runs every 5 minutes
-[LwxTimer(
-    CronExpression = "0 */5 * * * *",  // NCrontab 6-field format
-    Stage = LwxStage.All,
-    RunOnStartup = true
-)]
 public static partial class EndpointTimerHealthCheck
 {
+    [LwxTimer(
+        CronExpression = "0 */5 * * * *",  // NCrontab 6-field format
+        Stage = LwxStage.All,
+        RunOnStartup = true
+    )]
     public static async Task Execute(
         ILogger<EndpointTimerHealthCheck> logger,
         CancellationToken ct)
@@ -310,7 +312,7 @@ Uses NCrontab 6-field format: `second minute hour day month weekday`
 Timer endpoint classes must:
 - Start with `EndpointTimer` prefix (e.g., `EndpointTimerCleanup`)
 - Be in a `.Endpoints` namespace
-- Have a static `Execute` method (can be void or Task)
+- Have a static `Execute` method annotated with `[LwxTimer]` (can be void or Task)
 
 ### DI Support
 
@@ -357,6 +359,12 @@ The generator reports compile-time errors for common issues:
 | LWX043 | Missing QueueProvider |
 | LWX060 | Invalid timer endpoint class name |
 | LWX061 | Timer endpoint not in `.Endpoints` namespace |
+| LWX070 | `[LwxEndpoint]` must be on Execute method |
+| LWX071 | Endpoint attribute not on method named Execute |
+| LWX072 | `[LwxMessageEndpoint]` must be on Execute method |
+| LWX073 | Message endpoint attribute not on method named Execute |
+| LWX074 | `[LwxTimer]` must be on Execute method |
+| LWX075 | Timer attribute not on method named Execute |
 
 ## Contributing
 

@@ -136,13 +136,19 @@ public class Generator : IIncrementalGenerator
 
                     if (ns.Contains(".Endpoints", StringComparison.Ordinal))
                     {
-                        // Must have LwxEndpoint or LwxMessageEndpoint attribute
-                        var hasEndpoint = sym.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxEndpointAttribute");
-                        var hasMessageEndpoint = sym.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxMessageEndpointAttribute");
-                        var hasTimer = sym.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxTimerAttribute");
+                        // Must have an Execute method with LwxEndpoint, LwxMessageEndpoint, or LwxTimer attribute
+                        var namedSym = sym as INamedTypeSymbol;
+                        var hasEndpoint = namedSym?.GetMembers("Execute")
+                            .OfType<IMethodSymbol>()
+                            .Any(m => m.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxEndpointAttribute")) ?? false;
+                        var hasMessageEndpoint = namedSym?.GetMembers("Execute")
+                            .OfType<IMethodSymbol>()
+                            .Any(m => m.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxMessageEndpointAttribute")) ?? false;
+                        var hasTimer = namedSym?.GetMembers("Execute")
+                            .OfType<IMethodSymbol>()
+                            .Any(m => m.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxTimerAttribute")) ?? false;
                         
                         // Allow helper types that implement queue-related interfaces
-                        var namedSym = sym as INamedTypeSymbol;
                         var isHelperType = namedSym?.AllInterfaces.Any(i => 
                             i.Name == "ILwxQueueProvider" || 
                             i.Name == "ILwxErrorPolicy" || 
@@ -153,8 +159,8 @@ public class Generator : IIncrementalGenerator
                         {
                             var descriptor = new DiagnosticDescriptor(
                                 "LWX018",
-                                "Class in Endpoints namespace must be annotated",
-                                "Classes declared in namespaces containing '.Endpoints' must be annotated with [LwxEndpoint], [LwxMessageEndpoint], or [LwxTimer]. Found: '{0}'",
+                                "Class in Endpoints namespace must have annotated Execute method",
+                                "Classes declared in namespaces containing '.Endpoints' must have an Execute method annotated with [LwxEndpoint], [LwxMessageEndpoint], or [LwxTimer]. Found: '{0}'",
                                 "Usage",
                                 DiagnosticSeverity.Error,
                                 isEnabledByDefault: true);

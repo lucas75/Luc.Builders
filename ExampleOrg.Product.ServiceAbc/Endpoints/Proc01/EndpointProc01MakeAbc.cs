@@ -5,15 +5,15 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ExampleOrg.Product.ServiceAbc.Endpoints.Proc01;
 
-[LwxEndpoint(
-    Uri = "POST /proc01/make-abc",
-    SecurityProfile = "public",
-    Summary = "Start proccess 01",
-    Description = "Blah Blah",
-    Publish = LwxStage.DevelopmentOnly
-)]
 public static partial class EndpointProc01MakeAbc
 {
+    [LwxEndpoint(
+        Uri = "POST /proc01/make-abc",
+        SecurityProfile = "public",
+        Summary = "Start proccess 01",
+        Description = "Blah Blah",
+        Publish = LwxStage.DevelopmentOnly
+    )]
     public async static Task<SimpleResponseDto> Execute(
       [FromQuery(Name = "proc")] string procId
     )

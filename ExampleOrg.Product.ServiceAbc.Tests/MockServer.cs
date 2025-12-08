@@ -74,9 +74,16 @@ public sealed class MockServer : IAsyncDisposable
         builder.Logging.ClearProviders();
         builder.Logging.SetMinimumLevel(LogLevel.Warning);
 
-        // Load static JSON configuration for tests from MockServer.appsettings.json if requested
-        if (loadConfig)
+        // If we don't want to load test configuration, clear all default configuration sources
+        // so tests start with an empty configuration set. This avoids loading the project's
+        // appsettings.json that would otherwise provide default values and influence tests.
+        if (!loadConfig)
         {
+            builder.Configuration.Sources.Clear();
+        }
+        else
+        {
+            // Load static JSON configuration for tests from MockServer.appsettings.json
             var jsonPath = ResolveAppSettingsPath();
             builder.Configuration.AddJsonFile(jsonPath, optional: false, reloadOnChange: false);
         }

@@ -3,15 +3,15 @@ using Lwx.Builders.MicroService.Atributtes;
 
 namespace ExampleOrg.Product.ServiceAbc.Endpoints;
 
-[LwxEndpoint(
-    Uri = "GET /abc/cde",
-    SecurityProfile = "public",
-    Summary = "abc",
-    Description = "Blah Blah",
-    Publish = LwxStage.DevelopmentOnly
-)]
 public static partial class EndpointAbcCde
 {
+    [LwxEndpoint(
+        Uri = "GET /abc/cde",
+        SecurityProfile = "public",
+        Summary = "abc",
+        Description = "Blah Blah",
+        Publish = LwxStage.DevelopmentOnly
+    )]
     public async static Task<SimpleResponseDto> Execute(
 
     )

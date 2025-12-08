@@ -13,13 +13,51 @@ internal class LwxMessageEndpointTypeProcessor(
     AttributeInstance attr
 )
 {
+    private INamedTypeSymbol? _containingType;
+
     public void Execute()
     {
-        // Enforce file path and namespace matching
-        ProcessorUtils.ValidateFilePathMatchesNamespace(attr.TargetSymbol, ctx);
+        // The attribute is now on the Execute method, get the containing class
+        if (attr.TargetSymbol is not IMethodSymbol methodSymbol)
+        {
+            ctx.ReportDiagnostic(Diagnostic.Create(
+                new DiagnosticDescriptor(
+                    "LWX072",
+                    "LwxMessageEndpoint must be on method",
+                    "[LwxMessageEndpoint] attribute must be placed on the Execute method, not on a class.",
+                    "Usage",
+                    DiagnosticSeverity.Error,
+                    isEnabledByDefault: true),
+                attr.Location));
+            return;
+        }
 
-        var name = ProcessorUtils.SafeIdentifier(attr.TargetSymbol.Name);
-        var ns = attr.TargetSymbol.ContainingNamespace?.ToDisplayString() ?? "Generated";
+        // Validate method is named Execute
+        if (methodSymbol.Name != "Execute")
+        {
+            ctx.ReportDiagnostic(Diagnostic.Create(
+                new DiagnosticDescriptor(
+                    "LWX073",
+                    "LwxMessageEndpoint must be on Execute method",
+                    "[LwxMessageEndpoint] attribute must be placed on a method named 'Execute'. Found: '{0}'",
+                    "Usage",
+                    DiagnosticSeverity.Error,
+                    isEnabledByDefault: true),
+                attr.Location, methodSymbol.Name));
+            return;
+        }
+
+        _containingType = methodSymbol.ContainingType;
+        if (_containingType == null)
+        {
+            return;
+        }
+
+        // Enforce file path and namespace matching
+        ProcessorUtils.ValidateFilePathMatchesNamespace(_containingType, ctx);
+
+        var name = ProcessorUtils.SafeIdentifier(_containingType.Name);
+        var ns = _containingType.ContainingNamespace?.ToDisplayString() ?? "Generated";
 
         // Extract attribute properties
         var (uriArg, queueStageLiteral, uriStageLiteral, queueProviderTypeName, queueConfigSection, queueReaders, 
@@ -61,9 +99,9 @@ internal class LwxMessageEndpointTypeProcessor(
         // Register with service
         var servicePrefix = Generator.ComputeServicePrefix(ns);
         var reg = parent.GetOrCreateRegistration(servicePrefix);
-        reg.MessageEndpointNames.Add(ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation));
+        reg.MessageEndpointNames.Add(ProcessorUtils.ExtractRelativeTypeName(_containingType!, compilation));
         reg.MessageEndpointInfos.Add((
-            ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation),
+            ProcessorUtils.ExtractRelativeTypeName(_containingType!, compilation),
             queueReaders,
             queueConfigSection ?? string.Empty,
             uriArg ?? string.Empty
@@ -202,7 +240,7 @@ internal class LwxMessageEndpointTypeProcessor(
                     "Naming",
                     DiagnosticSeverity.Error,
                     isEnabledByDefault: true),
-                attr.Location, attr.TargetSymbol.Name));
+                attr.Location, name));
             return false;
         }
 
@@ -243,7 +281,7 @@ internal class LwxMessageEndpointTypeProcessor(
                         "Naming",
                         DiagnosticSeverity.Error,
                         isEnabledByDefault: true),
-                    attr.Location, attr.TargetSymbol.Name, expectedName, uriArg));
+                    attr.Location, name, expectedName, uriArg));
                 return false;
             }
         }
@@ -283,7 +321,7 @@ internal class LwxMessageEndpointTypeProcessor(
                     "Configuration",
                     DiagnosticSeverity.Error,
                     isEnabledByDefault: true),
-                attr.Location, attr.TargetSymbol.Name));
+                attr.Location, _containingType?.Name ?? "unknown"));
             return false;
         }
 
@@ -420,10 +458,10 @@ internal class LwxMessageEndpointTypeProcessor(
     {
         var result = new List<(string ParamName, string ParamType, bool IsQueueMessage)>();
         
-        if (attr.TargetSymbol is not INamedTypeSymbol typeSymbol)
+        if (_containingType == null)
             return result;
 
-        var executeMethods = typeSymbol.GetMembers("Execute")
+        var executeMethods = _containingType.GetMembers("Execute")
             .OfType<IMethodSymbol>()
             .Where(m => m.IsStatic)
             .ToList();

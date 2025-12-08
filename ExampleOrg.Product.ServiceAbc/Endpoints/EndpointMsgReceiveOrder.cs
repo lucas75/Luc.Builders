@@ -16,16 +16,6 @@ namespace ExampleOrg.Product.ServiceAbc.Endpoints;
 /// The HTTP endpoint is exposed only in development for testing purposes.
 /// The queue consumer runs in all environments (dev and prod).
 /// </remarks>
-[LwxMessageEndpoint(
-    Uri = "POST /receive-order",
-    QueueStage = LwxStage.All,
-    UriStage = LwxStage.DevelopmentOnly,
-    QueueProvider = typeof(ExampleQueueProvider),
-    QueueConfigSection = "OrderQueue",
-    QueueReaders = 2,
-    Summary = "Receives order messages from queue",
-    Description = "Processes incoming order messages. Can be triggered via HTTP in development for testing."
-)]
 public partial class EndpointMsgReceiveOrder
 {
     /// <summary>
@@ -33,6 +23,16 @@ public partial class EndpointMsgReceiveOrder
     /// The ILwxQueueMessage is provided by the queue infrastructure.
     /// TheWorker and IConfiguration are injected via DI.
     /// </summary>
+    [LwxMessageEndpoint(
+        Uri = "POST /receive-order",
+        QueueStage = LwxStage.All,
+        UriStage = LwxStage.DevelopmentOnly,
+        QueueProvider = typeof(ExampleQueueProvider),
+        QueueConfigSection = "OrderQueue",
+        QueueReaders = 2,
+        Summary = "Receives order messages from queue",
+        Description = "Processes incoming order messages. Can be triggered via HTTP in development for testing."
+    )]
     public static Task Execute(
         ILwxQueueMessage msg, 
         ILogger<EndpointMsgReceiveOrder> logger,

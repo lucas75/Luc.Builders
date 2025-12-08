@@ -34,9 +34,9 @@ public class CompileErrorTests
                 using Lwx.Builders.MicroService.Atributtes;
                 namespace TestApp.Endpoints;
 
-                [LwxEndpoint(Uri = "GET /hello", Summary = "hello", Publish = LwxStage.All)]
                 public static partial class BadName
                 {
+                    [LwxEndpoint(Uri = "GET /hello", Summary = "hello", Publish = LwxStage.All)]
                     public static Task<string> Execute() => Task.FromResult("hello");
                 }
                 """,
@@ -47,9 +47,9 @@ public class CompileErrorTests
                 using Lwx.Builders.MicroService.Atributtes;
                 namespace TestApp.NotEndpoints;
 
-                [LwxEndpoint(Uri = "GET /wrong", Summary = "wrong", Publish = LwxStage.All)]
                 public static partial class EndpointWrong
                 {
+                    [LwxEndpoint(Uri = "GET /wrong", Summary = "wrong", Publish = LwxStage.All)]
                     public static Task<string> Execute() => Task.FromResult("wrong");
                 }
                 """,
@@ -60,9 +60,9 @@ public class CompileErrorTests
                 using Lwx.Builders.MicroService.Atributtes;
                 namespace TestApp.Deep.Nested.Endpoints;
 
-                [LwxEndpoint(Uri = "GET /deep", Summary = "deep", Publish = LwxStage.All)]
                 public static partial class EndpointDeep
                 {
+                    [LwxEndpoint(Uri = "GET /deep", Summary = "deep", Publish = LwxStage.All)]
                     public static Task<string> Execute() => Task.FromResult("deep");
                 }
                 """,

@@ -12,9 +12,9 @@ namespace Lwx.Builders.MicroService.Atributtes
     /// <para>The endpoint class must contain an <c>Execute</c> method that will be mapped to the specified URI.</para>
     /// <para>Example usage:</para>
     /// <code>
-    /// [LwxEndpoint("GET /api/users")]
     /// public static class GetUsersEndpoint
     /// {
+    ///     [LwxEndpoint("GET /api/users")]
     ///     public static async Task Execute(HttpContext context)
     ///     {
     ///         // Endpoint implementation
@@ -22,7 +22,7 @@ namespace Lwx.Builders.MicroService.Atributtes
     /// }
     /// </code>
     /// </remarks>
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     public class LwxEndpointAttribute : Attribute
     {
         /// <summary>

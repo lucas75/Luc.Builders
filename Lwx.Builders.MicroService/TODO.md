@@ -2,24 +2,50 @@
 
 ## Pending Features
 
-### Method-Level Attributes
-
-Consider moving attributes from class level to method level for more flexibility:
-
-```csharp
-public partial class OrderEndpoints
-{
-    [LwxEndpoint(Uri = "GET /orders/{id}")]
-    public static Task<OrderDto> GetOrder([FromRoute] int id) { }
-
-    [LwxEndpoint(Uri = "POST /orders")]
-    public static Task<OrderDto> CreateOrder([FromBody] CreateOrderDto dto) { }
-}
-```
+(None at this time)
 
 ---
 
 # CHANGELOG
+
+## ✅ Completed: Method-Level Attributes (January 2025)
+
+Moved all endpoint attributes from class level to method level for cleaner declaration.
+
+### Breaking Change
+- `[LwxEndpoint]` now goes on the `Execute` method, not the class
+- `[LwxMessageEndpoint]` now goes on the `Execute` method, not the class
+- `[LwxTimer]` now goes on the `Execute` method, not the class
+
+### New Diagnostics
+- `LWX070` - `[LwxEndpoint]` attribute must be placed on the Execute method
+- `LWX071` - Endpoint attribute not on method named Execute
+- `LWX072` - `[LwxMessageEndpoint]` attribute must be placed on the Execute method
+- `LWX073` - Message endpoint attribute not on method named Execute
+- `LWX074` - `[LwxTimer]` attribute must be placed on the Execute method
+- `LWX075` - Timer attribute not on method named Execute
+
+### Migration Example
+
+Before:
+```csharp
+[LwxEndpoint(Uri = "GET /hello")]
+public static partial class EndpointHello
+{
+    public static Task<string> Execute() => Task.FromResult("Hello");
+}
+```
+
+After:
+```csharp
+public static partial class EndpointHello
+{
+    [LwxEndpoint(Uri = "GET /hello")]
+    public static Task<string> Execute() => Task.FromResult("Hello");
+}
+```
+
+---
 
 ## ✅ Completed: LwxTimer Mechanism (January 2025)
 
@@ -52,9 +78,9 @@ Implemented timer-triggered endpoints with both interval-based and cron-based sc
 
 ```csharp
 // Interval-based timer - every 30 seconds
-[LwxTimer(IntervalSeconds = 30, Summary = "Cleanup timer")]
 public static partial class EndpointTimerCleanup
 {
+    [LwxTimer(IntervalSeconds = 30, Summary = "Cleanup timer")]
     public static void Execute()
     {
         Console.WriteLine("Timer executed!");
@@ -62,9 +88,9 @@ public static partial class EndpointTimerCleanup
 }
 
 // Cron-based timer - every 5 minutes
-[LwxTimer(CronExpression = "0 */5 * * * *", RunOnStartup = true)]
 public static partial class EndpointTimerHealthCheck
 {
+    [LwxTimer(CronExpression = "0 */5 * * * *", RunOnStartup = true)]
     public static async Task Execute(ILogger<EndpointTimerHealthCheck> logger, CancellationToken ct)
     {
         logger.LogInformation("Health check at {Time}", DateTimeOffset.Now);

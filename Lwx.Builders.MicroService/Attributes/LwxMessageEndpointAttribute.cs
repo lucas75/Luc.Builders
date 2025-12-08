@@ -13,21 +13,21 @@ namespace Lwx.Builders.MicroService.Atributtes
     /// <see cref="ILwxQueueMessage"/> parameter plus any DI-injected dependencies.</para>
     /// <para>Example usage:</para>
     /// <code>
-    /// [LwxMessageEndpoint(
-    ///     Uri = "POST /receive-order",
-    ///     QueueStage = LwxStage.All,
-    ///     UriStage = LwxStage.DevelopmentOnly,
-    ///     QueueProvider = typeof(MyQueueProvider),
-    ///     QueueConfigSection = "MyQueue",
-    ///     QueueReaders = 2
-    /// )]
     /// public partial class EndpointMsgReceiveOrder
     /// {
+    ///     [LwxMessageEndpoint(
+    ///         Uri = "POST /receive-order",
+    ///         QueueStage = LwxStage.All,
+    ///         UriStage = LwxStage.DevelopmentOnly,
+    ///         QueueProvider = typeof(MyQueueProvider),
+    ///         QueueConfigSection = "MyQueue",
+    ///         QueueReaders = 2
+    ///     )]
     ///     public static Task Execute(ILwxQueueMessage msg, TheWorker worker, IConfiguration config) { /* ... */ }
     /// }
     /// </code>
     /// </remarks>
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     public class LwxMessageEndpointAttribute : Attribute
     {
         /// <summary>

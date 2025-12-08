@@ -3,11 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ExampleOrg.Product.ServiceAbc.Endpoints.ExampleProc;
 
-[LwxEndpoint(
-    Uri = "GET /example-proc/finish"
-)]
 public partial class EndpointExampleProcFinish
 {
+    [LwxEndpoint(
+        Uri = "GET /example-proc/finish"
+    )]
     public static async Task Execute(HttpContext context, [FromQuery] string procId)
     {
         // Simulate finishing the process

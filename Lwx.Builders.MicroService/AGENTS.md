@@ -14,6 +14,21 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
 
 ## Recent Development History
 
+### Method-Level Attributes (January 2025)
+- **BREAKING CHANGE**: Moved all endpoint attributes from class level to method level
+- `[LwxEndpoint]`, `[LwxMessageEndpoint]`, and `[LwxTimer]` now go on the `Execute` method, not the class
+- Processors updated to use `_containingType` field for class-based validation
+- Attribute target changed from `AttributeTargets.Class` to `AttributeTargets.Method`
+- New diagnostics: LWX070-LWX075 for attribute placement validation
+  - LWX070: `[LwxEndpoint]` must be on Execute method
+  - LWX071: Endpoint attribute not on method named Execute
+  - LWX072: `[LwxMessageEndpoint]` must be on Execute method
+  - LWX073: Message endpoint attribute not on method named Execute
+  - LWX074: `[LwxTimer]` must be on Execute method
+  - LWX075: Timer attribute not on method named Execute
+- Generator.cs LWX018 updated to check for method-level attributes
+- All example and test files updated to use new syntax
+
 ### LwxTimer Mechanism (January 2025)
 - Implemented timer-triggered endpoints with both interval-based and cron-based scheduling
 - New `[LwxTimer]` attribute with properties: CronExpression, IntervalSeconds, Stage, RunOnStartup, Summary, Description, NamingExceptionJustification

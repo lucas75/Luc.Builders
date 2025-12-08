@@ -13,13 +13,51 @@ internal class LwxTimerTypeProcessor(
     AttributeInstance attr
 )
 {
+    private INamedTypeSymbol? _containingType;
+
     public void Execute()
     {
-        // Enforce file path and namespace matching
-        ProcessorUtils.ValidateFilePathMatchesNamespace(attr.TargetSymbol, ctx);
+        // The attribute is now on the Execute method, get the containing class
+        if (attr.TargetSymbol is not IMethodSymbol methodSymbol)
+        {
+            ctx.ReportDiagnostic(Diagnostic.Create(
+                new DiagnosticDescriptor(
+                    "LWX074",
+                    "LwxTimer must be on method",
+                    "[LwxTimer] attribute must be placed on the Execute method, not on a class.",
+                    "Usage",
+                    DiagnosticSeverity.Error,
+                    isEnabledByDefault: true),
+                attr.Location));
+            return;
+        }
 
-        var name = ProcessorUtils.SafeIdentifier(attr.TargetSymbol.Name);
-        var ns = attr.TargetSymbol.ContainingNamespace?.ToDisplayString() ?? "Generated";
+        // Validate method is named Execute
+        if (methodSymbol.Name != "Execute")
+        {
+            ctx.ReportDiagnostic(Diagnostic.Create(
+                new DiagnosticDescriptor(
+                    "LWX075",
+                    "LwxTimer must be on Execute method",
+                    "[LwxTimer] attribute must be placed on a method named 'Execute'. Found: '{0}'",
+                    "Usage",
+                    DiagnosticSeverity.Error,
+                    isEnabledByDefault: true),
+                attr.Location, methodSymbol.Name));
+            return;
+        }
+
+        _containingType = methodSymbol.ContainingType;
+        if (_containingType == null)
+        {
+            return;
+        }
+
+        // Enforce file path and namespace matching
+        ProcessorUtils.ValidateFilePathMatchesNamespace(_containingType, ctx);
+
+        var name = ProcessorUtils.SafeIdentifier(_containingType.Name);
+        var ns = _containingType.ContainingNamespace?.ToDisplayString() ?? "Generated";
 
         // Extract attribute properties
         var (cronExpression, intervalSeconds, stageLiteral, runOnStartup, summary, description, namingException) 
@@ -46,10 +84,10 @@ internal class LwxTimerTypeProcessor(
         // Register with service - use interval or cron for schedule display
         var servicePrefix = Generator.ComputeServicePrefix(ns);
         var reg = parent.GetOrCreateRegistration(servicePrefix);
-        reg.TimerNames.Add(ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation));
+        reg.TimerNames.Add(ProcessorUtils.ExtractRelativeTypeName(_containingType!, compilation));
         var scheduleDisplay = intervalSeconds > 0 ? $"every {intervalSeconds}s" : (cronExpression ?? "0 0 * * * *");
         reg.TimerInfos.Add((
-            ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation),
+            ProcessorUtils.ExtractRelativeTypeName(_containingType!, compilation),
             scheduleDisplay
         ));
     }
@@ -154,7 +192,7 @@ internal class LwxTimerTypeProcessor(
                     "Naming",
                     DiagnosticSeverity.Error,
                     isEnabledByDefault: true),
-                attr.Location, attr.TargetSymbol.Name));
+                attr.Location, name));
             return false;
         }
 
@@ -187,10 +225,10 @@ internal class LwxTimerTypeProcessor(
         var hasCancellationToken = false;
         var returnsTask = false;
         
-        if (attr.TargetSymbol is not INamedTypeSymbol typeSymbol)
+        if (_containingType == null)
             return (result, hasCancellationToken, returnsTask);
 
-        var executeMethods = typeSymbol.GetMembers("Execute")
+        var executeMethods = _containingType.GetMembers("Execute")
             .OfType<IMethodSymbol>()
             .Where(m => m.IsStatic)
             .ToList();

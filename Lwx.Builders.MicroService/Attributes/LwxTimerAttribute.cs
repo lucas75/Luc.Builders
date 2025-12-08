@@ -12,13 +12,13 @@ namespace Lwx.Builders.MicroService.Atributtes;
 /// called according to the cron schedule. DI parameters are supported.</para>
 /// <para>Example usage:</para>
 /// <code>
-/// [LwxTimer(
-///     CronExpression = "0 */5 * * * *",   // Every 5 minutes
-///     Stage = LwxStage.All,
-///     Summary = "Cleanup timer"
-/// )]
 /// public partial class EndpointTimerCleanup
 /// {
+///     [LwxTimer(
+///         CronExpression = "0 */5 * * * *",   // Every 5 minutes
+///         Stage = LwxStage.All,
+///         Summary = "Cleanup timer"
+///     )]
 ///     public static async Task Execute(ILogger&lt;EndpointTimerCleanup&gt; logger)
 ///     {
 ///         logger.LogInformation("Timer executed at {Time}", DateTimeOffset.Now);
@@ -26,7 +26,7 @@ namespace Lwx.Builders.MicroService.Atributtes;
 /// }
 /// </code>
 /// </remarks>
-[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
 public class LwxTimerAttribute : Attribute
 {
     /// <summary>

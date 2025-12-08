@@ -50,16 +50,16 @@ public class MessageEndpointTests
                 using Lwx.Builders.MicroService.Atributtes;
                 namespace TestApp.Endpoints;
 
-                [LwxMessageEndpoint(
-                    Uri = "POST /receive-order",
-                    QueueStage = LwxStage.All,
-                    UriStage = LwxStage.DevelopmentOnly,
-                    QueueProvider = typeof(ExampleQueueProvider),
-                    QueueConfigSection = "OrderQueue",
-                    QueueReaders = 4
-                )]
                 public partial class EndpointMsgReceiveOrder
                 {
+                    [LwxMessageEndpoint(
+                        Uri = "POST /receive-order",
+                        QueueStage = LwxStage.All,
+                        UriStage = LwxStage.DevelopmentOnly,
+                        QueueProvider = typeof(ExampleQueueProvider),
+                        QueueConfigSection = "OrderQueue",
+                        QueueReaders = 4
+                    )]
                     public static Task Execute(ILwxQueueMessage msg) => Task.CompletedTask;
                 }
                 """
@@ -111,13 +111,13 @@ public class MessageEndpointTests
                 using Lwx.Builders.MicroService.Atributtes;
                 namespace TestApp.Endpoints;
 
-                [LwxMessageEndpoint(
-                    Uri = "POST /test",
-                    QueueStage = LwxStage.All,
-                    QueueConfigSection = "TestQueue"
-                )]
                 public partial class EndpointMsgTest
                 {
+                    [LwxMessageEndpoint(
+                        Uri = "POST /test",
+                        QueueStage = LwxStage.All,
+                        QueueConfigSection = "TestQueue"
+                    )]
                     public static Task Execute(ILwxQueueMessage msg) => Task.CompletedTask;
                 }
                 """
@@ -171,15 +171,15 @@ public class MessageEndpointTests
                 using Lwx.Builders.MicroService.Atributtes;
                 namespace TestApp.Endpoints;
 
-                [LwxMessageEndpoint(
-                    Uri = "POST /test",
-                    QueueStage = LwxStage.All,
-                    QueueProvider = typeof(ExampleQueueProvider),
-                    QueueConfigSection = "TestQueue",
-                    HandlerErrorPolicy = typeof(NotAnErrorPolicy)
-                )]
                 public partial class EndpointMsgTest
                 {
+                    [LwxMessageEndpoint(
+                        Uri = "POST /test",
+                        QueueStage = LwxStage.All,
+                        QueueProvider = typeof(ExampleQueueProvider),
+                        QueueConfigSection = "TestQueue",
+                        HandlerErrorPolicy = typeof(NotAnErrorPolicy)
+                    )]
                     public static Task Execute(ILwxQueueMessage msg) => Task.CompletedTask;
                 }
                 """
@@ -233,15 +233,15 @@ public class MessageEndpointTests
                 using Lwx.Builders.MicroService.Atributtes;
                 namespace TestApp.Endpoints;
 
-                [LwxMessageEndpoint(
-                    Uri = "POST /test",
-                    QueueStage = LwxStage.All,
-                    QueueProvider = typeof(ExampleQueueProvider),
-                    QueueConfigSection = "TestQueue",
-                    ProviderErrorPolicy = typeof(NotAProviderErrorPolicy)
-                )]
                 public partial class EndpointMsgTest
                 {
+                    [LwxMessageEndpoint(
+                        Uri = "POST /test",
+                        QueueStage = LwxStage.All,
+                        QueueProvider = typeof(ExampleQueueProvider),
+                        QueueConfigSection = "TestQueue",
+                        ProviderErrorPolicy = typeof(NotAProviderErrorPolicy)
+                    )]
                     public static Task Execute(ILwxQueueMessage msg) => Task.CompletedTask;
                 }
                 """
@@ -293,14 +293,14 @@ public class MessageEndpointTests
                 using Lwx.Builders.MicroService.Atributtes;
                 namespace TestApp.Endpoints;
 
-                [LwxMessageEndpoint(
-                    Uri = "POST /test",
-                    QueueStage = LwxStage.All,
-                    QueueProvider = typeof(ExampleQueueProvider),
-                    QueueConfigSection = "TestQueue"
-                )]
                 public partial class WronglyNamedEndpoint
                 {
+                    [LwxMessageEndpoint(
+                        Uri = "POST /test",
+                        QueueStage = LwxStage.All,
+                        QueueProvider = typeof(ExampleQueueProvider),
+                        QueueConfigSection = "TestQueue"
+                    )]
                     public static Task Execute(ILwxQueueMessage msg) => Task.CompletedTask;
                 }
                 """
@@ -353,14 +353,14 @@ public class MessageEndpointTests
                 using TestApp.Endpoints;
                 namespace TestApp.WrongPlace;
 
-                [LwxMessageEndpoint(
-                    Uri = "POST /test",
-                    QueueStage = LwxStage.All,
-                    QueueProvider = typeof(ExampleQueueProvider),
-                    QueueConfigSection = "TestQueue"
-                )]
                 public partial class EndpointMsgTest
                 {
+                    [LwxMessageEndpoint(
+                        Uri = "POST /test",
+                        QueueStage = LwxStage.All,
+                        QueueProvider = typeof(ExampleQueueProvider),
+                        QueueConfigSection = "TestQueue"
+                    )]
                     public static Task Execute(ILwxQueueMessage msg) => Task.CompletedTask;
                 }
                 """
@@ -414,15 +414,15 @@ public class MessageEndpointTests
                 using Lwx.Builders.MicroService.Atributtes;
                 namespace TestApp.Endpoints;
 
-                [LwxMessageEndpoint(
-                    Uri = "POST /receive-order",
-                    QueueStage = LwxStage.All,
-                    UriStage = LwxStage.DevelopmentOnly,
-                    QueueProvider = typeof(ExampleQueueProvider),
-                    QueueConfigSection = "OrderQueue"
-                )]
                 public partial class EndpointMsgReceiveOrder
                 {
+                    [LwxMessageEndpoint(
+                        Uri = "POST /receive-order",
+                        QueueStage = LwxStage.All,
+                        UriStage = LwxStage.DevelopmentOnly,
+                        QueueProvider = typeof(ExampleQueueProvider),
+                        QueueConfigSection = "OrderQueue"
+                    )]
                     public static Task Execute(ILwxQueueMessage msg, ILogger<EndpointMsgReceiveOrder> logger, IConfiguration config) => Task.CompletedTask;
                 }
                 """
@@ -485,15 +485,15 @@ public class MessageEndpointTests
                 using Lwx.Builders.MicroService.Atributtes;
                 namespace TestApp.Endpoints;
 
-                [LwxMessageEndpoint(
-                    Uri = "POST /receive-order",
-                    QueueStage = LwxStage.All,
-                    UriStage = LwxStage.DevelopmentOnly,
-                    QueueProvider = typeof(ExampleQueueProvider),
-                    QueueConfigSection = "OrderQueue"
-                )]
                 public partial class EndpointMsgReceiveOrder
                 {
+                    [LwxMessageEndpoint(
+                        Uri = "POST /receive-order",
+                        QueueStage = LwxStage.All,
+                        UriStage = LwxStage.DevelopmentOnly,
+                        QueueProvider = typeof(ExampleQueueProvider),
+                        QueueConfigSection = "OrderQueue"
+                    )]
                     public static Task Execute(ILwxQueueMessage msg) => Task.CompletedTask;
                 }
                 """

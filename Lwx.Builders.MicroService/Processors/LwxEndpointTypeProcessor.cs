@@ -14,13 +14,51 @@ internal class LwxEndpointTypeProcessor(
     AttributeInstance attr
 )
 {
+    private INamedTypeSymbol? _containingType;
+
     public void Execute()
     {
-        // enforce file path and namespace matching for classes marked with Lwx attributes
-        ProcessorUtils.ValidateFilePathMatchesNamespace(attr.TargetSymbol, ctx);
+        // The attribute is now on the Execute method, get the containing class
+        if (attr.TargetSymbol is not IMethodSymbol methodSymbol)
+        {
+            ctx.ReportDiagnostic(Diagnostic.Create(
+                new DiagnosticDescriptor(
+                    "LWX070",
+                    "LwxEndpoint must be on method",
+                    "[LwxEndpoint] attribute must be placed on the Execute method, not on a class.",
+                    "Usage",
+                    DiagnosticSeverity.Error,
+                    isEnabledByDefault: true),
+                attr.Location));
+            return;
+        }
 
-        var name = ProcessorUtils.SafeIdentifier(attr.TargetSymbol.Name);
-        var ns = attr.TargetSymbol.ContainingNamespace?.ToDisplayString() ?? "Generated";
+        // Validate method is named Execute
+        if (methodSymbol.Name != "Execute")
+        {
+            ctx.ReportDiagnostic(Diagnostic.Create(
+                new DiagnosticDescriptor(
+                    "LWX071",
+                    "LwxEndpoint must be on Execute method",
+                    "[LwxEndpoint] attribute must be placed on a method named 'Execute'. Found: '{0}'",
+                    "Usage",
+                    DiagnosticSeverity.Error,
+                    isEnabledByDefault: true),
+                attr.Location, methodSymbol.Name));
+            return;
+        }
+
+        _containingType = methodSymbol.ContainingType;
+        if (_containingType == null)
+        {
+            return;
+        }
+
+        // enforce file path and namespace matching for classes marked with Lwx attributes
+        ProcessorUtils.ValidateFilePathMatchesNamespace(_containingType, ctx);
+
+        var name = ProcessorUtils.SafeIdentifier(_containingType.Name);
+        var ns = _containingType.ContainingNamespace?.ToDisplayString() ?? "Generated";
 
         var uriArg = ExtractUriArgument();
 
@@ -38,7 +76,7 @@ internal class LwxEndpointTypeProcessor(
         // Register endpoint type with its service registration based on namespace
         var servicePrefix = Generator.ComputeServicePrefix(ns);
         var reg = parent.GetOrCreateRegistration(servicePrefix);
-        reg.EndpointNames.Add(ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation));
+        reg.EndpointNames.Add(ProcessorUtils.ExtractRelativeTypeName(_containingType!, compilation));
     }
 
     private string? ExtractUriArgument()
@@ -115,7 +153,7 @@ internal class LwxEndpointTypeProcessor(
             expectedPrefix + suffix
         };
 
-        if (!acceptableNames.Contains(attr.TargetSymbol.Name, StringComparer.Ordinal))
+        if (!acceptableNames.Contains(name, StringComparer.Ordinal))
         {
             // Check for a naming exception provided by the user on the attribute
             string? namingException = null;
@@ -144,7 +182,7 @@ internal class LwxEndpointTypeProcessor(
                     DiagnosticSeverity.Error,
                     isEnabledByDefault: true),
                 attr.Location,
-                    attr.TargetSymbol.Name,
+                    name,
                     string.Join(" or ", acceptableNames),
                 uriArg));
             return false;
@@ -218,7 +256,7 @@ internal class LwxEndpointTypeProcessor(
             endpointClassName = sb.ToString();
         }
 
-        endpointClassName ??= $"Endpoint{ProcessorUtils.SafeIdentifier(attr.TargetSymbol.Name)}";
+        endpointClassName ??= $"Endpoint{ProcessorUtils.SafeIdentifier(name)}";
 
         return (rootNs, endpointClassName, optionalFirstSegment);
     }
@@ -302,7 +340,7 @@ internal class LwxEndpointTypeProcessor(
         };
 
         // Only use the first path segment as a nested namespace if the target symbol namespace actually has this segment.
-        var targetNs = attr.TargetSymbol.ContainingNamespace?.ToDisplayString() ?? string.Empty;
+        var targetNs = _containingType?.ContainingNamespace?.ToDisplayString() ?? string.Empty;
         var nestedNs = !string.IsNullOrEmpty(optionalFirstSegment) && targetNs.IndexOf($".Endpoints.{optionalFirstSegment}", StringComparison.OrdinalIgnoreCase) >= 0
             ? optionalFirstSegment : null;
 
@@ -395,6 +433,6 @@ internal class LwxEndpointTypeProcessor(
         // Register endpoint metadata on the service registration for listing and diagnostics
         var servicePrefix = Generator.ComputeServicePrefix(ns);
         var reg = parent.GetOrCreateRegistration(servicePrefix);
-        reg.EndpointInfos.Add((ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation), httpVerb, pathPart));
+        reg.EndpointInfos.Add((ProcessorUtils.ExtractRelativeTypeName(_containingType!, compilation), httpVerb, pathPart));
     }
 }
