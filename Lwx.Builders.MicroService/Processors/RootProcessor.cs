@@ -25,20 +25,8 @@ internal sealed class RootProcessor
                 new LwxWorkerTypeProcessor(parent, compilation, ctx, attr).Execute();
                 break;
 
-            case LwxConstants.LwxServiceBusConsumer:
-                new LwxServiceBusConsumerTypeProcessor(parent, compilation, ctx, attr).Execute();
-                break;
-
-            case LwxConstants.LwxEventHubConsumer:
-                new LwxEventHubConsumerTypeProcessor(parent, compilation, ctx, attr).Execute();
-                break;
-
             case LwxConstants.LwxTimer:
                 new LwxTimerTypeProcessor(parent, compilation, ctx, attr).Execute();
-                break;
-
-            case LwxConstants.LwxServiceBusProducer:
-                new LwxServiceBusProducerTypeProcessor(parent, compilation, ctx, attr).Execute();
                 break;
 
             case LwxConstants.LwxService:

@@ -73,10 +73,7 @@ public class Generator : IIncrementalGenerator
         {
             new Processors.LwxEndpointPostInitializationProcessor(this, ctx).Execute();
             new Processors.LwxWorkerPostInitializationProcessor(this, ctx).Execute();
-            new Processors.LwxServiceBusConsumerPostInitializationProcessor(this, ctx).Execute();
-            new Processors.LwxEventHubConsumerPostInitializationProcessor(this, ctx).Execute();
             new Processors.LwxTimerPostInitializationProcessor(this, ctx).Execute();
-            new Processors.LwxServiceBusProducerPostInitializationProcessor(this, ctx).Execute();
             new Processors.LwxEndpointMetadataPostInitializationProcessor(this, ctx).Execute();
             new Processors.LwxEndpointExtensionsPostInitializationProcessor(this, ctx).Execute();
             new Processors.LwxServicePostInitializationProcessor(this, ctx).Execute();

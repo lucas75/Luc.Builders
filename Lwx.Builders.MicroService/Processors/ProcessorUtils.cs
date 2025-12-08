@@ -15,17 +15,8 @@ internal static class LwxConstants
     public const string LwxWorker = "LwxWorker";
     public const string LwxWorkerAttribute = "LwxWorkerAttribute";
 
-    public const string LwxServiceBusConsumer = "LwxServiceBusConsumer";
-    public const string LwxServiceBusConsumerAttribute = "LwxServiceBusConsumerAttribute";
-
-    public const string LwxEventHubConsumer = "LwxEventHubConsumer";
-    public const string LwxEventHubConsumerAttribute = "LwxEventHubConsumerAttribute";
-
     public const string LwxTimer = "LwxTimer";
     public const string LwxTimerAttribute = "LwxTimerAttribute";
-
-    public const string LwxServiceBusProducer = "LwxServiceBusProducer";
-    public const string LwxServiceBusProducerAttribute = "LwxServiceBusProducerAttribute";
 
     public const string LwxService = "LwxService";
     public const string LwxServiceAttribute = "LwxServiceAttribute";
@@ -40,10 +31,7 @@ internal static class LwxConstants
     public static readonly string[] AttributeNames = [
         LwxEndpoint,
         LwxWorker,
-        LwxServiceBusConsumer,
-        LwxEventHubConsumer,
         LwxTimer,
-        LwxServiceBusProducer,
         LwxService,
         LwxSetting,
         LwxMessageEndpoint

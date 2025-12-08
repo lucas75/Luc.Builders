@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Lwx.Builders.MicroService.Atributtes;
 
-namespace ExampleOrg.Product.ServiceAbc.Endpoints;
+namespace ExampleOrg.Product.ServiceAbc.Services;
 
 /// <summary>
 /// Example in-memory queue provider for testing and development purposes.

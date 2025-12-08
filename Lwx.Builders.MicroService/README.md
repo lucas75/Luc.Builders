@@ -199,6 +199,57 @@ Policy = LwxWorkerPolicy.UnhealthyOnException
 Policy = LwxWorkerPolicy.AlwaysHealthy
 ```
 
+## Message Endpoints
+
+Process messages from queues with optional HTTP endpoints for testing:
+
+```csharp
+// Services/MyQueueProvider.cs - Queue provider implementation
+public class MyQueueProvider : ILwxQueueProvider
+{
+    public string Name => nameof(MyQueueProvider);
+    public void Configure(IConfiguration config, string section) { /* ... */ }
+    public void SetProviderErrorPolicy(ILwxProviderErrorPolicy policy) { /* ... */ }
+    public Task StartAsync(Func<ILwxQueueMessage, CancellationToken, Task> handler, int concurrency, CancellationToken ct) { /* ... */ }
+    public Task StopAsync(CancellationToken ct) { /* ... */ }
+}
+
+// Endpoints/EndpointMsgReceiveOrder.cs - Message endpoint
+[LwxMessageEndpoint(
+    Uri = "POST /receive-order",
+    QueueStage = LwxStage.All,           // Queue consumer runs everywhere
+    UriStage = LwxStage.DevelopmentOnly, // HTTP endpoint only in dev
+    QueueProvider = typeof(MyQueueProvider),
+    QueueConfigSection = "OrderQueue",
+    QueueReaders = 2
+)]
+public partial class EndpointMsgReceiveOrder
+{
+    public static Task Execute(
+        ILwxQueueMessage msg,
+        ILogger<EndpointMsgReceiveOrder> logger)
+    {
+        logger.LogInformation("Processing message {Id}", msg.MessageId);
+        return msg.CompleteAsync().AsTask();
+    }
+}
+```
+
+### Naming Convention
+
+Message endpoint classes must:
+- Start with `EndpointMsg` prefix (e.g., `EndpointMsgReceiveOrder`)
+- Be in a `.Endpoints` namespace
+- Have a static `Execute` method with `ILwxQueueMessage` parameter
+
+### Stage Configuration
+
+Use separate stages for queue and HTTP:
+- `QueueStage = LwxStage.All` - Queue consumer runs in all environments
+- `QueueStage = LwxStage.DevelopmentOnly` - Queue consumer only in dev
+- `UriStage = LwxStage.DevelopmentOnly` - HTTP endpoint only in dev (for testing)
+- `UriStage = LwxStage.None` - No HTTP endpoint
+
 ## Swagger Configuration
 
 Swagger is configured via `[LwxService]`:
@@ -225,6 +276,9 @@ The generator reports compile-time errors for common issues:
 | LWX018 | Endpoint not in `.Endpoints` namespace |
 | LWX019 | Worker not in `.Workers` namespace |
 | LWX021 | Endpoint has no matching service |
+| LWX040 | Invalid message endpoint class name |
+| LWX042 | Message endpoint not in `.Endpoints` namespace |
+| LWX043 | Missing QueueProvider |
 
 ## Contributing
 

@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Lwx.Builders.MicroService.Atributtes;
 using ExampleOrg.Product.ServiceAbc.Workers;
+using ExampleOrg.Product.ServiceAbc.Services;
 
 namespace ExampleOrg.Product.ServiceAbc.Endpoints;
 
