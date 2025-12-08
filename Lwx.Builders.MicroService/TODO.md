@@ -1,5 +1,27 @@
 # TODO
 
+## Feature Request: Crontab Mechanism
+
+The builder should support a "timer" worker (singleton) that dispatches calls [LwxTimer]
+
+```csharp
+[LwxTimer(
+   CronExpression="* 1 * * *"
+   Stage = LwxStage.All
+)]
+[LwxEndpoint(
+    Uri = "GET /proc001/timer"
+    Stage = LwxStage.None
+)]
+public partial class EndpointProc001Timer
+{
+    public static async Task Execute( ILogger<EndpointProc001Timer> logger )
+    {        
+    }
+}
+```
+
+
 ## Feature Request: MessageProcessor Mechanism
 
 A mechanism to parse messages received from message queues or http endpoints.

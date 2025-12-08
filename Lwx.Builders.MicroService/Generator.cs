@@ -13,10 +13,10 @@ internal sealed class ServiceRegistration
     public string ServiceNamespacePrefix { get; init; } = string.Empty;
     public List<string> EndpointNames { get; } = new();
     public List<string> WorkerNames { get; } = new();
-    public List<string> MessageHandlerNames { get; } = new();
+    public List<string> MessageEndpointNames { get; } = new();
     public List<(string TypeName, string HttpMethod, string? Path)> EndpointInfos { get; } = new();
     public List<(string TypeName, int Threads)> WorkerInfos { get; } = new();
-    public List<(string TypeName, int QueueReaders, string QueueConfigSection, string HttpUri)> MessageHandlerInfos { get; } = new();
+    public List<(string TypeName, int QueueReaders, string QueueConfigSection, string HttpUri)> MessageEndpointInfos { get; } = new();
     public List<Processors.SettingInfo> Settings { get; } = new();
 }
 
@@ -46,11 +46,10 @@ public class Generator : IIncrementalGenerator
     /// Computes the service namespace prefix from an endpoint or worker namespace.
     /// For "Assembly.Abc.Endpoints.Sub" returns "Assembly.Abc".
     /// For "Assembly.Abc.Workers.Sub" returns "Assembly.Abc".
-    /// For "Assembly.Abc.MessageHandlers.Sub" returns "Assembly.Abc".
     /// </summary>
     internal static string ComputeServicePrefix(string ns)
     {
-        // Find .Endpoints, .Workers, or .MessageHandlers segment and return everything before it
+        // Find .Endpoints or .Workers segment and return everything before it
         var endpointsIdx = ns.IndexOf(".Endpoints", StringComparison.Ordinal);
         if (endpointsIdx > 0)
         {
@@ -63,13 +62,7 @@ public class Generator : IIncrementalGenerator
             return ns.Substring(0, workersIdx);
         }
 
-        var messageHandlersIdx = ns.IndexOf(".MessageHandlers", StringComparison.Ordinal);
-        if (messageHandlersIdx > 0)
-        {
-            return ns.Substring(0, messageHandlersIdx);
-        }
-
-        // Fallback: return the namespace as-is (shouldn't happen for valid endpoints/workers/handlers)
+        // Fallback: return the namespace as-is (shouldn't happen for valid endpoints/workers)
         return ns;
     }
 
@@ -88,7 +81,7 @@ public class Generator : IIncrementalGenerator
             new Processors.LwxEndpointExtensionsPostInitializationProcessor(this, ctx).Execute();
             new Processors.LwxServicePostInitializationProcessor(this, ctx).Execute();
             new Processors.LwxSettingPostInitializationProcessor(this, ctx).Execute();
-            new Processors.LwxMessageHandlerPostInitializationProcessor(this, ctx).Execute();
+            new Processors.LwxMessageEndpointPostInitializationProcessor(this, ctx).Execute();
         });
 
         var attrProvider = context.SyntaxProvider
@@ -144,14 +137,24 @@ public class Generator : IIncrementalGenerator
 
                     if (ns.Contains(".Endpoints", StringComparison.Ordinal))
                     {
-                        // Must have LwxEndpoint attribute
-                        var has = sym.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxEndpointAttribute");
-                        if (!has)
+                        // Must have LwxEndpoint or LwxMessageEndpoint attribute
+                        var hasEndpoint = sym.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxEndpointAttribute");
+                        var hasMessageEndpoint = sym.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxMessageEndpointAttribute");
+                        
+                        // Allow helper types that implement queue-related interfaces
+                        var namedSym = sym as INamedTypeSymbol;
+                        var isHelperType = namedSym?.AllInterfaces.Any(i => 
+                            i.Name == "ILwxQueueProvider" || 
+                            i.Name == "ILwxErrorPolicy" || 
+                            i.Name == "ILwxProviderErrorPolicy" ||
+                            i.Name == "ILwxQueueMessage") ?? false;
+                        
+                        if (!hasEndpoint && !hasMessageEndpoint && !isHelperType)
                         {
                             var descriptor = new DiagnosticDescriptor(
                                 "LWX018",
                                 "Class in Endpoints namespace must be annotated",
-                                "Classes declared in namespaces containing '.Endpoints' must be annotated with [LwxEndpoint]. Found: '{0}'",
+                                "Classes declared in namespaces containing '.Endpoints' must be annotated with [LwxEndpoint] or [LwxMessageEndpoint]. Found: '{0}'",
                                 "Usage",
                                 DiagnosticSeverity.Error,
                                 isEnabledByDefault: true);
@@ -179,33 +182,7 @@ public class Generator : IIncrementalGenerator
                         }
                     }
 
-                    if (ns.Contains(".MessageHandlers", StringComparison.Ordinal))
-                    {
-                        var hasMessageHandler = sym.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxMessageHandlerAttribute");
-                        
-                        // Exclude classes that implement helper interfaces for message processing
-                        // These are allowed in the MessageHandlers namespace
-                        var namedSym = sym as INamedTypeSymbol;
-                        var isHelperType = namedSym?.AllInterfaces.Any(i => 
-                            i.Name == "ILwxQueueProvider" || 
-                            i.Name == "ILwxErrorPolicy" || 
-                            i.Name == "ILwxProviderErrorPolicy" ||
-                            i.Name == "ILwxQueueMessage") ?? false;
 
-                        if (!hasMessageHandler && !isHelperType)
-                        {
-                            var descriptor = new DiagnosticDescriptor(
-                                "LWX050",
-                                "Class in MessageHandlers namespace must be annotated",
-                                "Classes declared in namespaces containing '.MessageHandlers' must be annotated with [LwxMessageHandler] or implement a message processing interface. Found: '{0}'",
-                                "Usage",
-                                DiagnosticSeverity.Error,
-                                isEnabledByDefault: true);
-
-                            var loc = cd.Identifier.GetLocation();
-                            spc.ReportDiagnostic(Diagnostic.Create(descriptor, loc, sym.ToDisplayString()));
-                        }
-                    }
                 }
             }
         });
@@ -265,10 +242,10 @@ public class Generator : IIncrementalGenerator
                             {
                                 Processors.LwxServiceTypeProcessor.ReportOrphanWorker(spc, kvp.Key, w.TypeName);
                             }
-                            // Report orphan message handlers
-                            foreach (var mh in kvp.Value.MessageHandlerInfos)
+                            // Report orphan message endpoints
+                            foreach (var mh in kvp.Value.MessageEndpointInfos)
                             {
-                                Processors.LwxServiceTypeProcessor.ReportOrphanMessageHandler(spc, kvp.Key, mh.TypeName);
+                                Processors.LwxServiceTypeProcessor.ReportOrphanMessageEndpoint(spc, kvp.Key, mh.TypeName);
                             }
                         }
                     }

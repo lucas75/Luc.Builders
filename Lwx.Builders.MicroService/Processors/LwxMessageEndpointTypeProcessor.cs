@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 
 namespace Lwx.Builders.MicroService.Processors;
 
-internal class LwxMessageHandlerTypeProcessor(
+internal class LwxMessageEndpointTypeProcessor(
     Generator parent,
     Compilation compilation,
     SourceProductionContext ctx,
@@ -22,12 +22,12 @@ internal class LwxMessageHandlerTypeProcessor(
         var ns = attr.TargetSymbol.ContainingNamespace?.ToDisplayString() ?? "Generated";
 
         // Extract attribute properties
-        var (uriArg, stageLiteral, queueProviderTypeName, queueConfigSection, queueReaders, 
+        var (uriArg, queueStageLiteral, uriStageLiteral, queueProviderTypeName, queueConfigSection, queueReaders, 
              handlerErrorPolicyTypeName, providerErrorPolicyTypeName, summary, description, namingException) 
             = ExtractAttributeMetadata();
 
-        // Validate naming convention
-        if (!ValidateHandlerNaming(uriArg, name, ns, namingException))
+        // Validate naming convention - must start with EndpointMsg
+        if (!ValidateEndpointNaming(uriArg, name, ns, namingException))
         {
             return;
         }
@@ -44,22 +44,25 @@ internal class LwxMessageHandlerTypeProcessor(
             return;
         }
 
-        // Validate namespace is under MessageHandlers
+        // Validate namespace is under Endpoints
         if (!ValidateNamespace(ns))
         {
             return;
         }
 
+        // Analyze the Execute method parameters for DI
+        var executeParams = AnalyzeExecuteMethod();
+
         // Generate the hosted service and Configure method
-        GenerateSourceFiles(name, ns, uriArg, stageLiteral, queueProviderTypeName, queueConfigSection, 
+        GenerateSourceFiles(name, ns, uriArg, queueStageLiteral, uriStageLiteral, queueProviderTypeName, queueConfigSection, 
                            queueReaders, handlerErrorPolicyTypeName, providerErrorPolicyTypeName, 
-                           summary, description, namingException);
+                           summary, description, namingException, executeParams);
 
         // Register with service
         var servicePrefix = Generator.ComputeServicePrefix(ns);
         var reg = parent.GetOrCreateRegistration(servicePrefix);
-        reg.MessageHandlerNames.Add(ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation));
-        reg.MessageHandlerInfos.Add((
+        reg.MessageEndpointNames.Add(ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation));
+        reg.MessageEndpointInfos.Add((
             ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation),
             queueReaders,
             queueConfigSection ?? string.Empty,
@@ -67,12 +70,13 @@ internal class LwxMessageHandlerTypeProcessor(
         ));
     }
 
-    private (string? uri, string stageLiteral, string? queueProviderTypeName, string? queueConfigSection, 
+    private (string? uri, string queueStageLiteral, string uriStageLiteral, string? queueProviderTypeName, string? queueConfigSection, 
              int queueReaders, string? handlerErrorPolicyTypeName, string? providerErrorPolicyTypeName,
              string? summary, string? description, string? namingException) ExtractAttributeMetadata()
     {
         string? uri = null;
-        string stageLiteral = "Lwx.Builders.MicroService.Atributtes.LwxStage.None";
+        string queueStageLiteral = "Lwx.Builders.MicroService.Atributtes.LwxStage.None";
+        string uriStageLiteral = "Lwx.Builders.MicroService.Atributtes.LwxStage.DevelopmentOnly";
         string? queueProviderTypeName = null;
         string? queueConfigSection = null;
         int queueReaders = 2;
@@ -83,7 +87,7 @@ internal class LwxMessageHandlerTypeProcessor(
         string? namingException = null;
 
         if (attr.AttributeData == null) 
-            return (uri, stageLiteral, queueProviderTypeName, queueConfigSection, queueReaders,
+            return (uri, queueStageLiteral, uriStageLiteral, queueProviderTypeName, queueConfigSection, queueReaders,
                     handlerErrorPolicyTypeName, providerErrorPolicyTypeName, summary, description, namingException);
 
         var named = attr.AttributeData.ToNamedArgumentMap();
@@ -98,24 +102,16 @@ internal class LwxMessageHandlerTypeProcessor(
             uri = cs;
         }
 
-        // Stage
-        if (named.TryGetValue("Stage", out var stageTc) && stageTc.Value != null)
+        // QueueStage
+        if (named.TryGetValue("QueueStage", out var qstageTc) && qstageTc.Value != null)
         {
-            var raw = stageTc.Value;
-            if (raw is int iv)
-            {
-                stageLiteral = iv switch
-                {
-                    1 => "Lwx.Builders.MicroService.Atributtes.LwxStage.DevelopmentOnly",
-                    2 => "Lwx.Builders.MicroService.Atributtes.LwxStage.All",
-                    _ => "Lwx.Builders.MicroService.Atributtes.LwxStage.None"
-                };
-            }
-            else
-            {
-                var tmp = raw.ToString() ?? "Lwx.Builders.MicroService.Atributtes.LwxStage.None";
-                stageLiteral = tmp.Contains('.') ? tmp : ("Lwx.Builders.MicroService.Atributtes.LwxStage." + tmp);
-            }
+            queueStageLiteral = ParseStageLiteral(qstageTc.Value);
+        }
+
+        // UriStage
+        if (named.TryGetValue("UriStage", out var ustageTc) && ustageTc.Value != null)
+        {
+            uriStageLiteral = ParseStageLiteral(ustageTc.Value);
         }
 
         // QueueProvider
@@ -166,15 +162,32 @@ internal class LwxMessageHandlerTypeProcessor(
             namingException = neVal?.Trim();
         }
 
-        return (uri, stageLiteral, queueProviderTypeName, queueConfigSection, queueReaders,
+        return (uri, queueStageLiteral, uriStageLiteral, queueProviderTypeName, queueConfigSection, queueReaders,
                 handlerErrorPolicyTypeName, providerErrorPolicyTypeName, summary, description, namingException);
     }
 
-    private bool ValidateHandlerNaming(string? uriArg, string name, string ns, string? namingException)
+    private static string ParseStageLiteral(object raw)
     {
-        // Naming convention: MessageHandler{PathSegments} for URI /path/segments
-        // If no URI, just require name starts with "MessageHandler"
-        if (!name.StartsWith("MessageHandler", StringComparison.Ordinal))
+        if (raw is int iv)
+        {
+            return iv switch
+            {
+                1 => "Lwx.Builders.MicroService.Atributtes.LwxStage.DevelopmentOnly",
+                2 => "Lwx.Builders.MicroService.Atributtes.LwxStage.All",
+                _ => "Lwx.Builders.MicroService.Atributtes.LwxStage.None"
+            };
+        }
+        else
+        {
+            var tmp = raw.ToString() ?? "Lwx.Builders.MicroService.Atributtes.LwxStage.None";
+            return tmp.Contains('.') ? tmp : ("Lwx.Builders.MicroService.Atributtes.LwxStage." + tmp);
+        }
+    }
+
+    private bool ValidateEndpointNaming(string? uriArg, string name, string ns, string? namingException)
+    {
+        // Naming convention: EndpointMsg{PathSegments} for URI /path/segments
+        if (!name.StartsWith("EndpointMsg", StringComparison.Ordinal))
         {
             if (!string.IsNullOrEmpty(namingException))
             {
@@ -184,8 +197,8 @@ internal class LwxMessageHandlerTypeProcessor(
             ctx.ReportDiagnostic(Diagnostic.Create(
                 new DiagnosticDescriptor(
                     "LWX040",
-                    "Invalid message handler class name",
-                    "Message handler class '{0}' must start with 'MessageHandler'. Example: MessageHandlerReceiveOrder",
+                    "Invalid message endpoint class name",
+                    "Message endpoint class '{0}' must start with 'EndpointMsg'. Example: EndpointMsgReceiveOrder",
                     "Naming",
                     DiagnosticSeverity.Error,
                     isEnabledByDefault: true),
@@ -213,7 +226,7 @@ internal class LwxMessageHandlerTypeProcessor(
                 }
             }
 
-            var expectedName = "MessageHandler" + string.Join(string.Empty, nameParts);
+            var expectedName = "EndpointMsg" + string.Join(string.Empty, nameParts);
 
             if (!string.Equals(name, expectedName, StringComparison.Ordinal))
             {
@@ -225,8 +238,8 @@ internal class LwxMessageHandlerTypeProcessor(
                 ctx.ReportDiagnostic(Diagnostic.Create(
                     new DiagnosticDescriptor(
                         "LWX041",
-                        "Message handler name does not match URI",
-                        "Message handler class '{0}' does not match expected name '{1}' for URI '{2}'",
+                        "Message endpoint name does not match URI",
+                        "Message endpoint class '{0}' does not match expected name '{1}' for URI '{2}'",
                         "Naming",
                         DiagnosticSeverity.Error,
                         isEnabledByDefault: true),
@@ -240,13 +253,14 @@ internal class LwxMessageHandlerTypeProcessor(
 
     private bool ValidateNamespace(string ns)
     {
-        if (!ns.Contains(".MessageHandlers", StringComparison.Ordinal))
+        // MessageEndpoints should be in .Endpoints namespace (not .MessageHandlers)
+        if (!ns.Contains(".Endpoints", StringComparison.Ordinal))
         {
             ctx.ReportDiagnostic(Diagnostic.Create(
                 new DiagnosticDescriptor(
                     "LWX042",
-                    "Invalid message handler namespace",
-                    "Message handler class must be in a namespace containing '.MessageHandlers'. Found: '{0}'",
+                    "Invalid message endpoint namespace",
+                    "Message endpoint class must be in a namespace containing '.Endpoints'. Found: '{0}'",
                     "Naming",
                     DiagnosticSeverity.Error,
                     isEnabledByDefault: true),
@@ -265,7 +279,7 @@ internal class LwxMessageHandlerTypeProcessor(
                 new DiagnosticDescriptor(
                     "LWX043",
                     "Missing QueueProvider",
-                    "Message handler '{0}' must specify a QueueProvider type that implements ILwxQueueProvider",
+                    "Message endpoint '{0}' must specify a QueueProvider type that implements ILwxQueueProvider",
                     "Configuration",
                     DiagnosticSeverity.Error,
                     isEnabledByDefault: true),
@@ -402,15 +416,47 @@ internal class LwxMessageHandlerTypeProcessor(
         return true;
     }
 
+    private List<(string ParamName, string ParamType, bool IsQueueMessage)> AnalyzeExecuteMethod()
+    {
+        var result = new List<(string ParamName, string ParamType, bool IsQueueMessage)>();
+        
+        if (attr.TargetSymbol is not INamedTypeSymbol typeSymbol)
+            return result;
+
+        var executeMethods = typeSymbol.GetMembers("Execute")
+            .OfType<IMethodSymbol>()
+            .Where(m => m.IsStatic)
+            .ToList();
+
+        if (executeMethods.Count == 0)
+            return result;
+
+        var executeMethod = executeMethods[0];
+        foreach (var param in executeMethod.Parameters)
+        {
+            var paramType = param.Type.ToDisplayString();
+            var isQueueMessage = paramType == "Lwx.Builders.MicroService.Atributtes.ILwxQueueMessage" ||
+                                 param.Type.AllInterfaces.Any(i => i.ToDisplayString() == "Lwx.Builders.MicroService.Atributtes.ILwxQueueMessage") ||
+                                 param.Type.Name == "ILwxQueueMessage";
+            result.Add((param.Name, paramType, isQueueMessage));
+        }
+
+        return result;
+    }
+
     private void GenerateSourceFiles(
-        string name, string ns, string? uriArg, string stageLiteral,
+        string name, string ns, string? uriArg, string queueStageLiteral, string uriStageLiteral,
         string? queueProviderTypeName, string? queueConfigSection, int queueReaders,
         string? handlerErrorPolicyTypeName, string? providerErrorPolicyTypeName,
-        string? summary, string? description, string? namingException)
+        string? summary, string? description, string? namingException,
+        List<(string ParamName, string ParamType, bool IsQueueMessage)> executeParams)
     {
-        var shortStage = stageLiteral.Contains('.')
-            ? string.Join('.', stageLiteral.Split('.').Skip(Math.Max(0, stageLiteral.Split('.').Length - 2)))
-            : stageLiteral;
+        var shortQueueStage = queueStageLiteral.Contains('.')
+            ? string.Join('.', queueStageLiteral.Split('.').Skip(Math.Max(0, queueStageLiteral.Split('.').Length - 2)))
+            : queueStageLiteral;
+        var shortUriStage = uriStageLiteral.Contains('.')
+            ? string.Join('.', uriStageLiteral.Split('.').Skip(Math.Max(0, uriStageLiteral.Split('.').Length - 2)))
+            : uriStageLiteral;
 
         // Default policies
         var effectiveHandlerErrorPolicy = handlerErrorPolicyTypeName ?? "LwxDefaultErrorPolicy";
@@ -426,34 +472,89 @@ internal class LwxMessageHandlerTypeProcessor(
             pathPart = parts.Length > 1 ? parts[1] : (parts.Length > 0 ? parts[0] : string.Empty);
         }
 
-        string configureMethod;
-        if (stageLiteral.EndsWith(".None", StringComparison.Ordinal))
+        // Build DI parameter list for the hosted service
+        var diParams = executeParams.Where(p => !p.IsQueueMessage).ToList();
+        var diParamsDecl = string.Join(", ", diParams.Select(p => $"{p.ParamType} {p.ParamName}"));
+        var diParamsCtorDecl = diParams.Count > 0 
+            ? $", {string.Join(", ", diParams.Select(p => $"{p.ParamType} {p.ParamName}"))}" 
+            : string.Empty;
+        var diParamsFieldAssign = string.Join("\n        ", diParams.Select(p => $"_{p.ParamName} = {p.ParamName};"));
+        var diParamsFieldDecl = string.Join("\n    ", diParams.Select(p => $"private readonly {p.ParamType} _{p.ParamName};"));
+        // For scoped DI in HandlerWrapper - use local variable names (not fields)
+        var diParamsCallArgs = string.Join(", ", executeParams.Select(p => p.IsQueueMessage ? "msg" : p.ParamName));
+
+        // Check if queue stage is active
+        var queueActive = !queueStageLiteral.EndsWith(".None", StringComparison.Ordinal);
+        var uriActive = !uriStageLiteral.EndsWith(".None", StringComparison.Ordinal) && !string.IsNullOrEmpty(pathPart);
+
+        string configureBuilderMethod;
+        string configureAppMethod;
+
+        if (!queueActive && !uriActive)
         {
-            configureMethod = $$"""
+            configureBuilderMethod = $$"""
 public static void Configure(WebApplicationBuilder builder)
 {
-    // Stage={{shortStage}} - Handler is disabled
+    // QueueStage={{shortQueueStage}}, UriStage={{shortUriStage}} - Both disabled
 }
-
+""";
+            configureAppMethod = $$"""
 public static void Configure(WebApplication app)
 {
-    // Stage={{shortStage}} - Handler is disabled
+    // QueueStage={{shortQueueStage}}, UriStage={{shortUriStage}} - Both disabled
 }
 """;
         }
         else
         {
-            var condExpr = stageLiteral.EndsWith(".DevelopmentOnly", StringComparison.Ordinal)
+            var queueCondExpr = queueStageLiteral.EndsWith(".DevelopmentOnly", StringComparison.Ordinal)
                 ? "builder.Environment.IsDevelopment()"
                 : "builder.Environment.IsDevelopment() || builder.Environment.IsProduction()";
 
-            var appCondExpr = stageLiteral.EndsWith(".DevelopmentOnly", StringComparison.Ordinal)
-                ? "app.Environment.IsDevelopment()"
-                : "app.Environment.IsDevelopment() || app.Environment.IsProduction()";
-
-            var httpEndpointCode = string.Empty;
-            if (!string.IsNullOrEmpty(pathPart))
+            var builderBody = new StringBuilder();
+            builderBody.AppendLine($"// QueueStage={shortQueueStage}, UriStage={shortUriStage}");
+            
+            if (queueActive)
             {
+                builderBody.AppendLine($$"""
+if ({{queueCondExpr}})
+{
+    // Register descriptor for health/monitoring
+    builder.Services.AddSingleton(new LwxMessageEndpointDescriptor
+    {
+        Name = "{{GeneratorUtils.EscapeForCSharp(name)}}",
+        Description = "{{GeneratorUtils.EscapeForCSharp(description ?? string.Empty)}}",
+        QueueReaders = {{queueReaders}},
+        QueueConfigSection = "{{GeneratorUtils.EscapeForCSharp(queueConfigSection ?? string.Empty)}}",
+        QueueProviderType = typeof({{queueProviderTypeName}}),
+        HttpUri = {{(string.IsNullOrEmpty(pathPart) ? "null" : $"\"{GeneratorUtils.EscapeForCSharp(pathPart)}\"")}},
+        QueueActive = true,
+        HttpActive = {{(uriActive ? "true" : "false")}}
+    });
+
+    // Register the hosted service that manages the message endpoint
+    builder.Services.AddHostedService<{{name}}HostedService>();
+}
+""");
+            }
+
+            configureBuilderMethod = $$"""
+public static void Configure(WebApplicationBuilder builder)
+{
+{{builderBody.ToString().FixIndent(1, indentFirstLine: false)}}
+}
+""";
+
+            // App configuration for HTTP endpoint
+            var appBody = new StringBuilder();
+            appBody.AppendLine($"// QueueStage={shortQueueStage}, UriStage={shortUriStage}");
+
+            if (uriActive)
+            {
+                var uriCondExpr = uriStageLiteral.EndsWith(".DevelopmentOnly", StringComparison.Ordinal)
+                    ? "app.Environment.IsDevelopment()"
+                    : "app.Environment.IsDevelopment() || app.Environment.IsProduction()";
+
                 var mapMethod = (httpVerb ?? "POST") switch
                 {
                     "GET" => "MapGet",
@@ -463,73 +564,61 @@ public static void Configure(WebApplication app)
                     _ => "MapPost"
                 };
 
-                httpEndpointCode = $$"""
+                // Build HTTP handler with DI parameters
+                var httpDiParams = diParams.Select(p => $"{p.ParamType} {p.ParamName}").ToList();
+                httpDiParams.Insert(0, "HttpContext ctx");
+                var httpParamsList = string.Join(", ", httpDiParams);
+                
+                var httpCallArgs = executeParams.Select(p => p.IsQueueMessage ? "msg" : p.ParamName).ToList();
+                var httpCallArgsList = string.Join(", ", httpCallArgs);
 
-        // Also expose HTTP endpoint for direct message injection
-        var endpoint = app.{{mapMethod}}("{{pathPart}}", async (HttpContext ctx) =>
-        {
-            using var reader = new System.IO.StreamReader(ctx.Request.Body);
-            var body = await reader.ReadToEndAsync();
-            var msg = new LwxHttpQueueMessage(body, ctx.Request.Headers);
-            await Execute(msg);
-            return Results.Ok();
-        });
-        endpoint.WithName("{{name}}");
-        {{(!string.IsNullOrEmpty(summary) ? $"endpoint.WithDisplayName(\"{GeneratorUtils.EscapeForCSharp(summary)}\");" : string.Empty)}}
-""";
+                appBody.AppendLine($$"""
+if ({{uriCondExpr}})
+{
+    // HTTP endpoint for testing/direct message injection
+    var endpoint = app.{{mapMethod}}("{{pathPart}}", async ({{httpParamsList}}) =>
+    {
+        using var reader = new System.IO.StreamReader(ctx.Request.Body);
+        var body = await reader.ReadToEndAsync();
+        var msg = new LwxHttpQueueMessage(body, ctx.Request.Headers);
+        await Execute({{httpCallArgsList}});
+        return Results.Ok();
+    });
+    endpoint.WithName("{{name}}");
+    {{(!string.IsNullOrEmpty(summary) ? $"endpoint.WithDisplayName(\"{GeneratorUtils.EscapeForCSharp(summary)}\");" : string.Empty)}}
+}
+""");
             }
 
-            configureMethod = $$"""
-public static void Configure(WebApplicationBuilder builder)
-{
-    // Stage={{shortStage}}
-    if ({{condExpr}})
-    {
-        // Register descriptor for health/monitoring
-        builder.Services.AddSingleton(new LwxMessageHandlerDescriptor
-        {
-            Name = "{{GeneratorUtils.EscapeForCSharp(name)}}",
-            Description = "{{GeneratorUtils.EscapeForCSharp(description ?? string.Empty)}}",
-            QueueReaders = {{queueReaders}},
-            QueueConfigSection = "{{GeneratorUtils.EscapeForCSharp(queueConfigSection ?? string.Empty)}}",
-            QueueProviderType = typeof({{queueProviderTypeName}}),
-            HttpUri = {{(string.IsNullOrEmpty(pathPart) ? "null" : $"\"{GeneratorUtils.EscapeForCSharp(pathPart)}\"")}}
-        });
-
-        // Register the hosted service that manages the message handler
-        builder.Services.AddHostedService<{{name}}HostedService>();
-    }
-}
-
+            configureAppMethod = $$"""
 public static void Configure(WebApplication app)
 {
-    // Stage={{shortStage}}
-    if ({{appCondExpr}})
-    {{{httpEndpointCode}}
-    }
+{{appBody.ToString().FixIndent(1, indentFirstLine: false)}}
 }
 """;
         }
 
         // Generate the hosted service class
         var hostedServiceClass = string.Empty;
-        if (!stageLiteral.EndsWith(".None", StringComparison.Ordinal))
+        if (queueActive)
         {
             hostedServiceClass = $$"""
 
 /// <summary>
-/// Hosted service that manages the message handler lifecycle.
+/// Hosted service that manages the message endpoint queue consumer lifecycle.
 /// </summary>
 public sealed class {{name}}HostedService : BackgroundService
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<{{name}}HostedService> _logger;
+    private readonly IServiceProvider _serviceProvider;
     private ILwxQueueProvider? _provider;
 
-    public {{name}}HostedService(IConfiguration configuration, ILogger<{{name}}HostedService> logger)
+    public {{name}}HostedService(IConfiguration configuration, ILogger<{{name}}HostedService> logger, IServiceProvider serviceProvider)
     {
         _configuration = configuration;
         _logger = logger;
+        _serviceProvider = serviceProvider;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -542,7 +631,7 @@ public sealed class {{name}}HostedService : BackgroundService
         _provider.SetProviderErrorPolicy(providerErrorPolicy);
 
         _logger.LogInformation(
-            "Starting message handler {Name} with section {Section} and concurrency {Concurrency}",
+            "Starting message endpoint {Name} with section {Section} and concurrency {Concurrency}",
             _provider.Name,
             "{{GeneratorUtils.EscapeForCSharp(queueConfigSection ?? string.Empty)}}",
             {{queueReaders}});
@@ -551,7 +640,9 @@ public sealed class {{name}}HostedService : BackgroundService
         {
             try
             {
-                await {{name}}.Execute(msg);
+                using var scope = _serviceProvider.CreateScope();
+{{GenerateDiResolution(diParams).FixIndent(4)}}
+                await {{name}}.Execute({{diParamsCallArgs}});
                 await msg.CompleteAsync(ct);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
@@ -568,7 +659,7 @@ public sealed class {{name}}HostedService : BackgroundService
     {
         if (_provider != null)
         {
-            _logger.LogInformation("Stopping message handler {Name}", _provider.Name);
+            _logger.LogInformation("Stopping message endpoint {Name}", _provider.Name);
             await _provider.StopAsync(cancellationToken);
         }
         await base.StopAsync(cancellationToken);
@@ -579,7 +670,7 @@ public sealed class {{name}}HostedService : BackgroundService
 
         // Generate helper class for HTTP message wrapping
         var httpMessageClass = string.Empty;
-        if (!string.IsNullOrEmpty(pathPart) && !stageLiteral.EndsWith(".None", StringComparison.Ordinal))
+        if (uriActive)
         {
             httpMessageClass = $$"""
 
@@ -635,7 +726,9 @@ namespace {{ns}};
 
 public partial class {{name}}
 {
-    {{configureMethod.FixIndent(1, indentFirstLine: false)}}
+    {{configureBuilderMethod.FixIndent(1, indentFirstLine: false)}}
+
+    {{configureAppMethod.FixIndent(1, indentFirstLine: false)}}
 }
 {{hostedServiceClass}}
 {{httpMessageClass}}
@@ -643,8 +736,21 @@ public partial class {{name}}
 
         var generatedFileName = !string.IsNullOrEmpty(namingException)
             ? $"{ns}.{name}.g.cs"
-            : $"LwxMessageHandler_{name}.g.cs";
+            : $"LwxMessageEndpoint_{name}.g.cs";
 
         ProcessorUtils.AddGeneratedFile(ctx, generatedFileName, source);
+    }
+
+    private static string GenerateDiResolution(List<(string ParamName, string ParamType, bool IsQueueMessage)> diParams)
+    {
+        if (diParams.Count == 0)
+            return string.Empty;
+
+        var sb = new StringBuilder();
+        foreach (var p in diParams)
+        {
+            sb.AppendLine($"var {p.ParamName} = scope.ServiceProvider.GetRequiredService<{p.ParamType}>();");
+        }
+        return sb.ToString().TrimEnd();
     }
 }

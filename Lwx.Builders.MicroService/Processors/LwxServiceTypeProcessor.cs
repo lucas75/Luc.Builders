@@ -296,16 +296,16 @@ internal class LwxServiceTypeProcessor(
             srcWorkerCalls.Append($"{workerName}.Configure(builder);\n\n");
         }
 
-        var srcMessageHandlerBuilderCalls = new StringBuilder();
-        foreach (var handlerName in reg.MessageHandlerNames)
+        var srcMessageEndpointBuilderCalls = new StringBuilder();
+        foreach (var handlerName in reg.MessageEndpointNames)
         {
-            srcMessageHandlerBuilderCalls.Append($"{handlerName}.Configure(builder);\n\n");
+            srcMessageEndpointBuilderCalls.Append($"{handlerName}.Configure(builder);\n\n");
         }
 
-        var srcMessageHandlerAppCalls = new StringBuilder();
-        foreach (var handlerName in reg.MessageHandlerNames)
+        var srcMessageEndpointAppCalls = new StringBuilder();
+        foreach (var handlerName in reg.MessageEndpointNames)
         {
-            srcMessageHandlerAppCalls.Append($"{handlerName}.Configure(app);\n\n");
+            srcMessageEndpointAppCalls.Append($"{handlerName}.Configure(app);\n\n");
         }
 
         var srcEndpointCalls = new StringBuilder();
@@ -345,18 +345,18 @@ internal class LwxServiceTypeProcessor(
             srcList.Append($"System.Console.WriteLine(\"Worker: {escDisplay} nThreads={w.Threads}\");\n");
         }
 
-        foreach (var mh in reg.MessageHandlerInfos)
+        foreach (var mh in reg.MessageEndpointInfos)
         {
             var displayType = mh.TypeName ?? string.Empty;
             if (!string.IsNullOrEmpty(assemblyRoot) && displayType.StartsWith(assemblyRoot + ".", StringComparison.Ordinal))
             {
                 displayType = displayType.Substring(assemblyRoot.Length + 1);
             }
-            if (displayType.StartsWith("MessageHandlers.", StringComparison.Ordinal)) displayType = displayType.Substring("MessageHandlers.".Length);
+            if (displayType.StartsWith("Endpoints.", StringComparison.Ordinal)) displayType = displayType.Substring("Endpoints.".Length);
             var escDisplay = GeneratorUtils.EscapeForCSharp(displayType);
             var escSection = GeneratorUtils.EscapeForCSharp(mh.QueueConfigSection);
             var escUri = GeneratorUtils.EscapeForCSharp(mh.HttpUri);
-            srcList.Append($"System.Console.WriteLine(\"MessageHandler: {escDisplay} section={escSection} readers={mh.QueueReaders}{(string.IsNullOrEmpty(mh.HttpUri) ? "" : $" http={escUri}")}\");\n");
+            srcList.Append($"System.Console.WriteLine(\"MessageEndpoint: {escDisplay} section={escSection} readers={mh.QueueReaders}{(string.IsNullOrEmpty(mh.HttpUri) ? "" : $" http={escUri}")}\");\n");
         }
 
         var serviceTypeName = ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation);
@@ -379,12 +379,12 @@ internal class LwxServiceTypeProcessor(
 
         var builderSwaggerMethod = "ConfigureSwagger";
         var builderWorkersMethod = "ConfigureWorkers";
-        var builderMessageHandlersMethod = "ConfigureMessageHandlers";
+        var builderMessageEndpointsMethod = "ConfigureMessageEndpoints";
         var builderSettingsMethod = "ConfigureSettings";
         var appSwaggerMethod = "ConfigureSwagger";
         var appHealthzMethod = "ConfigureHealthz";
         var appEndpointsMethod = "ConfigureEndpoints";
-        var appMessageHandlersMethod = "ConfigureMessageHandlers";
+        var appMessageEndpointsMethod = "ConfigureMessageEndpoints";
 
         // Build settings initialization code
         var srcSettingsCalls = new StringBuilder();
@@ -444,7 +444,7 @@ public static partial class Service
         {{builderSettingsMethod}}(builder);
         {{builderSwaggerMethod}}(builder);
         {{builderWorkersMethod}}(builder);
-        {{builderMessageHandlersMethod}}(builder);
+        {{builderMessageEndpointsMethod}}(builder);
 
         // Allow user customization on Service.Configure(WebApplicationBuilder)
         {{(hasBuilderConfigure ? (serviceTypeName + ".Configure(builder);") : string.Empty)}}
@@ -465,7 +465,7 @@ public static partial class Service
         {{appSwaggerMethod}}(app);
         {{appHealthzMethod}}(app);
         {{appEndpointsMethod}}(app);
-        {{appMessageHandlersMethod}}(app);
+        {{appMessageEndpointsMethod}}(app);
 
         // Allow user customization on Service.Configure(WebApplication)
         {{(hasAppConfigure ? (serviceTypeName + ".Configure(app);") : string.Empty)}}
@@ -490,12 +490,12 @@ public static partial class Service
     }
 
     /// <summary>
-    /// Register Lwx message handlers and their hosted services
+    /// Register Lwx message endpoints and their hosted services
     /// </summary>
-    public static void {{builderMessageHandlersMethod}}(WebApplicationBuilder builder)
+    public static void {{builderMessageEndpointsMethod}}(WebApplicationBuilder builder)
     {
-        // Register Lwx message handlers
-        {{srcMessageHandlerBuilderCalls.FixIndent(2, indentFirstLine: false)}}
+        // Register Lwx message endpoints
+        {{srcMessageEndpointBuilderCalls.FixIndent(2, indentFirstLine: false)}}
     }
 
     /// <summary>
@@ -579,12 +579,12 @@ public static partial class Service
     }
 
     /// <summary>
-    /// Configure Lwx message handler HTTP endpoints (if any)
+    /// Configure Lwx message endpoint HTTP endpoints (if any)
     /// </summary>
-    public static void {{appMessageHandlersMethod}}(WebApplication app)
+    public static void {{appMessageEndpointsMethod}}(WebApplication app)
     {
-        // Configure message handler HTTP endpoints
-        {{srcMessageHandlerAppCalls.FixIndent(2, indentFirstLine: false)}}
+        // Configure message endpoint HTTP endpoints
+        {{srcMessageEndpointAppCalls.FixIndent(2, indentFirstLine: false)}}
     }
 }
 """;
@@ -672,20 +672,20 @@ public static partial class Service
     }
 
     /// <summary>
-    /// Report a message handler that has no matching service.
+    /// Report a message endpoint that has no matching service.
     /// </summary>
-    public static void ReportOrphanMessageHandler(SourceProductionContext spc, string expectedServicePrefix, string handlerTypeName)
+    public static void ReportOrphanMessageEndpoint(SourceProductionContext spc, string expectedServicePrefix, string endpointTypeName)
     {
         spc.ReportDiagnostic(Diagnostic.Create(
             new DiagnosticDescriptor(
                 "LWX051",
-                "MessageHandler has no matching Service",
-                "MessageHandler '{0}' requires a [LwxService] in namespace '{1}'. " +
+                "MessageEndpoint has no matching Service",
+                "MessageEndpoint '{0}' requires a [LwxService] in namespace '{1}'. " +
                 "Create a Service.cs file with [LwxService] attribute in that namespace.",
                 "Configuration",
                 DiagnosticSeverity.Error,
                 isEnabledByDefault: true),
-            Location.None, handlerTypeName, expectedServicePrefix));
+            Location.None, endpointTypeName, expectedServicePrefix));
     }
 
     /// <summary>

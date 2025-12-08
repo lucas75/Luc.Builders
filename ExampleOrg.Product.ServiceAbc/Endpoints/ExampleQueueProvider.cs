@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Lwx.Builders.MicroService.Atributtes;
 
-namespace ExampleOrg.Product.ServiceAbc.MessageHandlers;
+namespace ExampleOrg.Product.ServiceAbc.Endpoints;
 
 /// <summary>
 /// Example in-memory queue provider for testing and development purposes.
@@ -58,7 +58,6 @@ public class ExampleQueueProvider : ILwxQueueProvider
                         }
                         catch (Exception ex) when (ex is not OperationCanceledException)
                         {
-                            // Handler errors are managed by the handler wrapper
                             Console.WriteLine($"[{Name}] Handler error for message {msg.MessageId}: {ex.Message}");
                         }
                     }
@@ -80,7 +79,7 @@ public class ExampleQueueProvider : ILwxQueueProvider
             
             _readers.Add(readerTask);
         }
-
+        
         return Task.CompletedTask;
     }
 
@@ -88,48 +87,42 @@ public class ExampleQueueProvider : ILwxQueueProvider
     public async Task StopAsync(CancellationToken ct)
     {
         _channel.Writer.Complete();
-        _cts?.Cancel();
         
-        try
+        if (_cts != null)
         {
-            await Task.WhenAll(_readers);
+            await _cts.CancelAsync();
         }
-        catch (OperationCanceledException)
-        {
-            // Expected
-        }
-        
+
+        await Task.WhenAll(_readers);
         _readers.Clear();
+        
         Console.WriteLine($"[{Name}] Stopped");
     }
 
     /// <summary>
-    /// Enqueue a message for processing (for testing/demo purposes).
+    /// Enqueues a message for processing. Used for testing.
     /// </summary>
-    public async ValueTask EnqueueAsync(string messageId, string payload, CancellationToken ct = default)
+    public async ValueTask EnqueueAsync(ILwxQueueMessage message)
     {
-        var msg = new ExampleQueueMessage(messageId, payload);
-        await _channel.Writer.WriteAsync(msg, ct);
+        await _channel.Writer.WriteAsync(message);
     }
 }
 
 /// <summary>
-/// Example in-memory queue message implementation.
+/// Example queue message implementation for testing.
 /// </summary>
-internal sealed class ExampleQueueMessage : ILwxQueueMessage
+internal class ExampleQueueMessage : ILwxQueueMessage
 {
-    private readonly string _payload;
-
-    public ExampleQueueMessage(string messageId, string payload)
+    public ExampleQueueMessage(string payload, Dictionary<string, string>? headers = null)
     {
-        MessageId = messageId;
-        _payload = payload;
+        MessageId = Guid.NewGuid().ToString("N");
+        Payload = System.Text.Encoding.UTF8.GetBytes(payload);
+        Headers = headers ?? new Dictionary<string, string>();
         EnqueuedAt = DateTimeOffset.UtcNow;
-        Headers = new Dictionary<string, string>();
     }
 
     public string MessageId { get; }
-    public ReadOnlyMemory<byte> Payload => System.Text.Encoding.UTF8.GetBytes(_payload);
+    public ReadOnlyMemory<byte> Payload { get; }
     public IReadOnlyDictionary<string, string> Headers { get; }
     public DateTimeOffset EnqueuedAt { get; }
 

@@ -5,43 +5,49 @@ using System;
 namespace Lwx.Builders.MicroService.Atributtes
 {
     /// <summary>
-    /// Marks a class as a message handler that processes messages from a queue.
-    /// The source generator will create the necessary hosted service registrations
-    /// and wiring for the message handler to receive and process messages.
+    /// Marks an endpoint class as a message endpoint that processes messages from a queue
+    /// and optionally exposes an HTTP endpoint for testing.
     /// </summary>
     /// <remarks>
-    /// <para>The handler class must contain a static <c>Execute</c> method that takes an
-    /// <see cref="ILwxQueueMessage"/> parameter.</para>
+    /// <para>The endpoint class must contain a static <c>Execute</c> method that takes an
+    /// <see cref="ILwxQueueMessage"/> parameter plus any DI-injected dependencies.</para>
     /// <para>Example usage:</para>
     /// <code>
-    /// [LwxMessageHandler(
-    ///     Uri = "POST /receive-message",
-    ///     Stage = LwxStage.All,
+    /// [LwxMessageEndpoint(
+    ///     Uri = "POST /receive-order",
+    ///     QueueStage = LwxStage.All,
+    ///     UriStage = LwxStage.DevelopmentOnly,
     ///     QueueProvider = typeof(MyQueueProvider),
     ///     QueueConfigSection = "MyQueue",
     ///     QueueReaders = 2
     /// )]
-    /// public partial class MessageHandlerReceiveMessage
+    /// public partial class EndpointMsgReceiveOrder
     /// {
-    ///     public static Task Execute(ILwxQueueMessage msg) { /* ... */ }
+    ///     public static Task Execute(ILwxQueueMessage msg, TheWorker worker, IConfiguration config) { /* ... */ }
     /// }
     /// </code>
     /// </remarks>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
-    public class LwxMessageHandlerAttribute : Attribute
+    public class LwxMessageEndpointAttribute : Attribute
     {
         /// <summary>
         /// Gets or sets the URI pattern for the optional HTTP endpoint, including HTTP method.
-        /// Format: "METHOD /path" (e.g., "POST /receive-message").
-        /// When set, messages can also be pushed via HTTP in addition to queue processing.
+        /// Format: "METHOD /path" (e.g., "POST /receive-order").
+        /// When set, messages can also be pushed via HTTP (typically for testing in development).
         /// </summary>
         public string Uri { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the deployment stage(s) where this handler should be active.
-        /// Defaults to <see cref="LwxStage.None"/>, meaning the handler is not active.
+        /// Gets or sets the deployment stage(s) where the queue consumer should be active.
+        /// Defaults to <see cref="LwxStage.None"/>, meaning the queue consumer is not active.
         /// </summary>
-        public LwxStage Stage { get; set; } = LwxStage.None;
+        public LwxStage QueueStage { get; set; } = LwxStage.None;
+
+        /// <summary>
+        /// Gets or sets the deployment stage(s) where the HTTP endpoint should be active.
+        /// Defaults to <see cref="LwxStage.DevelopmentOnly"/>, exposing the HTTP endpoint only in development.
+        /// </summary>
+        public LwxStage UriStage { get; set; } = LwxStage.DevelopmentOnly;
 
         /// <summary>
         /// Gets or sets the type of the queue provider that implements <see cref="ILwxQueueProvider"/>.
@@ -73,33 +79,33 @@ namespace Lwx.Builders.MicroService.Atributtes
         public Type? ProviderErrorPolicy { get; set; }
 
         /// <summary>
-        /// Gets or sets a short summary of the handler's purpose, used for documentation.
+        /// Gets or sets a short summary of the endpoint's purpose, used for documentation.
         /// </summary>
         public string Summary { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets a detailed description of the handler's behavior.
+        /// Gets or sets a detailed description of the endpoint's behavior.
         /// </summary>
         public string Description { get; set; } = string.Empty;
 
         /// <summary>
-        /// Optional: provide a justification when a handler class name does not match the
+        /// Optional: provide a justification when an endpoint class name does not match the
         /// generator's expected naming convention. When present, the generator will accept
         /// the exception and skip the naming diagnostic.
         /// </summary>
         public string NamingExceptionJustification { get; set; } = string.Empty;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="LwxMessageHandlerAttribute"/> class.
+        /// Initializes a new instance of the <see cref="LwxMessageEndpointAttribute"/> class.
         /// </summary>
-        public LwxMessageHandlerAttribute() { }
+        public LwxMessageEndpointAttribute() { }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="LwxMessageHandlerAttribute"/> class
+        /// Initializes a new instance of the <see cref="LwxMessageEndpointAttribute"/> class
         /// with the specified URI.
         /// </summary>
         /// <param name="uri">The URI pattern for the optional HTTP endpoint.</param>
-        public LwxMessageHandlerAttribute(string uri)
+        public LwxMessageEndpointAttribute(string uri)
         {
             Uri = uri;
         }
