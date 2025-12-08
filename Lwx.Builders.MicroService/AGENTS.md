@@ -10,20 +10,38 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
 - **Processors**: Object-oriented design with individual processor classes (e.g., `LwxEndpointTypeProcessor`, `LwxSettingTypeProcessor`) that implement `Execute()` methods
 - **Attributes**: Embedded as resources with LogicalName for proper resource naming
 - **Primary Constructors**: Used throughout for clean parameter handling
-- **Diagnostic System**: Custom error codes (LWX001-LWX035) for compile-time validation
+- **Diagnostic System**: Custom error codes (LWX001-LWX061) for compile-time validation
 
 ## Recent Development History
 
-### MessageHandler Mechanism (January 2025)
+### LwxTimer Mechanism (January 2025)
+- Implemented timer-triggered endpoints with both interval-based and cron-based scheduling
+- New `[LwxTimer]` attribute with properties: CronExpression, IntervalSeconds, Stage, RunOnStartup, Summary, Description, NamingExceptionJustification
+- New processor: `LwxTimerTypeProcessor` generates hosted BackgroundService classes
+- ServiceRegistration updated with TimerNames/TimerInfos for listing
+- Service.ConfigureTimers(builder) method generated for timer wiring
+- Supports void Execute() and Task Execute() methods
+- Supports DI parameters in Execute method (resolved via IServiceProvider.CreateScope())
+- Supports CancellationToken parameter for cooperative cancellation
+- Naming convention: `EndpointTimer{Name}` in `.Endpoints` namespace
+- New diagnostics: LWX060 (invalid timer class name), LWX061 (invalid timer namespace)
+- Generator.cs LWX018 updated to allow `[LwxTimer]` alongside `[LwxEndpoint]` and `[LwxMessageEndpoint]`
+
+### MessageEndpoint Mechanism (January 2025)
+- Renamed from MessageHandler to MessageEndpoint for consistency
 - Implemented complete message queue processing infrastructure with configurable providers and error policies
 - New core interfaces: `ILwxQueueProvider`, `ILwxQueueMessage`, `ILwxErrorPolicy`, `ILwxProviderErrorPolicy`
-- Default policies: `LwxDefaultErrorPolicy` (logs + abandons), `LwxDefaultProviderErrorPolicy` (logs only)
-- `[LwxMessageHandler]` attribute with Uri, Stage, QueueProvider, QueueConfigSection, QueueReaders, HandlerErrorPolicy, ProviderErrorPolicy properties
-- New processor: `LwxMessageHandlerTypeProcessor` generates hosted background services and HTTP endpoints
-- ServiceRegistration updated with MessageHandlerNames/MessageHandlerInfos
-- Namespace convention: `.MessageHandlers` (parallel to `.Endpoints` and `.Workers`)
-- New diagnostics: LWX040-LWX051 for MessageHandler validation
-- 8 unit tests covering valid handlers, missing providers, invalid naming, wrong namespace, unannotated classes
+- Default policies: `LwxDefaultErrorPolicy` (dead-letters on error), `LwxDefaultProviderErrorPolicy` (logs only)
+- `[LwxMessageEndpoint]` attribute with Uri, QueueStage, UriStage, QueueProvider, QueueConfigSection, QueueReaders, HandlerErrorPolicy, ProviderErrorPolicy properties
+- New processor: `LwxMessageEndpointTypeProcessor` generates hosted background services and HTTP endpoints
+- ServiceRegistration updated with MessageEndpointNames/MessageEndpointInfos
+- Namespace convention: `.Endpoints` with `EndpointMsg{PathSegments}` naming
+- Queue providers should be in `.Services` namespace (not `.Endpoints`)
+- New diagnostics: LWX040-LWX049 for MessageEndpoint validation
+
+### Removed: ServiceBus/EventHub Processors (January 2025)
+- Removed unused stub processors for Azure ServiceBus and EventHub
+- `LwxMessageEndpoint` provides generic abstraction for any queue provider
 
 ### LwxSetting Configuration Mechanism (December 2025)
 - Replaced `[FromConfig]` constructor parameter injection with `[LwxSetting]` static partial property mechanism

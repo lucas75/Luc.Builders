@@ -308,6 +308,18 @@ internal class LwxServiceTypeProcessor(
             srcMessageEndpointAppCalls.Append($"{handlerName}.Configure(app);\n\n");
         }
 
+        var srcTimerBuilderCalls = new StringBuilder();
+        foreach (var timerName in reg.TimerNames)
+        {
+            srcTimerBuilderCalls.Append($"{timerName}.Configure(builder);\n\n");
+        }
+
+        var srcTimerAppCalls = new StringBuilder();
+        foreach (var timerName in reg.TimerNames)
+        {
+            srcTimerAppCalls.Append($"{timerName}.Configure(app);\n\n");
+        }
+
         var srcEndpointCalls = new StringBuilder();
         foreach (var endpointName in reg.EndpointNames)
         {
@@ -359,6 +371,19 @@ internal class LwxServiceTypeProcessor(
             srcList.Append($"System.Console.WriteLine(\"MessageEndpoint: {escDisplay} section={escSection} readers={mh.QueueReaders}{(string.IsNullOrEmpty(mh.HttpUri) ? "" : $" http={escUri}")}\");\n");
         }
 
+        foreach (var t in reg.TimerInfos)
+        {
+            var displayType = t.TypeName ?? string.Empty;
+            if (!string.IsNullOrEmpty(assemblyRoot) && displayType.StartsWith(assemblyRoot + ".", StringComparison.Ordinal))
+            {
+                displayType = displayType.Substring(assemblyRoot.Length + 1);
+            }
+            if (displayType.StartsWith("Endpoints.", StringComparison.Ordinal)) displayType = displayType.Substring("Endpoints.".Length);
+            var escDisplay = GeneratorUtils.EscapeForCSharp(displayType);
+            var escCron = GeneratorUtils.EscapeForCSharp(t.CronExpression);
+            srcList.Append($"System.Console.WriteLine(\"Timer: {escDisplay} cron={escCron}\");\n");
+        }
+
         var serviceTypeName = ProcessorUtils.ExtractRelativeTypeName(attr.TargetSymbol, compilation);
         var webAppBuilderType = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Builder.WebApplicationBuilder");
         var webAppType = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Builder.WebApplication");
@@ -380,6 +405,7 @@ internal class LwxServiceTypeProcessor(
         var builderSwaggerMethod = "ConfigureSwagger";
         var builderWorkersMethod = "ConfigureWorkers";
         var builderMessageEndpointsMethod = "ConfigureMessageEndpoints";
+        var builderTimersMethod = "ConfigureTimers";
         var builderSettingsMethod = "ConfigureSettings";
         var appSwaggerMethod = "ConfigureSwagger";
         var appHealthzMethod = "ConfigureHealthz";
@@ -445,6 +471,7 @@ public static partial class Service
         {{builderSwaggerMethod}}(builder);
         {{builderWorkersMethod}}(builder);
         {{builderMessageEndpointsMethod}}(builder);
+        {{builderTimersMethod}}(builder);
 
         // Allow user customization on Service.Configure(WebApplicationBuilder)
         {{(hasBuilderConfigure ? (serviceTypeName + ".Configure(builder);") : string.Empty)}}
@@ -496,6 +523,15 @@ public static partial class Service
     {
         // Register Lwx message endpoints
         {{srcMessageEndpointBuilderCalls.FixIndent(2, indentFirstLine: false)}}
+    }
+
+    /// <summary>
+    /// Register Lwx timer-triggered hosted services
+    /// </summary>
+    public static void {{builderTimersMethod}}(WebApplicationBuilder builder)
+    {
+        // Register Lwx timer hosted services
+        {{srcTimerBuilderCalls.FixIndent(2, indentFirstLine: false)}}
     }
 
     /// <summary>

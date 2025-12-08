@@ -14,9 +14,11 @@ internal sealed class ServiceRegistration
     public List<string> EndpointNames { get; } = new();
     public List<string> WorkerNames { get; } = new();
     public List<string> MessageEndpointNames { get; } = new();
+    public List<string> TimerNames { get; } = new();
     public List<(string TypeName, string HttpMethod, string? Path)> EndpointInfos { get; } = new();
     public List<(string TypeName, int Threads)> WorkerInfos { get; } = new();
     public List<(string TypeName, int QueueReaders, string QueueConfigSection, string HttpUri)> MessageEndpointInfos { get; } = new();
+    public List<(string TypeName, string CronExpression)> TimerInfos { get; } = new();
     public List<Processors.SettingInfo> Settings { get; } = new();
 }
 
@@ -137,6 +139,7 @@ public class Generator : IIncrementalGenerator
                         // Must have LwxEndpoint or LwxMessageEndpoint attribute
                         var hasEndpoint = sym.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxEndpointAttribute");
                         var hasMessageEndpoint = sym.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxMessageEndpointAttribute");
+                        var hasTimer = sym.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxTimerAttribute");
                         
                         // Allow helper types that implement queue-related interfaces
                         var namedSym = sym as INamedTypeSymbol;
@@ -146,12 +149,12 @@ public class Generator : IIncrementalGenerator
                             i.Name == "ILwxProviderErrorPolicy" ||
                             i.Name == "ILwxQueueMessage") ?? false;
                         
-                        if (!hasEndpoint && !hasMessageEndpoint && !isHelperType)
+                        if (!hasEndpoint && !hasMessageEndpoint && !hasTimer && !isHelperType)
                         {
                             var descriptor = new DiagnosticDescriptor(
                                 "LWX018",
                                 "Class in Endpoints namespace must be annotated",
-                                "Classes declared in namespaces containing '.Endpoints' must be annotated with [LwxEndpoint] or [LwxMessageEndpoint]. Found: '{0}'",
+                                "Classes declared in namespaces containing '.Endpoints' must be annotated with [LwxEndpoint], [LwxMessageEndpoint], or [LwxTimer]. Found: '{0}'",
                                 "Usage",
                                 DiagnosticSeverity.Error,
                                 isEnabledByDefault: true);

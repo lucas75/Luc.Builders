@@ -2,31 +2,6 @@
 
 ## Pending Features
 
-### LwxTimer Mechanism
-
-The builder should support cron-based scheduled execution via `[LwxTimer]` attribute:
-
-```csharp
-[LwxTimer(
-   CronExpression = "0 */5 * * * *",  // Every 5 minutes
-   Stage = LwxStage.All
-)]
-public partial class EndpointProc001Timer
-{
-    public static async Task Execute(ILogger<EndpointProc001Timer> logger)
-    {
-        logger.LogInformation("Timer executed at {Time}", DateTimeOffset.Now);
-    }
-}
-```
-
-**Implementation Notes:**
-- Timer runs as a singleton hosted service
-- Uses NCrontab or similar for cron expression parsing
-- Stage controls which environments the timer runs in
-- DI parameters are resolved at execution time
-- Consider adding: `RunOnStartup`, `MaxConcurrentExecutions`, `MissedExecutionPolicy`
-
 ### Method-Level Attributes
 
 Consider moving attributes from class level to method level for more flexibility:
@@ -45,6 +20,60 @@ public partial class OrderEndpoints
 ---
 
 # CHANGELOG
+
+## ✅ Completed: LwxTimer Mechanism (January 2025)
+
+Implemented timer-triggered endpoints with both interval-based and cron-based scheduling.
+
+### `[LwxTimer]` Attribute Properties
+- `CronExpression` - NCrontab 6-field format (second minute hour day month weekday)
+- `IntervalSeconds` - Simple interval in seconds (takes precedence over CronExpression)
+- `Stage` - Stage controls which environments the timer runs in
+- `RunOnStartup` - Whether to run immediately on application start
+- `Summary` - Short description for documentation
+- `Description` - Detailed description
+- `NamingExceptionJustification` - Justification for non-standard naming
+
+### Naming Convention
+- Classes: `EndpointTimer{Name}` (e.g., `EndpointTimerCleanup`)
+- Namespace: Must be under `.Endpoints` (same as regular endpoints)
+
+### Generated Code
+- Hosted `BackgroundService` with either interval-based or cron-based scheduling
+- Service wiring via `ConfigureTimers(builder)`
+- Timer listing in startup output
+- DI parameter resolution for Execute method
+
+### New Diagnostics
+- `LWX060` - Invalid timer endpoint class name
+- `LWX061` - Invalid timer endpoint namespace
+
+### Example Usage
+
+```csharp
+// Interval-based timer - every 30 seconds
+[LwxTimer(IntervalSeconds = 30, Summary = "Cleanup timer")]
+public static partial class EndpointTimerCleanup
+{
+    public static void Execute()
+    {
+        Console.WriteLine("Timer executed!");
+    }
+}
+
+// Cron-based timer - every 5 minutes
+[LwxTimer(CronExpression = "0 */5 * * * *", RunOnStartup = true)]
+public static partial class EndpointTimerHealthCheck
+{
+    public static async Task Execute(ILogger<EndpointTimerHealthCheck> logger, CancellationToken ct)
+    {
+        logger.LogInformation("Health check at {Time}", DateTimeOffset.Now);
+        await Task.Delay(100, ct);
+    }
+}
+```
+
+---
 
 ## ✅ Completed: LwxMessageEndpoint Mechanism (December 2025)
 

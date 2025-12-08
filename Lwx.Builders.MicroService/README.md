@@ -250,6 +250,82 @@ Use separate stages for queue and HTTP:
 - `UriStage = LwxStage.DevelopmentOnly` - HTTP endpoint only in dev (for testing)
 - `UriStage = LwxStage.None` - No HTTP endpoint
 
+## Timer Endpoints
+
+Schedule recurring tasks with cron expressions or simple intervals:
+
+```csharp
+// Interval-based timer - runs every 30 seconds
+[LwxTimer(IntervalSeconds = 30, Summary = "Cleanup timer")]
+public static partial class EndpointTimerCleanup
+{
+    public static void Execute()
+    {
+        Console.WriteLine("Timer executed!");
+    }
+}
+
+// Cron-based timer - runs every 5 minutes
+[LwxTimer(
+    CronExpression = "0 */5 * * * *",  // NCrontab 6-field format
+    Stage = LwxStage.All,
+    RunOnStartup = true
+)]
+public static partial class EndpointTimerHealthCheck
+{
+    public static async Task Execute(
+        ILogger<EndpointTimerHealthCheck> logger,
+        CancellationToken ct)
+    {
+        logger.LogInformation("Health check at {Time}", DateTimeOffset.Now);
+        await Task.Delay(100, ct);
+    }
+}
+```
+
+### Timer Attribute Properties
+
+| Property | Description | Default |
+|----------|-------------|---------|
+| `IntervalSeconds` | Simple interval in seconds (takes precedence over cron) | 0 (disabled) |
+| `CronExpression` | NCrontab 6-field format (second minute hour day month weekday) | - |
+| `Stage` | Environment stage (All, DevelopmentOnly, None) | All |
+| `RunOnStartup` | Run immediately on application start | false |
+| `Summary` | Short description for documentation | - |
+| `Description` | Detailed description | - |
+
+### Cron Expression Format
+
+Uses NCrontab 6-field format: `second minute hour day month weekday`
+
+| Example | Description |
+|---------|-------------|
+| `0 */5 * * * *` | Every 5 minutes |
+| `0 0 * * * *` | Every hour |
+| `0 0 0 * * *` | Every day at midnight |
+| `0 30 9 * * 1-5` | Weekdays at 9:30 AM |
+
+### Naming Convention
+
+Timer endpoint classes must:
+- Start with `EndpointTimer` prefix (e.g., `EndpointTimerCleanup`)
+- Be in a `.Endpoints` namespace
+- Have a static `Execute` method (can be void or Task)
+
+### DI Support
+
+The Execute method can request services via parameters:
+
+```csharp
+public static async Task Execute(
+    ILogger<EndpointTimerCleanup> logger,    // DI injection
+    IMyService service,                       // Custom service
+    CancellationToken ct                      // Cancellation token
+) { }
+```
+
+Services are resolved using `IServiceProvider.CreateScope()` for proper scoped lifetime.
+
 ## Swagger Configuration
 
 Swagger is configured via `[LwxService]`:
@@ -279,6 +355,8 @@ The generator reports compile-time errors for common issues:
 | LWX040 | Invalid message endpoint class name |
 | LWX042 | Message endpoint not in `.Endpoints` namespace |
 | LWX043 | Missing QueueProvider |
+| LWX060 | Invalid timer endpoint class name |
+| LWX061 | Timer endpoint not in `.Endpoints` namespace |
 
 ## Contributing
 
