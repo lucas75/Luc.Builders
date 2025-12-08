@@ -33,6 +33,14 @@ internal class LwxEndpointTypeProcessor(
             return;
         }
 
+        // If LwxMessageSource is also on this method, let LwxMessageSourceTypeProcessor handle it
+        var hasMessageSource = methodSymbol.GetAttributes()
+            .Any(a => a.AttributeClass?.Name is "LwxMessageSourceAttribute" or "LwxMessageSource");
+        if (hasMessageSource)
+        {
+            return; // LwxMessageSourceTypeProcessor will handle this method
+        }
+
         // Validate method is named Execute
         if (methodSymbol.Name != "Execute")
         {

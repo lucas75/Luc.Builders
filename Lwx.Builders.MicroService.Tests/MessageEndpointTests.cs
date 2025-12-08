@@ -52,10 +52,12 @@ public class MessageEndpointTests
 
                 public partial class EndpointMsgReceiveOrder
                 {
-                    [LwxMessageEndpoint(
-                        Uri = "POST /receive-order",
-                        QueueStage = LwxStage.All,
-                        UriStage = LwxStage.DevelopmentOnly,
+                    [LwxEndpoint(
+                        "POST /receive-order",
+                        Publish = LwxStage.DevelopmentOnly
+                    )]
+                    [LwxMessageSource(
+                        Stage = LwxStage.All,
                         QueueProvider = typeof(ExampleQueueProvider),
                         QueueConfigSection = "OrderQueue",
                         QueueReaders = 4
@@ -113,9 +115,9 @@ public class MessageEndpointTests
 
                 public partial class EndpointMsgTest
                 {
-                    [LwxMessageEndpoint(
-                        Uri = "POST /test",
-                        QueueStage = LwxStage.All,
+                    [LwxEndpoint("POST /test", Publish = LwxStage.DevelopmentOnly)]
+                    [LwxMessageSource(
+                        Stage = LwxStage.All,
                         QueueConfigSection = "TestQueue"
                     )]
                     public static Task Execute(ILwxQueueMessage msg) => Task.CompletedTask;
@@ -173,9 +175,9 @@ public class MessageEndpointTests
 
                 public partial class EndpointMsgTest
                 {
-                    [LwxMessageEndpoint(
-                        Uri = "POST /test",
-                        QueueStage = LwxStage.All,
+                    [LwxEndpoint("POST /test", Publish = LwxStage.DevelopmentOnly)]
+                    [LwxMessageSource(
+                        Stage = LwxStage.All,
                         QueueProvider = typeof(ExampleQueueProvider),
                         QueueConfigSection = "TestQueue",
                         HandlerErrorPolicy = typeof(NotAnErrorPolicy)
@@ -235,9 +237,9 @@ public class MessageEndpointTests
 
                 public partial class EndpointMsgTest
                 {
-                    [LwxMessageEndpoint(
-                        Uri = "POST /test",
-                        QueueStage = LwxStage.All,
+                    [LwxEndpoint("POST /test", Publish = LwxStage.DevelopmentOnly)]
+                    [LwxMessageSource(
+                        Stage = LwxStage.All,
                         QueueProvider = typeof(ExampleQueueProvider),
                         QueueConfigSection = "TestQueue",
                         ProviderErrorPolicy = typeof(NotAProviderErrorPolicy)
@@ -295,9 +297,9 @@ public class MessageEndpointTests
 
                 public partial class WronglyNamedEndpoint
                 {
-                    [LwxMessageEndpoint(
-                        Uri = "POST /test",
-                        QueueStage = LwxStage.All,
+                    [LwxEndpoint("POST /test", Publish = LwxStage.DevelopmentOnly)]
+                    [LwxMessageSource(
+                        Stage = LwxStage.All,
                         QueueProvider = typeof(ExampleQueueProvider),
                         QueueConfigSection = "TestQueue"
                     )]
@@ -355,9 +357,9 @@ public class MessageEndpointTests
 
                 public partial class EndpointMsgTest
                 {
-                    [LwxMessageEndpoint(
-                        Uri = "POST /test",
-                        QueueStage = LwxStage.All,
+                    [LwxEndpoint("POST /test", Publish = LwxStage.DevelopmentOnly)]
+                    [LwxMessageSource(
+                        Stage = LwxStage.All,
                         QueueProvider = typeof(ExampleQueueProvider),
                         QueueConfigSection = "TestQueue"
                     )]
@@ -416,10 +418,12 @@ public class MessageEndpointTests
 
                 public partial class EndpointMsgReceiveOrder
                 {
-                    [LwxMessageEndpoint(
-                        Uri = "POST /receive-order",
-                        QueueStage = LwxStage.All,
-                        UriStage = LwxStage.DevelopmentOnly,
+                    [LwxEndpoint(
+                        "POST /receive-order",
+                        Publish = LwxStage.DevelopmentOnly
+                    )]
+                    [LwxMessageSource(
+                        Stage = LwxStage.All,
                         QueueProvider = typeof(ExampleQueueProvider),
                         QueueConfigSection = "OrderQueue"
                     )]
@@ -487,10 +491,12 @@ public class MessageEndpointTests
 
                 public partial class EndpointMsgReceiveOrder
                 {
-                    [LwxMessageEndpoint(
-                        Uri = "POST /receive-order",
-                        QueueStage = LwxStage.All,
-                        UriStage = LwxStage.DevelopmentOnly,
+                    [LwxEndpoint(
+                        "POST /receive-order",
+                        Publish = LwxStage.DevelopmentOnly
+                    )]
+                    [LwxMessageSource(
+                        Stage = LwxStage.All,
                         QueueProvider = typeof(ExampleQueueProvider),
                         QueueConfigSection = "OrderQueue"
                     )]

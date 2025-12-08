@@ -16,18 +16,17 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
 
 ### Method-Level Attributes (January 2025)
 - **BREAKING CHANGE**: Moved all endpoint attributes from class level to method level
-- `[LwxEndpoint]`, `[LwxMessageEndpoint]`, and `[LwxTimer]` now go on the `Execute` method, not the class
+- `[LwxEndpoint]`, `[LwxMessageSource]`, and `[LwxTimer]` now go on the `Execute` method, not the class
 - Processors updated to use `_containingType` field for class-based validation
 - Attribute target changed from `AttributeTargets.Class` to `AttributeTargets.Method`
 - New diagnostics: LWX070-LWX075 for attribute placement validation
   - LWX070: `[LwxEndpoint]` must be on Execute method
   - LWX071: Endpoint attribute not on method named Execute
-  - LWX072: `[LwxMessageEndpoint]` must be on Execute method
-  - LWX073: Message endpoint attribute not on method named Execute
+  - LWX072: `[LwxMessageSource]` must be on Execute method
+  - LWX073: Message source attribute not on method named Execute
   - LWX074: `[LwxTimer]` must be on Execute method
   - LWX075: Timer attribute not on method named Execute
 - Generator.cs LWX018 updated to check for method-level attributes
-- All example and test files updated to use new syntax
 
 ### LwxTimer Mechanism (January 2025)
 - Implemented timer-triggered endpoints with both interval-based and cron-based scheduling
@@ -40,23 +39,25 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
 - Supports CancellationToken parameter for cooperative cancellation
 - Naming convention: `EndpointTimer{Name}` in `.Endpoints` namespace
 - New diagnostics: LWX060 (invalid timer class name), LWX061 (invalid timer namespace)
-- Generator.cs LWX018 updated to allow `[LwxTimer]` alongside `[LwxEndpoint]` and `[LwxMessageEndpoint]`
+- Generator.cs LWX018 updated to allow `[LwxTimer]` alongside `[LwxEndpoint]` and `[LwxMessageSource]`
 
-### MessageEndpoint Mechanism (January 2025)
-- Renamed from MessageHandler to MessageEndpoint for consistency
+### MessageSource Mechanism (January 2025)
+- Refactored from `[LwxMessageEndpoint]` to dual-attribute pattern: `[LwxEndpoint]` + `[LwxMessageSource]`
+- `[LwxEndpoint]` handles HTTP configuration (Uri, Publish, Summary, Description)
+- `[LwxMessageSource]` handles queue configuration (Stage, QueueProvider, QueueConfigSection, QueueReaders, HandlerErrorPolicy, ProviderErrorPolicy)
+- When both attributes are present on Execute method, `LwxEndpointTypeProcessor` defers to `LwxMessageSourceTypeProcessor`
 - Implemented complete message queue processing infrastructure with configurable providers and error policies
 - New core interfaces: `ILwxQueueProvider`, `ILwxQueueMessage`, `ILwxErrorPolicy`, `ILwxProviderErrorPolicy`
 - Default policies: `LwxDefaultErrorPolicy` (dead-letters on error), `LwxDefaultProviderErrorPolicy` (logs only)
-- `[LwxMessageEndpoint]` attribute with Uri, QueueStage, UriStage, QueueProvider, QueueConfigSection, QueueReaders, HandlerErrorPolicy, ProviderErrorPolicy properties
-- New processor: `LwxMessageEndpointTypeProcessor` generates hosted background services and HTTP endpoints
+- New processor: `LwxMessageSourceTypeProcessor` generates hosted background services and HTTP endpoints
 - ServiceRegistration updated with MessageEndpointNames/MessageEndpointInfos
 - Namespace convention: `.Endpoints` with `EndpointMsg{PathSegments}` naming
 - Queue providers should be in `.Services` namespace (not `.Endpoints`)
-- New diagnostics: LWX040-LWX049 for MessageEndpoint validation
+- New diagnostics: LWX040-LWX049 for MessageSource validation
 
 ### Removed: ServiceBus/EventHub Processors (January 2025)
 - Removed unused stub processors for Azure ServiceBus and EventHub
-- `LwxMessageEndpoint` provides generic abstraction for any queue provider
+- `LwxMessageSource` provides generic abstraction for any queue provider
 
 ### LwxSetting Configuration Mechanism (December 2025)
 - Replaced `[FromConfig]` constructor parameter injection with `[LwxSetting]` static partial property mechanism

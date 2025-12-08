@@ -203,7 +203,7 @@ Policy = LwxWorkerPolicy.AlwaysHealthy
 
 ## Message Endpoints
 
-Process messages from queues with optional HTTP endpoints for testing:
+Process messages from queues with optional HTTP endpoints for testing. Use `[LwxEndpoint]` for HTTP configuration and `[LwxMessageSource]` for queue configuration:
 
 ```csharp
 // Services/MyQueueProvider.cs - Queue provider implementation
@@ -219,10 +219,13 @@ public class MyQueueProvider : ILwxQueueProvider
 // Endpoints/EndpointMsgReceiveOrder.cs - Message endpoint
 public partial class EndpointMsgReceiveOrder
 {
-    [LwxMessageEndpoint(
-        Uri = "POST /receive-order",
-        QueueStage = LwxStage.All,           // Queue consumer runs everywhere
-        UriStage = LwxStage.DevelopmentOnly, // HTTP endpoint only in dev
+    [LwxEndpoint(
+        "POST /receive-order",
+        Publish = LwxStage.DevelopmentOnly, // HTTP endpoint only in dev
+        Summary = "Receives order messages from queue"
+    )]
+    [LwxMessageSource(
+        Stage = LwxStage.All,           // Queue consumer runs everywhere
         QueueProvider = typeof(MyQueueProvider),
         QueueConfigSection = "OrderQueue",
         QueueReaders = 2
@@ -242,15 +245,15 @@ public partial class EndpointMsgReceiveOrder
 Message endpoint classes must:
 - Start with `EndpointMsg` prefix (e.g., `EndpointMsgReceiveOrder`)
 - Be in a `.Endpoints` namespace
-- Have a static `Execute` method annotated with `[LwxMessageEndpoint]` and an `ILwxQueueMessage` parameter
+- Have a static `Execute` method annotated with `[LwxMessageSource]` (and optionally `[LwxEndpoint]`) and an `ILwxQueueMessage` parameter
 
 ### Stage Configuration
 
-Use separate stages for queue and HTTP:
-- `QueueStage = LwxStage.All` - Queue consumer runs in all environments
-- `QueueStage = LwxStage.DevelopmentOnly` - Queue consumer only in dev
-- `UriStage = LwxStage.DevelopmentOnly` - HTTP endpoint only in dev (for testing)
-- `UriStage = LwxStage.None` - No HTTP endpoint
+Use `[LwxEndpoint]` for HTTP stage and `[LwxMessageSource]` for queue stage:
+- `[LwxMessageSource(Stage = LwxStage.All)]` - Queue consumer runs in all environments
+- `[LwxMessageSource(Stage = LwxStage.DevelopmentOnly)]` - Queue consumer only in dev
+- `[LwxEndpoint(Publish = LwxStage.DevelopmentOnly)]` - HTTP endpoint only in dev (for testing)
+- No `[LwxEndpoint]` or `[LwxEndpoint(Publish = LwxStage.None)]` - No HTTP endpoint
 
 ## Timer Endpoints
 
@@ -361,8 +364,8 @@ The generator reports compile-time errors for common issues:
 | LWX061 | Timer endpoint not in `.Endpoints` namespace |
 | LWX070 | `[LwxEndpoint]` must be on Execute method |
 | LWX071 | Endpoint attribute not on method named Execute |
-| LWX072 | `[LwxMessageEndpoint]` must be on Execute method |
-| LWX073 | Message endpoint attribute not on method named Execute |
+| LWX072 | `[LwxMessageSource]` must be on Execute method |
+| LWX073 | Message source attribute not on method named Execute |
 | LWX074 | `[LwxTimer]` must be on Execute method |
 | LWX075 | Timer attribute not on method named Execute |
 

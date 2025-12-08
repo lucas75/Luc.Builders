@@ -80,7 +80,7 @@ public class Generator : IIncrementalGenerator
             new Processors.LwxEndpointExtensionsPostInitializationProcessor(this, ctx).Execute();
             new Processors.LwxServicePostInitializationProcessor(this, ctx).Execute();
             new Processors.LwxSettingPostInitializationProcessor(this, ctx).Execute();
-            new Processors.LwxMessageEndpointPostInitializationProcessor(this, ctx).Execute();
+            new Processors.LwxMessageSourcePostInitializationProcessor(this, ctx).Execute();
         });
 
         var attrProvider = context.SyntaxProvider
@@ -136,14 +136,14 @@ public class Generator : IIncrementalGenerator
 
                     if (ns.Contains(".Endpoints", StringComparison.Ordinal))
                     {
-                        // Must have an Execute method with LwxEndpoint, LwxMessageEndpoint, or LwxTimer attribute
+                        // Must have an Execute method with LwxEndpoint, LwxMessageSource, or LwxTimer attribute
                         var namedSym = sym as INamedTypeSymbol;
                         var hasEndpoint = namedSym?.GetMembers("Execute")
                             .OfType<IMethodSymbol>()
                             .Any(m => m.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxEndpointAttribute")) ?? false;
-                        var hasMessageEndpoint = namedSym?.GetMembers("Execute")
+                        var hasMessageSource = namedSym?.GetMembers("Execute")
                             .OfType<IMethodSymbol>()
-                            .Any(m => m.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxMessageEndpointAttribute")) ?? false;
+                            .Any(m => m.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxMessageSourceAttribute")) ?? false;
                         var hasTimer = namedSym?.GetMembers("Execute")
                             .OfType<IMethodSymbol>()
                             .Any(m => m.GetAttributes().Any(a => a.AttributeClass?.Name == "LwxTimerAttribute")) ?? false;
@@ -155,12 +155,12 @@ public class Generator : IIncrementalGenerator
                             i.Name == "ILwxProviderErrorPolicy" ||
                             i.Name == "ILwxQueueMessage") ?? false;
                         
-                        if (!hasEndpoint && !hasMessageEndpoint && !hasTimer && !isHelperType)
+                        if (!hasEndpoint && !hasMessageSource && !hasTimer && !isHelperType)
                         {
                             var descriptor = new DiagnosticDescriptor(
                                 "LWX018",
                                 "Class in Endpoints namespace must have annotated Execute method",
-                                "Classes declared in namespaces containing '.Endpoints' must have an Execute method annotated with [LwxEndpoint], [LwxMessageEndpoint], or [LwxTimer]. Found: '{0}'",
+                                "Classes declared in namespaces containing '.Endpoints' must have an Execute method annotated with [LwxEndpoint], [LwxMessageSource], or [LwxTimer]. Found: '{0}'",
                                 "Usage",
                                 DiagnosticSeverity.Error,
                                 isEnabledByDefault: true);

@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 
 namespace Lwx.Builders.MicroService.Processors;
 
-internal class LwxMessageEndpointTypeProcessor(
+internal class LwxMessageSourceTypeProcessor(
     Generator parent,
     Compilation compilation,
     SourceProductionContext ctx,
@@ -14,6 +14,7 @@ internal class LwxMessageEndpointTypeProcessor(
 )
 {
     private INamedTypeSymbol? _containingType;
+    private IMethodSymbol? _methodSymbol;
 
     public void Execute()
     {
@@ -23,8 +24,8 @@ internal class LwxMessageEndpointTypeProcessor(
             ctx.ReportDiagnostic(Diagnostic.Create(
                 new DiagnosticDescriptor(
                     "LWX072",
-                    "LwxMessageEndpoint must be on method",
-                    "[LwxMessageEndpoint] attribute must be placed on the Execute method, not on a class.",
+                    "LwxMessageSource must be on method",
+                    "[LwxMessageSource] attribute must be placed on the Execute method, not on a class.",
                     "Usage",
                     DiagnosticSeverity.Error,
                     isEnabledByDefault: true),
@@ -38,8 +39,8 @@ internal class LwxMessageEndpointTypeProcessor(
             ctx.ReportDiagnostic(Diagnostic.Create(
                 new DiagnosticDescriptor(
                     "LWX073",
-                    "LwxMessageEndpoint must be on Execute method",
-                    "[LwxMessageEndpoint] attribute must be placed on a method named 'Execute'. Found: '{0}'",
+                    "LwxMessageSource must be on Execute method",
+                    "[LwxMessageSource] attribute must be placed on a method named 'Execute'. Found: '{0}'",
                     "Usage",
                     DiagnosticSeverity.Error,
                     isEnabledByDefault: true),
@@ -47,6 +48,7 @@ internal class LwxMessageEndpointTypeProcessor(
             return;
         }
 
+        _methodSymbol = methodSymbol;
         _containingType = methodSymbol.ContainingType;
         if (_containingType == null)
         {
@@ -59,10 +61,13 @@ internal class LwxMessageEndpointTypeProcessor(
         var name = ProcessorUtils.SafeIdentifier(_containingType.Name);
         var ns = _containingType.ContainingNamespace?.ToDisplayString() ?? "Generated";
 
-        // Extract attribute properties
-        var (uriArg, queueStageLiteral, uriStageLiteral, queueProviderTypeName, queueConfigSection, queueReaders, 
-             handlerErrorPolicyTypeName, providerErrorPolicyTypeName, summary, description, namingException) 
-            = ExtractAttributeMetadata();
+        // Extract attribute properties from LwxMessageSource
+        var (queueStageLiteral, queueProviderTypeName, queueConfigSection, queueReaders, 
+             handlerErrorPolicyTypeName, providerErrorPolicyTypeName) 
+            = ExtractMessageSourceMetadata();
+
+        // Extract LwxEndpoint attribute properties from the same method
+        var (uriArg, uriStageLiteral, summary, description, namingException) = ExtractEndpointMetadata();
 
         // Validate naming convention - must start with EndpointMsg
         if (!ValidateEndpointNaming(uriArg, name, ns, namingException))
@@ -108,48 +113,27 @@ internal class LwxMessageEndpointTypeProcessor(
         ));
     }
 
-    private (string? uri, string queueStageLiteral, string uriStageLiteral, string? queueProviderTypeName, string? queueConfigSection, 
-             int queueReaders, string? handlerErrorPolicyTypeName, string? providerErrorPolicyTypeName,
-             string? summary, string? description, string? namingException) ExtractAttributeMetadata()
+    private (string queueStageLiteral, string? queueProviderTypeName, string? queueConfigSection, 
+             int queueReaders, string? handlerErrorPolicyTypeName, string? providerErrorPolicyTypeName) 
+        ExtractMessageSourceMetadata()
     {
-        string? uri = null;
         string queueStageLiteral = "Lwx.Builders.MicroService.Atributtes.LwxStage.None";
-        string uriStageLiteral = "Lwx.Builders.MicroService.Atributtes.LwxStage.DevelopmentOnly";
         string? queueProviderTypeName = null;
         string? queueConfigSection = null;
         int queueReaders = 2;
         string? handlerErrorPolicyTypeName = null;
         string? providerErrorPolicyTypeName = null;
-        string? summary = null;
-        string? description = null;
-        string? namingException = null;
 
         if (attr.AttributeData == null) 
-            return (uri, queueStageLiteral, uriStageLiteral, queueProviderTypeName, queueConfigSection, queueReaders,
-                    handlerErrorPolicyTypeName, providerErrorPolicyTypeName, summary, description, namingException);
+            return (queueStageLiteral, queueProviderTypeName, queueConfigSection, queueReaders,
+                    handlerErrorPolicyTypeName, providerErrorPolicyTypeName);
 
         var named = attr.AttributeData.ToNamedArgumentMap();
 
-        // Uri (also check constructor arg)
-        if (named.TryGetValue("Uri", out var uriTc) && uriTc.Value is string s)
+        // Stage (queue stage)
+        if (named.TryGetValue("Stage", out var stageTc) && stageTc.Value != null)
         {
-            uri = s;
-        }
-        else if (attr.AttributeData.ConstructorArguments.Length > 0 && attr.AttributeData.ConstructorArguments[0].Value is string cs)
-        {
-            uri = cs;
-        }
-
-        // QueueStage
-        if (named.TryGetValue("QueueStage", out var qstageTc) && qstageTc.Value != null)
-        {
-            queueStageLiteral = ParseStageLiteral(qstageTc.Value);
-        }
-
-        // UriStage
-        if (named.TryGetValue("UriStage", out var ustageTc) && ustageTc.Value != null)
-        {
-            uriStageLiteral = ParseStageLiteral(ustageTc.Value);
+            queueStageLiteral = ParseStageLiteral(stageTc.Value);
         }
 
         // QueueProvider
@@ -182,6 +166,47 @@ internal class LwxMessageEndpointTypeProcessor(
             providerErrorPolicyTypeName = pepType.ToDisplayString();
         }
 
+        return (queueStageLiteral, queueProviderTypeName, queueConfigSection, queueReaders,
+                handlerErrorPolicyTypeName, providerErrorPolicyTypeName);
+    }
+
+    private (string? uri, string uriStageLiteral, string? summary, string? description, string? namingException) 
+        ExtractEndpointMetadata()
+    {
+        string? uri = null;
+        string uriStageLiteral = "Lwx.Builders.MicroService.Atributtes.LwxStage.DevelopmentOnly";
+        string? summary = null;
+        string? description = null;
+        string? namingException = null;
+
+        if (_methodSymbol == null)
+            return (uri, uriStageLiteral, summary, description, namingException);
+
+        // Find LwxEndpoint attribute on the same method
+        var endpointAttr = _methodSymbol.GetAttributes()
+            .FirstOrDefault(a => a.AttributeClass?.Name is "LwxEndpointAttribute" or "LwxEndpoint");
+
+        if (endpointAttr == null)
+            return (uri, uriStageLiteral, summary, description, namingException);
+
+        var named = endpointAttr.ToNamedArgumentMap();
+
+        // Uri from constructor arg or named property
+        if (named.TryGetValue("Uri", out var uriTc) && uriTc.Value is string s)
+        {
+            uri = s;
+        }
+        else if (endpointAttr.ConstructorArguments.Length > 0 && endpointAttr.ConstructorArguments[0].Value is string cs)
+        {
+            uri = cs;
+        }
+
+        // Publish (uri stage)
+        if (named.TryGetValue("Publish", out var publishTc) && publishTc.Value != null)
+        {
+            uriStageLiteral = ParseStageLiteral(publishTc.Value);
+        }
+
         // Summary
         if (named.TryGetValue("Summary", out var sumTc) && sumTc.Value is string sumVal)
         {
@@ -200,8 +225,7 @@ internal class LwxMessageEndpointTypeProcessor(
             namingException = neVal?.Trim();
         }
 
-        return (uri, queueStageLiteral, uriStageLiteral, queueProviderTypeName, queueConfigSection, queueReaders,
-                handlerErrorPolicyTypeName, providerErrorPolicyTypeName, summary, description, namingException);
+        return (uri, uriStageLiteral, summary, description, namingException);
     }
 
     private static string ParseStageLiteral(object raw)

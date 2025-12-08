@@ -8,20 +8,56 @@
 
 # CHANGELOG
 
+## ✅ Completed: Split LwxMessageSource from LwxEndpoint (January 2025)
+
+Refactored from single `[LwxMessageEndpoint]` to dual-attribute pattern for cleaner separation of concerns.
+
+### Breaking Change
+- `[LwxMessageEndpoint]` is now replaced by `[LwxEndpoint]` + `[LwxMessageSource]`
+- HTTP configuration goes in `[LwxEndpoint]` (Uri, Publish, Summary, Description)
+- Queue configuration goes in `[LwxMessageSource]` (Stage, QueueProvider, QueueConfigSection, QueueReaders, HandlerErrorPolicy, ProviderErrorPolicy)
+
+### Migration Example
+
+Before:
+```csharp
+[LwxMessageEndpoint(
+    Uri = "POST /receive-order",
+    QueueStage = LwxStage.All,
+    UriStage = LwxStage.DevelopmentOnly,
+    QueueProvider = typeof(MyQueueProvider),
+    QueueConfigSection = "OrderQueue"
+)]
+public static Task Execute(ILwxQueueMessage msg) => Task.CompletedTask;
+```
+
+After:
+```csharp
+[LwxEndpoint("POST /receive-order", Publish = LwxStage.DevelopmentOnly)]
+[LwxMessageSource(
+    Stage = LwxStage.All,
+    QueueProvider = typeof(MyQueueProvider),
+    QueueConfigSection = "OrderQueue"
+)]
+public static Task Execute(ILwxQueueMessage msg) => Task.CompletedTask;
+```
+
+---
+
 ## ✅ Completed: Method-Level Attributes (January 2025)
 
 Moved all endpoint attributes from class level to method level for cleaner declaration.
 
 ### Breaking Change
 - `[LwxEndpoint]` now goes on the `Execute` method, not the class
-- `[LwxMessageEndpoint]` now goes on the `Execute` method, not the class
+- `[LwxMessageSource]` now goes on the `Execute` method, not the class
 - `[LwxTimer]` now goes on the `Execute` method, not the class
 
 ### New Diagnostics
 - `LWX070` - `[LwxEndpoint]` attribute must be placed on the Execute method
 - `LWX071` - Endpoint attribute not on method named Execute
-- `LWX072` - `[LwxMessageEndpoint]` attribute must be placed on the Execute method
-- `LWX073` - Message endpoint attribute not on method named Execute
+- `LWX072` - `[LwxMessageSource]` attribute must be placed on the Execute method
+- `LWX073` - Message source attribute not on method named Execute
 - `LWX074` - `[LwxTimer]` attribute must be placed on the Execute method
 - `LWX075` - Timer attribute not on method named Execute
 
@@ -101,10 +137,10 @@ public static partial class EndpointTimerHealthCheck
 
 ---
 
-## ✅ Completed: LwxMessageEndpoint Mechanism (December 2025)
+## ✅ Completed: LwxMessageSource Mechanism (December 2025)
 
 Implemented message queue processing with configurable providers and error policies.
-Refactored from LwxMessageHandler to LwxMessageEndpoint with split stage control.
+Refactored to use dual-attribute pattern: `[LwxEndpoint]` + `[LwxMessageSource]`.
 
 ### Core Interfaces
 - `ILwxQueueProvider` - Queue provider abstraction with Configure/Start/Stop lifecycle
@@ -116,10 +152,16 @@ Refactored from LwxMessageHandler to LwxMessageEndpoint with split stage control
 - `LwxDefaultErrorPolicy` - Dead-letters messages on handler errors
 - `LwxDefaultProviderErrorPolicy` - Logs provider errors
 
-### `[LwxMessageEndpoint]` Attribute Properties
+### Attribute Properties
+
+`[LwxEndpoint]` (for HTTP):
 - `Uri` - HTTP endpoint path for receiving messages (e.g., "POST /receive-order")
-- `QueueStage` - Stage for queue consumer (None, DevelopmentOnly, All)
-- `UriStage` - Stage for HTTP endpoint (None, DevelopmentOnly, All)
+- `Publish` - Stage for HTTP endpoint (None, DevelopmentOnly, All)
+- `Summary` - Short description
+- `Description` - Detailed description
+
+`[LwxMessageSource]` (for queue):
+- `Stage` - Stage for queue consumer (None, DevelopmentOnly, All)
 - `QueueProvider` - Type implementing `ILwxQueueProvider`
 - `QueueConfigSection` - Configuration section name (reads from `Queues:{section}`)
 - `QueueReaders` - Concurrency level (default: 2)
@@ -155,16 +197,15 @@ Refactored from LwxMessageHandler to LwxMessageEndpoint with split stage control
 public class MyQueueProvider : ILwxQueueProvider { /* ... */ }
 
 // In Endpoints/ folder - message endpoint
-[LwxMessageEndpoint(
-    Uri = "POST /receive-order",
-    QueueStage = LwxStage.All,           // Queue runs everywhere
-    UriStage = LwxStage.DevelopmentOnly, // HTTP only in dev
-    QueueProvider = typeof(MyQueueProvider),
-    QueueConfigSection = "OrderQueue",
-    QueueReaders = 2
-)]
 public partial class EndpointMsgReceiveOrder
 {
+    [LwxEndpoint("POST /receive-order", Publish = LwxStage.DevelopmentOnly)]
+    [LwxMessageSource(
+        Stage = LwxStage.All,           // Queue runs everywhere
+        QueueProvider = typeof(MyQueueProvider),
+        QueueConfigSection = "OrderQueue",
+        QueueReaders = 2
+    )]
     // DI parameters are resolved at execution time
     public static Task Execute(
         ILwxQueueMessage msg,
@@ -233,4 +274,4 @@ Removed unused stub processors for Azure ServiceBus and EventHub:
 - `LwxServiceBusProducerAttribute` / Processor
 - `LwxEventHubConsumerAttribute` / Processor
 
-These were placeholder stubs. The `LwxMessageEndpoint` mechanism provides a generic abstraction that can work with any queue provider including Azure ServiceBus via custom `ILwxQueueProvider` implementations.
+These were placeholder stubs. The `LwxMessageSource` mechanism provides a generic abstraction that can work with any queue provider including Azure ServiceBus via custom `ILwxQueueProvider` implementations.

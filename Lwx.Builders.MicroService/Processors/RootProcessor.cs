@@ -37,8 +37,8 @@ internal sealed class RootProcessor
                 new LwxSettingTypeProcessor(parent, compilation, ctx, attr).Execute();
                 break;
 
-            case LwxConstants.LwxMessageEndpoint:
-                new LwxMessageEndpointTypeProcessor(parent, compilation, ctx, attr).Execute();
+            case LwxConstants.LwxMessageSource:
+                new LwxMessageSourceTypeProcessor(parent, compilation, ctx, attr).Execute();
                 break;
 
             default:

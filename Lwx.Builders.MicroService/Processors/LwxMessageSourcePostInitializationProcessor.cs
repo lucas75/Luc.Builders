@@ -3,16 +3,16 @@ using Microsoft.CodeAnalysis;
 namespace Lwx.Builders.MicroService.Processors;
 
 /// <summary>
-/// Processor that emits the LwxMessageEndpoint attribute and related interfaces via post-initialization.
+/// Processor that emits the LwxMessageSource attribute and related interfaces via post-initialization.
 /// </summary>
-internal class LwxMessageEndpointPostInitializationProcessor(Generator parent, IncrementalGeneratorPostInitializationContext ctx)
+internal class LwxMessageSourcePostInitializationProcessor(Generator parent, IncrementalGeneratorPostInitializationContext ctx)
 {
     public void Execute()
     {
         ProcessorUtils.AddEmbeddedSource(
             ctx,
-            "Attributes/LwxMessageEndpointAttribute.cs",
-            "LwxMessageEndpointAttribute.g.cs"
+            "Attributes/LwxMessageSourceAttribute.cs",
+            "LwxMessageSourceAttribute.g.cs"
         );
         ProcessorUtils.AddEmbeddedSource(
             ctx,

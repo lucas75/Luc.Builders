@@ -23,33 +23,29 @@ public partial class EndpointMsgReceiveOrder
     /// The ILwxQueueMessage is provided by the queue infrastructure.
     /// TheWorker and IConfiguration are injected via DI.
     /// </summary>
-    [LwxMessageEndpoint(
-        Uri = "POST /receive-order",
-        QueueStage = LwxStage.All,
-        UriStage = LwxStage.DevelopmentOnly,
+    [LwxMessageSource(
+        Stage = LwxStage.All,
         QueueProvider = typeof(ExampleQueueProvider),
         QueueConfigSection = "OrderQueue",
-        QueueReaders = 2,
+        QueueReaders = 2
+    )]
+    [LwxEndpoint(
+        "POST /receive-order",
+        Publish = LwxStage.DevelopmentOnly,
         Summary = "Receives order messages from queue",
         Description = "Processes incoming order messages. Can be triggered via HTTP in development for testing."
-    )]
+    )]    
     public static Task Execute(
         ILwxQueueMessage msg, 
-        ILogger<EndpointMsgReceiveOrder> logger,
-        IConfiguration config)
+        ILogger<EndpointMsgReceiveOrder> logger
+    )
     {
         var payload = Encoding.UTF8.GetString(msg.Payload.Span);
-        var queueConfig = config.GetSection("Queues:OrderQueue");
-        var maxRetries = queueConfig.GetValue<int>("MaxRetries", 3);
-
+     
         logger.LogInformation(
-            "Processing order message {MessageId} with payload: {Payload}, MaxRetries configured: {MaxRetries}",
+            "Processing order message {MessageId} with payload: {Payload}",
             msg.MessageId,
-            payload,
-            maxRetries);
-
-        // Example: Delegate some work to the worker or process directly
-        // In a real scenario, you might parse the payload and dispatch to appropriate handlers
+            payload);
 
         return Task.CompletedTask;
     }
