@@ -24,7 +24,7 @@ public sealed class MockServer : IAsyncDisposable
     private static MockServer? _prdServer = null;
     private static readonly SemaphoreSlim _lock = new(1, 1);
 
-    public static async Task<MockServer> StartDevServer(bool loadConfig = true)
+    public static async Task<MockServer> StartDevServer()
     {
         await _lock.WaitAsync();
         try
@@ -34,7 +34,7 @@ public sealed class MockServer : IAsyncDisposable
                 _devServer.RunningInstances++;
                 return _devServer;
             }
-            _devServer = await StartAsync("Development", loadConfig);
+            _devServer = await StartAsync("Development", true);
             _devServer.RunningInstances++;
             return _devServer;
         }
@@ -44,7 +44,7 @@ public sealed class MockServer : IAsyncDisposable
         }
     }
 
-    public static async Task<MockServer> StartPrdServer(bool loadConfig = true)
+    public static async Task<MockServer> StartPrdServer()
     {
         await _lock.WaitAsync();
         try
@@ -54,7 +54,54 @@ public sealed class MockServer : IAsyncDisposable
                 _prdServer.RunningInstances++;
                 return _prdServer;
             }
-            _prdServer = await StartAsync("Production", loadConfig);
+            _prdServer = await StartAsync("Production", true);
+            _prdServer.RunningInstances++;
+            return _prdServer;
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
+    /// <summary>
+    /// Starts a development server without loading the default MockServer configuration.
+    /// This is intended for tests that need an empty configuration set.
+    /// </summary>
+    public static async Task<MockServer> StartDevServerNoConfig()
+    {
+        await _lock.WaitAsync();
+        try
+        {
+            if (_devServer is not null)
+            {
+                _devServer.RunningInstances++;
+                return _devServer;
+            }
+            _devServer = await StartAsync("Development", false);
+            _devServer.RunningInstances++;
+            return _devServer;
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
+    /// <summary>
+    /// Starts a production server without loading the default MockServer configuration.
+    /// </summary>
+    public static async Task<MockServer> StartPrdServerNoConfig()
+    {
+        await _lock.WaitAsync();
+        try
+        {
+            if (_prdServer is not null)
+            {
+                _prdServer.RunningInstances++;
+                return _prdServer;
+            }
+            _prdServer = await StartAsync("Production", false);
             _prdServer.RunningInstances++;
             return _prdServer;
         }

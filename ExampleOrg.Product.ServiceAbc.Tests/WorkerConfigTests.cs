@@ -23,7 +23,7 @@ public class WorkerConfigTests
     [Fact(DisplayName = "Worker config: missing config section results in default property values")]
     public async System.Threading.Tasks.Task WorkerConfig_MissingSection_Defaults()
     {
-        await using var server = await MockServer.StartDevServer(loadConfig: false);
+        await using var server = await MockServer.StartDevServerNoConfig();
 
         // When no configuration exists, the Configuration section should be empty
         var cfgVal = server.Host.Services.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>().GetSection("TheWorker")["Abc"];
