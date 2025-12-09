@@ -45,7 +45,8 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
 - Refactored from `[LwxMessageEndpoint]` to dual-attribute pattern: `[LwxEndpoint]` + `[LwxMessageSource]`
 - `[LwxEndpoint]` handles HTTP configuration (Uri, Publish, Summary, Description, ReqBodyType)
 - `[LwxMessageSource]` handles queue configuration (Stage, QueueProvider, QueueConfigSection, QueueReaders, HandlerErrorPolicy, ProviderErrorPolicy)
-- **ReqBodyType property**: When using `[LwxEndpoint]` with `[LwxMessageSource]`, the `ReqBodyType` property specifies the concrete `ILwxQueueMessage` implementation used for HTTP JSON deserialization. This type must implement `ILwxQueueMessage` and have a parameterless constructor for model binding.
+- **ReqBodyType property**: Specifies the concrete `ILwxQueueMessage` for HTTP JSON deserialization. Use the built-in `LwxQueueMessage` class.
+- **LwxQueueMessage class**: A ready-to-use `ILwxQueueMessage` implementation with JSON-serializable properties. Emitted via PostInitialization.
 - When `ReqBodyType` is set, `LwxEndpointTypeProcessor` defers processing to `LwxMessageSourceTypeProcessor`
 - When `[LwxEndpoint]` and `[LwxMessageSource]` are combined without `ReqBodyType`, diagnostic LWX050 is emitted
 - Implemented complete message queue processing infrastructure with configurable providers and error policies

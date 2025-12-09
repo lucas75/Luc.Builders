@@ -15,50 +15,27 @@ Added `ReqBodyType` property to `[LwxEndpoint]` attribute for specifying concret
 ### Purpose
 When using `[LwxEndpoint]` with `[LwxMessageSource]`, ASP.NET Core cannot deserialize JSON into the `ILwxQueueMessage` interface directly. The `ReqBodyType` property specifies the concrete type that ASP.NET should use for model binding.
 
-### Requirements
-- The `ReqBodyType` must implement `ILwxQueueMessage`
-- The `ReqBodyType` must have a parameterless constructor for model binding
-- HTTP-specific methods (`CompleteAsync`, `AbandonAsync`, `DeadLetterAsync`) can be no-op stubs
+### Built-in LwxQueueMessage Class
+The generator provides a ready-to-use `LwxQueueMessage` class that implements `ILwxQueueMessage` with JSON-serializable properties. Use it directly as the `ReqBodyType`:
 
-### Example Usage
 ```csharp
-// Create a concrete ILwxQueueMessage implementation for HTTP binding
-public class OrderMessage : ILwxQueueMessage
+[LwxEndpoint("POST /receive-order", Publish = LwxStage.DevelopmentOnly, ReqBodyType = typeof(LwxQueueMessage))]
+[LwxMessageSource(
+    Stage = LwxStage.All,
+    QueueProvider = typeof(ExampleQueueProvider),
+    QueueConfigSection = "OrderQueue"
+)]
+public static Task Execute(ILwxQueueMessage msg) => Task.CompletedTask;
+```
+
+### LwxQueueMessage JSON Schema
+The `LwxQueueMessage` class accepts the following JSON structure:
+```json
 {
-    [JsonPropertyName("messageId")]
-    public string MessageId { get; set; } = Guid.NewGuid().ToString();
-
-    [JsonPropertyName("payload")]
-    public string PayloadString { get; set; } = string.Empty;
-
-    [JsonIgnore]
-    public ReadOnlyMemory<byte> Payload => Encoding.UTF8.GetBytes(PayloadString);
-
-    [JsonPropertyName("headers")]
-    public Dictionary<string, string> HeadersDict { get; set; } = new();
-
-    [JsonIgnore]
-    public IReadOnlyDictionary<string, string> Headers => HeadersDict;
-
-    [JsonPropertyName("enqueuedAt")]
-    public DateTimeOffset EnqueuedAt { get; set; } = DateTimeOffset.UtcNow;
-
-    // No-op stubs for HTTP use
-    public ValueTask CompleteAsync(CancellationToken ct = default) => ValueTask.CompletedTask;
-    public ValueTask AbandonAsync(string? reason = null, CancellationToken ct = default) => ValueTask.CompletedTask;
-    public ValueTask DeadLetterAsync(string? reason = null, CancellationToken ct = default) => ValueTask.CompletedTask;
-}
-
-// Use in endpoint
-public partial class EndpointMsgReceiveOrder
-{
-    [LwxEndpoint("POST /receive-order", Publish = LwxStage.DevelopmentOnly, ReqBodyType = typeof(OrderMessage))]
-    [LwxMessageSource(
-        Stage = LwxStage.All,
-        QueueProvider = typeof(ExampleQueueProvider),
-        QueueConfigSection = "OrderQueue"
-    )]
-    public static Task Execute(ILwxQueueMessage msg) => Task.CompletedTask;
+    "messageId": "abc123",
+    "payload": "{ \"orderId\": 42 }",
+    "headers": { "key": "value" },
+    "enqueuedAt": "2025-01-15T10:30:00Z"
 }
 ```
 
@@ -66,9 +43,9 @@ public partial class EndpointMsgReceiveOrder
 - `LWX050` - When `[LwxMessageSource]` is combined with `[LwxEndpoint]`, the `ReqBodyType` property must be specified
 
 ### Processor Changes
--- `LwxEndpointTypeProcessor` now skips processing when `ReqBodyType` is set (defers to `LwxMessageSourceTypeProcessor`)
--- `LwxMessageSourceTypeProcessor` validates `ReqBodyType` is present when `[LwxEndpoint]` is combined with `[LwxMessageSource]`
--- HTTP endpoint generation uses `ReqBodyType` instead of generating a wrapper class
+- `LwxEndpointTypeProcessor` now skips processing when `ReqBodyType` is set (defers to `LwxMessageSourceTypeProcessor`)
+- `LwxMessageSourceTypeProcessor` validates `ReqBodyType` is present when `[LwxEndpoint]` is combined with `[LwxMessageSource]`
+- HTTP endpoint generation uses `ReqBodyType` instead of generating a wrapper class
 
 ---
 
@@ -97,7 +74,7 @@ public static Task Execute(ILwxQueueMessage msg) => Task.CompletedTask;
 
 After:
 ```csharp
-[LwxEndpoint("POST /receive-order", Publish = LwxStage.DevelopmentOnly, ReqBodyType = typeof(OrderMessage))]
+[LwxEndpoint("POST /receive-order", Publish = LwxStage.DevelopmentOnly, ReqBodyType = typeof(LwxQueueMessage))]
 [LwxMessageSource(
     Stage = LwxStage.All,
     QueueProvider = typeof(MyQueueProvider),

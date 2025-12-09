@@ -26,6 +26,11 @@ internal class LwxMessageSourcePostInitializationProcessor(Generator parent, Inc
         );
         ProcessorUtils.AddEmbeddedSource(
             ctx,
+            "Attributes/LwxQueueMessage.cs",
+            "LwxQueueMessage.g.cs"
+        );
+        ProcessorUtils.AddEmbeddedSource(
+            ctx,
             "Attributes/ILwxQueueProvider.cs",
             "ILwxQueueProvider.g.cs"
         );
