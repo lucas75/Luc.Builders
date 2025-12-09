@@ -60,6 +60,13 @@ namespace Lwx.Builders.MicroService.Atributtes
         public string NamingExceptionJustification { get; set; }
 
         /// <summary>
+        /// Optional: specifies the concrete type to use for request body deserialization.
+        /// When set, the endpoint will deserialize the HTTP request body to this type.
+        /// Required when used with [LwxMessageSource] to specify the ILwxQueueMessage implementation.
+        /// </summary>
+        public Type ReqBodyType { get; set; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="LwxEndpointAttribute"/> class.
         /// </summary>
         public LwxEndpointAttribute() { }

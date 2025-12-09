@@ -43,9 +43,11 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
 
 ### MessageSource Mechanism (January 2025)
 - Refactored from `[LwxMessageEndpoint]` to dual-attribute pattern: `[LwxEndpoint]` + `[LwxMessageSource]`
-- `[LwxEndpoint]` handles HTTP configuration (Uri, Publish, Summary, Description)
+- `[LwxEndpoint]` handles HTTP configuration (Uri, Publish, Summary, Description, ReqBodyType)
 - `[LwxMessageSource]` handles queue configuration (Stage, QueueProvider, QueueConfigSection, QueueReaders, HandlerErrorPolicy, ProviderErrorPolicy)
-- When both attributes are present on Execute method, `LwxEndpointTypeProcessor` defers to `LwxMessageSourceTypeProcessor`
+- **ReqBodyType property**: When using `[LwxEndpoint]` with `[LwxMessageSource]`, the `ReqBodyType` property specifies the concrete `ILwxQueueMessage` implementation used for HTTP JSON deserialization. This type must implement `ILwxQueueMessage` and have a parameterless constructor for model binding.
+- When `ReqBodyType` is set, `LwxEndpointTypeProcessor` defers processing to `LwxMessageSourceTypeProcessor`
+- When `[LwxEndpoint]` and `[LwxMessageSource]` are combined without `ReqBodyType`, diagnostic LWX050 is emitted
 - Implemented complete message queue processing infrastructure with configurable providers and error policies
 - New core interfaces: `ILwxQueueProvider`, `ILwxQueueMessage`, `ILwxErrorPolicy`, `ILwxProviderErrorPolicy`
 - Default policies: `LwxDefaultErrorPolicy` (dead-letters on error), `LwxDefaultProviderErrorPolicy` (logs only)
@@ -53,7 +55,15 @@ This is a Roslyn incremental source generator for C# microservice archetypes, ta
 - ServiceRegistration updated with MessageEndpointNames/MessageEndpointInfos
 - Namespace convention: `.Endpoints` with `EndpointMsg{PathSegments}` naming
 - Queue providers should be in `.Services` namespace (not `.Endpoints`)
-- New diagnostics: LWX040-LWX049 for MessageSource validation
+- New diagnostics: LWX040-LWX050 for MessageSource validation
+  - LWX040: Invalid EndpointMsg* class name
+  - LWX041: File path mismatch
+  - LWX042: Not in .Endpoints namespace
+  - LWX043: Missing QueueProvider
+  - LWX044: QueueProvider doesn't implement ILwxQueueProvider
+  - LWX047: HandlerErrorPolicy doesn't implement ILwxErrorPolicy
+  - LWX049: ProviderErrorPolicy doesn't implement ILwxProviderErrorPolicy
+  - LWX050: Missing ReqBodyType when LwxEndpoint + LwxMessageSource combined
 
 ### Removed: ServiceBus/EventHub Processors (January 2025)
 - Removed unused stub processors for Azure ServiceBus and EventHub

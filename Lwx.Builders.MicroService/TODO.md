@@ -8,13 +8,77 @@
 
 # CHANGELOG
 
+## ✅ Completed: ReqBodyType Property for HTTP Deserialization (January 2025)
+
+Added `ReqBodyType` property to `[LwxEndpoint]` attribute for specifying concrete `ILwxQueueMessage` implementation used in HTTP deserialization.
+
+### Purpose
+When using `[LwxEndpoint]` with `[LwxMessageSource]`, ASP.NET Core cannot deserialize JSON into the `ILwxQueueMessage` interface directly. The `ReqBodyType` property specifies the concrete type that ASP.NET should use for model binding.
+
+### Requirements
+- The `ReqBodyType` must implement `ILwxQueueMessage`
+- The `ReqBodyType` must have a parameterless constructor for model binding
+- HTTP-specific methods (`CompleteAsync`, `AbandonAsync`, `DeadLetterAsync`) can be no-op stubs
+
+### Example Usage
+```csharp
+// Create a concrete ILwxQueueMessage implementation for HTTP binding
+public class OrderMessage : ILwxQueueMessage
+{
+    [JsonPropertyName("messageId")]
+    public string MessageId { get; set; } = Guid.NewGuid().ToString();
+
+    [JsonPropertyName("payload")]
+    public string PayloadString { get; set; } = string.Empty;
+
+    [JsonIgnore]
+    public ReadOnlyMemory<byte> Payload => Encoding.UTF8.GetBytes(PayloadString);
+
+    [JsonPropertyName("headers")]
+    public Dictionary<string, string> HeadersDict { get; set; } = new();
+
+    [JsonIgnore]
+    public IReadOnlyDictionary<string, string> Headers => HeadersDict;
+
+    [JsonPropertyName("enqueuedAt")]
+    public DateTimeOffset EnqueuedAt { get; set; } = DateTimeOffset.UtcNow;
+
+    // No-op stubs for HTTP use
+    public ValueTask CompleteAsync(CancellationToken ct = default) => ValueTask.CompletedTask;
+    public ValueTask AbandonAsync(string? reason = null, CancellationToken ct = default) => ValueTask.CompletedTask;
+    public ValueTask DeadLetterAsync(string? reason = null, CancellationToken ct = default) => ValueTask.CompletedTask;
+}
+
+// Use in endpoint
+public partial class EndpointMsgReceiveOrder
+{
+    [LwxEndpoint("POST /receive-order", Publish = LwxStage.DevelopmentOnly, ReqBodyType = typeof(OrderMessage))]
+    [LwxMessageSource(
+        Stage = LwxStage.All,
+        QueueProvider = typeof(ExampleQueueProvider),
+        QueueConfigSection = "OrderQueue"
+    )]
+    public static Task Execute(ILwxQueueMessage msg) => Task.CompletedTask;
+}
+```
+
+### New Diagnostic
+- `LWX050` - When `[LwxMessageSource]` is combined with `[LwxEndpoint]`, the `ReqBodyType` property must be specified
+
+### Processor Changes
+-- `LwxEndpointTypeProcessor` now skips processing when `ReqBodyType` is set (defers to `LwxMessageSourceTypeProcessor`)
+-- `LwxMessageSourceTypeProcessor` validates `ReqBodyType` is present when `[LwxEndpoint]` is combined with `[LwxMessageSource]`
+-- HTTP endpoint generation uses `ReqBodyType` instead of generating a wrapper class
+
+---
+
 ## ✅ Completed: Split LwxMessageSource from LwxEndpoint (January 2025)
 
 Refactored from single `[LwxMessageEndpoint]` to dual-attribute pattern for cleaner separation of concerns.
 
 ### Breaking Change
 - `[LwxMessageEndpoint]` is now replaced by `[LwxEndpoint]` + `[LwxMessageSource]`
-- HTTP configuration goes in `[LwxEndpoint]` (Uri, Publish, Summary, Description)
+    - HTTP configuration goes in `[LwxEndpoint]` (Uri, Publish, Summary, Description, ReqBodyType)
 - Queue configuration goes in `[LwxMessageSource]` (Stage, QueueProvider, QueueConfigSection, QueueReaders, HandlerErrorPolicy, ProviderErrorPolicy)
 
 ### Migration Example
@@ -33,7 +97,7 @@ public static Task Execute(ILwxQueueMessage msg) => Task.CompletedTask;
 
 After:
 ```csharp
-[LwxEndpoint("POST /receive-order", Publish = LwxStage.DevelopmentOnly)]
+[LwxEndpoint("POST /receive-order", Publish = LwxStage.DevelopmentOnly, ReqBodyType = typeof(OrderMessage))]
 [LwxMessageSource(
     Stage = LwxStage.All,
     QueueProvider = typeof(MyQueueProvider),

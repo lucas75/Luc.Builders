@@ -12,6 +12,50 @@ namespace Lwx.Builders.MicroService.Tests;
 public class MessageEndpointTests
 {
     /// <summary>
+    /// Common source for TestQueueMessage - a concrete ILwxQueueMessage implementation for tests.
+    /// </summary>
+    private const string TestQueueMessageSource = """
+        using System;
+        using System.Collections.Generic;
+        using System.Text;
+        using System.Text.Json.Serialization;
+        using System.Threading;
+        using System.Threading.Tasks;
+        using Lwx.Builders.MicroService.Atributtes;
+        namespace TestApp.Endpoints;
+
+        /// <summary>
+        /// A concrete ILwxQueueMessage implementation for HTTP testing.
+        /// Queue-specific methods are no-op stubs since HTTP doesn't need them.
+        /// </summary>
+        public class TestQueueMessage : ILwxQueueMessage
+        {
+            [JsonPropertyName("messageId")]
+            public string MessageId { get; set; } = Guid.NewGuid().ToString();
+
+            [JsonPropertyName("payload")]
+            public string PayloadString { get; set; } = string.Empty;
+
+            [JsonIgnore]
+            public ReadOnlyMemory<byte> Payload => Encoding.UTF8.GetBytes(PayloadString);
+
+            [JsonPropertyName("headers")]
+            public Dictionary<string, string> HeadersDict { get; set; } = new();
+
+            [JsonIgnore]
+            public IReadOnlyDictionary<string, string> Headers => HeadersDict;
+
+            [JsonPropertyName("enqueuedAt")]
+            public DateTimeOffset EnqueuedAt { get; set; } = DateTimeOffset.UtcNow;
+
+            // HTTP messages don't need completion/abandon/dead-letter - these are no-op stubs
+            public ValueTask CompleteAsync(CancellationToken ct = default) => ValueTask.CompletedTask;
+            public ValueTask AbandonAsync(string? reason = null, CancellationToken ct = default) => ValueTask.CompletedTask;
+            public ValueTask DeadLetterAsync(string? reason = null, CancellationToken ct = default) => ValueTask.CompletedTask;
+        }
+        """;
+
+    /// <summary>
     /// Tests that a valid MessageEndpoint with all required properties generates code correctly.
     /// </summary>
     [Fact(DisplayName = "Valid MessageEndpoint generates hosted service and Configure methods")]
@@ -26,6 +70,8 @@ public class MessageEndpointTests
                 [LwxService(Title = "Test")]
                 public static partial class Service { }
                 """,
+
+            ["Endpoints/TestQueueMessage.cs"] = TestQueueMessageSource,
 
             ["Endpoints/ExampleQueueProvider.cs"] = """
                 using System;
@@ -54,7 +100,8 @@ public class MessageEndpointTests
                 {
                     [LwxEndpoint(
                         "POST /receive-order",
-                        Publish = LwxStage.DevelopmentOnly
+                        Publish = LwxStage.DevelopmentOnly,
+                        ReqBodyType = typeof(TestQueueMessage)
                     )]
                     [LwxMessageSource(
                         Stage = LwxStage.All,
@@ -108,6 +155,8 @@ public class MessageEndpointTests
                 public static partial class Service { }
                 """,
 
+            ["Endpoints/TestQueueMessage.cs"] = TestQueueMessageSource,
+
             ["Endpoints/EndpointMsgTest.cs"] = """
                 using System.Threading.Tasks;
                 using Lwx.Builders.MicroService.Atributtes;
@@ -115,7 +164,7 @@ public class MessageEndpointTests
 
                 public partial class EndpointMsgTest
                 {
-                    [LwxEndpoint("POST /test", Publish = LwxStage.DevelopmentOnly)]
+                    [LwxEndpoint("POST /test", Publish = LwxStage.DevelopmentOnly, ReqBodyType = typeof(TestQueueMessage))]
                     [LwxMessageSource(
                         Stage = LwxStage.All,
                         QueueConfigSection = "TestQueue"
@@ -148,6 +197,8 @@ public class MessageEndpointTests
                 public static partial class Service { }
                 """,
 
+            ["Endpoints/TestQueueMessage.cs"] = TestQueueMessageSource,
+
             ["Endpoints/ExampleQueueProvider.cs"] = """
                 using System;
                 using System.Threading;
@@ -175,7 +226,7 @@ public class MessageEndpointTests
 
                 public partial class EndpointMsgTest
                 {
-                    [LwxEndpoint("POST /test", Publish = LwxStage.DevelopmentOnly)]
+                    [LwxEndpoint("POST /test", Publish = LwxStage.DevelopmentOnly, ReqBodyType = typeof(TestQueueMessage))]
                     [LwxMessageSource(
                         Stage = LwxStage.All,
                         QueueProvider = typeof(ExampleQueueProvider),
@@ -210,6 +261,8 @@ public class MessageEndpointTests
                 public static partial class Service { }
                 """,
 
+            ["Endpoints/TestQueueMessage.cs"] = TestQueueMessageSource,
+
             ["Endpoints/ExampleQueueProvider.cs"] = """
                 using System;
                 using System.Threading;
@@ -237,7 +290,7 @@ public class MessageEndpointTests
 
                 public partial class EndpointMsgTest
                 {
-                    [LwxEndpoint("POST /test", Publish = LwxStage.DevelopmentOnly)]
+                    [LwxEndpoint("POST /test", Publish = LwxStage.DevelopmentOnly, ReqBodyType = typeof(TestQueueMessage))]
                     [LwxMessageSource(
                         Stage = LwxStage.All,
                         QueueProvider = typeof(ExampleQueueProvider),
@@ -272,6 +325,8 @@ public class MessageEndpointTests
                 public static partial class Service { }
                 """,
 
+            ["Endpoints/TestQueueMessage.cs"] = TestQueueMessageSource,
+
             ["Endpoints/ExampleQueueProvider.cs"] = """
                 using System;
                 using System.Threading;
@@ -297,7 +352,7 @@ public class MessageEndpointTests
 
                 public partial class WronglyNamedEndpoint
                 {
-                    [LwxEndpoint("POST /test", Publish = LwxStage.DevelopmentOnly)]
+                    [LwxEndpoint("POST /test", Publish = LwxStage.DevelopmentOnly, ReqBodyType = typeof(TestQueueMessage))]
                     [LwxMessageSource(
                         Stage = LwxStage.All,
                         QueueProvider = typeof(ExampleQueueProvider),
@@ -331,6 +386,8 @@ public class MessageEndpointTests
                 public static partial class Service { }
                 """,
 
+            ["Endpoints/TestQueueMessage.cs"] = TestQueueMessageSource,
+
             ["Endpoints/ExampleQueueProvider.cs"] = """
                 using System;
                 using System.Threading;
@@ -357,7 +414,7 @@ public class MessageEndpointTests
 
                 public partial class EndpointMsgTest
                 {
-                    [LwxEndpoint("POST /test", Publish = LwxStage.DevelopmentOnly)]
+                    [LwxEndpoint("POST /test", Publish = LwxStage.DevelopmentOnly, ReqBodyType = typeof(TestQueueMessage))]
                     [LwxMessageSource(
                         Stage = LwxStage.All,
                         QueueProvider = typeof(ExampleQueueProvider),
@@ -391,6 +448,8 @@ public class MessageEndpointTests
                 public static partial class Service { }
                 """,
 
+            ["Endpoints/TestQueueMessage.cs"] = TestQueueMessageSource,
+
             ["Endpoints/ExampleQueueProvider.cs"] = """
                 using System;
                 using System.Threading;
@@ -420,7 +479,8 @@ public class MessageEndpointTests
                 {
                     [LwxEndpoint(
                         "POST /receive-order",
-                        Publish = LwxStage.DevelopmentOnly
+                        Publish = LwxStage.DevelopmentOnly,
+                        ReqBodyType = typeof(TestQueueMessage)
                     )]
                     [LwxMessageSource(
                         Stage = LwxStage.All,
@@ -466,6 +526,8 @@ public class MessageEndpointTests
                 public static partial class Service { }
                 """,
 
+            ["Endpoints/TestQueueMessage.cs"] = TestQueueMessageSource,
+
             ["Endpoints/ExampleQueueProvider.cs"] = """
                 using System;
                 using System.Threading;
@@ -493,7 +555,8 @@ public class MessageEndpointTests
                 {
                     [LwxEndpoint(
                         "POST /receive-order",
-                        Publish = LwxStage.DevelopmentOnly
+                        Publish = LwxStage.DevelopmentOnly,
+                        ReqBodyType = typeof(TestQueueMessage)
                     )]
                     [LwxMessageSource(
                         Stage = LwxStage.All,

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Lwx.Builders.MicroService.Atributtes;
 using ExampleOrg.Product.ServiceAbc.Workers;
 using ExampleOrg.Product.ServiceAbc.Services;
+using ExampleOrg.Product.ServiceAbc.Dto;
 
 namespace ExampleOrg.Product.ServiceAbc.Endpoints;
 
@@ -32,6 +33,7 @@ public partial class EndpointMsgReceiveOrder
     [LwxEndpoint(
         "POST /receive-order",
         Publish = LwxStage.DevelopmentOnly,
+        ReqBodyType = typeof(OrderMessage),
         Summary = "Receives order messages from queue",
         Description = "Processes incoming order messages. Can be triggered via HTTP in development for testing."
     )]    

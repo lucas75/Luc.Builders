@@ -33,12 +33,15 @@ internal class LwxEndpointTypeProcessor(
             return;
         }
 
-        // If LwxMessageSource is also on this method, let LwxMessageSourceTypeProcessor handle it
-        var hasMessageSource = methodSymbol.GetAttributes()
-            .Any(a => a.AttributeClass?.Name is "LwxMessageSourceAttribute" or "LwxMessageSource");
-        if (hasMessageSource)
+        // If ReqBodyType is specified, this is a composite endpoint (e.g., with LwxMessageSource)
+        // and should be handled by the appropriate processor, not by LwxEndpointTypeProcessor
+        if (attr.AttributeData != null)
         {
-            return; // LwxMessageSourceTypeProcessor will handle this method
+            var named = attr.AttributeData.ToNamedArgumentMap();
+            if (named.TryGetValue("ReqBodyType", out var btTc) && btTc.Value is INamedTypeSymbol)
+            {
+                return; // Another processor will handle this endpoint
+            }
         }
 
         // Validate method is named Execute

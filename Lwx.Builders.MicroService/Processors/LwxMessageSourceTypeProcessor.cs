@@ -67,7 +67,22 @@ internal class LwxMessageSourceTypeProcessor(
             = ExtractMessageSourceMetadata();
 
         // Extract LwxEndpoint attribute properties from the same method
-        var (uriArg, uriStageLiteral, summary, description, namingException) = ExtractEndpointMetadata();
+        var (uriArg, uriStageLiteral, summary, description, namingException, reqBodyTypeName) = ExtractEndpointMetadata();
+
+        // Validate ReqBodyType is specified when LwxEndpoint is present
+        if (!string.IsNullOrEmpty(uriArg) && string.IsNullOrEmpty(reqBodyTypeName))
+        {
+            ctx.ReportDiagnostic(Diagnostic.Create(
+                new DiagnosticDescriptor(
+                    "LWX050",
+                    "Missing ReqBodyType on LwxEndpoint",
+                    "When [LwxMessageSource] is combined with [LwxEndpoint], you must specify ReqBodyType on [LwxEndpoint] to indicate the concrete ILwxQueueMessage implementation for HTTP deserialization. Example: [LwxEndpoint(\"POST /path\", ReqBodyType = typeof(MyQueueMessage))]",
+                    "Configuration",
+                    DiagnosticSeverity.Error,
+                    isEnabledByDefault: true),
+                attr.Location));
+            return;
+        }
 
         // Validate naming convention - must start with EndpointMsg
         if (!ValidateEndpointNaming(uriArg, name, ns, namingException))
@@ -99,7 +114,7 @@ internal class LwxMessageSourceTypeProcessor(
         // Generate the hosted service and Configure method
         GenerateSourceFiles(name, ns, uriArg, queueStageLiteral, uriStageLiteral, queueProviderTypeName, queueConfigSection, 
                            queueReaders, handlerErrorPolicyTypeName, providerErrorPolicyTypeName, 
-                           summary, description, namingException, executeParams);
+                           summary, description, namingException, reqBodyTypeName, executeParams);
 
         // Register with service
         var servicePrefix = Generator.ComputeServicePrefix(ns);
@@ -170,7 +185,7 @@ internal class LwxMessageSourceTypeProcessor(
                 handlerErrorPolicyTypeName, providerErrorPolicyTypeName);
     }
 
-    private (string? uri, string uriStageLiteral, string? summary, string? description, string? namingException) 
+    private (string? uri, string uriStageLiteral, string? summary, string? description, string? namingException, string? reqBodyTypeName) 
         ExtractEndpointMetadata()
     {
         string? uri = null;
@@ -178,16 +193,17 @@ internal class LwxMessageSourceTypeProcessor(
         string? summary = null;
         string? description = null;
         string? namingException = null;
+        string? reqBodyTypeName = null;
 
         if (_methodSymbol == null)
-            return (uri, uriStageLiteral, summary, description, namingException);
+            return (uri, uriStageLiteral, summary, description, namingException, reqBodyTypeName);
 
         // Find LwxEndpoint attribute on the same method
         var endpointAttr = _methodSymbol.GetAttributes()
             .FirstOrDefault(a => a.AttributeClass?.Name is "LwxEndpointAttribute" or "LwxEndpoint");
 
         if (endpointAttr == null)
-            return (uri, uriStageLiteral, summary, description, namingException);
+            return (uri, uriStageLiteral, summary, description, namingException, reqBodyTypeName);
 
         var named = endpointAttr.ToNamedArgumentMap();
 
@@ -225,7 +241,13 @@ internal class LwxMessageSourceTypeProcessor(
             namingException = neVal?.Trim();
         }
 
-        return (uri, uriStageLiteral, summary, description, namingException);
+        // ReqBodyType
+        if (named.TryGetValue("ReqBodyType", out var btTc) && btTc.Value is INamedTypeSymbol btType)
+        {
+            reqBodyTypeName = btType.ToDisplayString();
+        }
+
+        return (uri, uriStageLiteral, summary, description, namingException, reqBodyTypeName);
     }
 
     private static string ParseStageLiteral(object raw)
@@ -510,7 +532,7 @@ internal class LwxMessageSourceTypeProcessor(
         string name, string ns, string? uriArg, string queueStageLiteral, string uriStageLiteral,
         string? queueProviderTypeName, string? queueConfigSection, int queueReaders,
         string? handlerErrorPolicyTypeName, string? providerErrorPolicyTypeName,
-        string? summary, string? description, string? namingException,
+        string? summary, string? description, string? namingException, string? reqBodyTypeName,
         List<(string ParamName, string ParamType, bool IsQueueMessage)> executeParams)
     {
         var shortQueueStage = queueStageLiteral.Contains('.')
@@ -626,9 +648,9 @@ public static void Configure(WebApplicationBuilder builder)
                     _ => "MapPost"
                 };
 
-                // Build HTTP handler with DI parameters
+                // Build HTTP handler with DI parameters plus the body type
                 var httpDiParams = diParams.Select(p => $"{p.ParamType} {p.ParamName}").ToList();
-                httpDiParams.Insert(0, "HttpContext ctx");
+                httpDiParams.Insert(0, $"{reqBodyTypeName} msg");
                 var httpParamsList = string.Join(", ", httpDiParams);
                 
                 var httpCallArgs = executeParams.Select(p => p.IsQueueMessage ? "msg" : p.ParamName).ToList();
@@ -640,9 +662,6 @@ if ({{uriCondExpr}})
     // HTTP endpoint for testing/direct message injection
     var endpoint = app.{{mapMethod}}("{{pathPart}}", async ({{httpParamsList}}) =>
     {
-        using var reader = new System.IO.StreamReader(ctx.Request.Body);
-        var body = await reader.ReadToEndAsync();
-        var msg = new LwxHttpQueueMessage(body, ctx.Request.Headers);
         await Execute({{httpCallArgsList}});
         return Results.Ok();
     });
@@ -730,45 +749,6 @@ public sealed class {{name}}HostedService : BackgroundService
 """;
         }
 
-        // Generate helper class for HTTP message wrapping
-        var httpMessageClass = string.Empty;
-        if (uriActive)
-        {
-            httpMessageClass = $$"""
-
-/// <summary>
-/// Wraps an HTTP request body as an ILwxQueueMessage for unified processing.
-/// </summary>
-internal sealed class LwxHttpQueueMessage : ILwxQueueMessage
-{
-    private readonly string _body;
-    private readonly IReadOnlyDictionary<string, string> _headers;
-
-    public LwxHttpQueueMessage(string body, IHeaderDictionary requestHeaders)
-    {
-        _body = body;
-        MessageId = Guid.NewGuid().ToString("N");
-        EnqueuedAt = DateTimeOffset.UtcNow;
-        var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var h in requestHeaders)
-        {
-            dict[h.Key] = h.Value.ToString();
-        }
-        _headers = dict;
-    }
-
-    public string MessageId { get; }
-    public ReadOnlyMemory<byte> Payload => System.Text.Encoding.UTF8.GetBytes(_body);
-    public IReadOnlyDictionary<string, string> Headers => _headers;
-    public DateTimeOffset EnqueuedAt { get; }
-
-    public ValueTask CompleteAsync(CancellationToken ct = default) => ValueTask.CompletedTask;
-    public ValueTask AbandonAsync(string? reason = null, CancellationToken ct = default) => ValueTask.CompletedTask;
-    public ValueTask DeadLetterAsync(string? reason = null, CancellationToken ct = default) => ValueTask.CompletedTask;
-}
-""";
-        }
-
         var source = $$"""
 // <auto-generated/>
 #nullable enable
@@ -793,7 +773,6 @@ public partial class {{name}}
     {{configureAppMethod.FixIndent(1, indentFirstLine: false)}}
 }
 {{hostedServiceClass}}
-{{httpMessageClass}}
 """;
 
         var generatedFileName = !string.IsNullOrEmpty(namingException)
